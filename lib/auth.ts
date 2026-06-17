@@ -5,7 +5,8 @@ const SECRET_KEY = new TextEncoder().encode(
   process.env.JWT_SECRET || 'tu-secreto-super-seguro-cambialo'
 )
 
-const ADMIN_PASSWORD = '123456' // Contraseña simple de admin
+// Contraseña de admin desde variable de entorno
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || '123456'
 
 export interface SessionData {
   isAuthenticated: boolean
