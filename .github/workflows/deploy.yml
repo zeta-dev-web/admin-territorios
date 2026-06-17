@@ -1,4 +1,4 @@
-name: Deploy to Production
+name: Deploy to VPS
 
 on:
   push:
@@ -7,7 +7,7 @@ on:
 
 jobs:
   deploy:
-    name: Deploy to Vercel
+    name: Deploy to VPS
     runs-on: ubuntu-latest
     
     steps:
@@ -18,7 +18,6 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-          cache: 'npm'
       
       - name: Install dependencies
         run: npm ci
@@ -32,14 +31,31 @@ jobs:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           NEXTAUTH_URL: ${{ secrets.NEXTAUTH_URL }}
       
-      - name: Deploy to Vercel
-        uses: amondnet/vercel-action@v25
+      - name: Deploy to VPS via SSH
+        uses: appleboy/scp-action@v0.1.7
         with:
-          vercel-token: ${{ secrets.VERCEL_TOKEN }}
-          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
-          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
-          vercel-args: '--prod'
-          working-directory: ./
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          port: ${{ secrets.VPS_PORT }}
+          source: ".next,package.json,package-lock.json,node_modules,prisma,public"
+          target: "${{ secrets.VPS_APP_PATH }}"
+          strip_components: 0
+      
+      - name: Execute deployment commands on VPS
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          port: ${{ secrets.VPS_PORT }}
+          script: |
+            cd ${{ secrets.VPS_APP_PATH }}
+            npm install --production
+            npx prisma generate
+            npx prisma migrate deploy
+            pm2 restart territorios-app || pm2 start npm --name "territorios-app" -- start
+            pm2 save
 
   notify:
     name: Notify Deployment
@@ -51,8 +67,8 @@ jobs:
       - name: Deployment Status
         run: |
           if [ "${{ needs.deploy.result }}" == "success" ]; then
-            echo "✅ Deployment successful!"
+            echo "✅ Deployment to VPS successful!"
           else
-            echo "❌ Deployment failed!"
+            echo "❌ Deployment to VPS failed!"
             exit 1
           fi
