@@ -37,6 +37,7 @@ export async function createSession(username: string) {
   cookieStore.set('session', session, {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
+    sameSite: 'lax', // Permite navegación entre páginas
     maxAge: 60 * 60 * 24, // 24 horas
     path: '/',
   })
