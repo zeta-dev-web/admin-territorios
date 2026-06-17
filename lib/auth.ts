@@ -45,13 +45,6 @@ export async function createSession(username: string) {
     path: '/',
     domain: undefined, // Dejar que Next.js lo maneje automáticamente
   })
-  
-  console.log('[Auth] Cookie created:', {
-    secure: isHttps || false,
-    sameSite: 'lax',
-    path: '/',
-    maxAge: 60 * 60 * 24,
-  })
 }
 
 export async function getSession(): Promise<SessionData | null> {
