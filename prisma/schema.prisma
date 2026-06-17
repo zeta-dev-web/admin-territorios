@@ -1,0 +1,140 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Group {
+  id              String      @id @default(cuid())
+  name            String
+  superintendent  String?
+  auxiliary       String?
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+  drivers         Driver[]
+  members         Member[]
+  territories     Territory[]
+
+  @@index([name])
+}
+
+model Member {
+  id                  String              @id @default(cuid())
+  name                String
+  groupId             String
+  createdAt           DateTime            @default(now())
+  updatedAt           DateTime            @updatedAt
+  group               Group               @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  personalAssignments PersonalAssignment[]
+
+  @@index([groupId])
+  @@index([name])
+}
+
+model Driver {
+  id           String        @id @default(cuid())
+  name         String
+  groupId      String
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  assignments  Assignment[]
+  dailyRecords DailyRecord[]
+  group        Group         @relation(fields: [groupId], references: [id], onDelete: Cascade)
+
+  @@index([groupId])
+  @@index([name])
+}
+
+model Territory {
+  id                  String              @id @default(cuid())
+  number              Int                 @unique
+  description         String?
+  groupId             String
+  createdAt           DateTime            @default(now())
+  updatedAt           DateTime            @updatedAt
+  group               Group               @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  assignments         Assignment[]
+  blocks              Block[]
+  personalAssignments PersonalAssignment[]
+
+  @@index([number])
+  @@index([groupId])
+}
+
+model Block {
+  id           String        @id @default(cuid())
+  letter       String
+  territoryId  String
+  assignmentId String?
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  assignment   Assignment?   @relation(fields: [assignmentId], references: [id])
+  territory    Territory     @relation(fields: [territoryId], references: [id], onDelete: Cascade)
+  dailyRecords DailyRecord[]
+
+  @@unique([territoryId, letter])
+  @@index([territoryId])
+  @@index([assignmentId])
+}
+
+model Assignment {
+  id           String        @id @default(cuid())
+  territoryId  String
+  driverId     String
+  startDate    DateTime      @default(now())
+  endDate      DateTime?
+  isCompleted  Boolean       @default(false)
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  driver       Driver        @relation(fields: [driverId], references: [id], onDelete: Cascade)
+  territory    Territory     @relation(fields: [territoryId], references: [id], onDelete: Cascade)
+  blocks       Block[]
+  dailyRecords DailyRecord[]
+
+  @@index([territoryId])
+  @@index([driverId])
+  @@index([isCompleted])
+  @@index([endDate])
+}
+
+model DailyRecord {
+  id           String     @id @default(cuid())
+  assignmentId String
+  driverId     String
+  blockId      String
+  date         DateTime   @default(now())
+  notes        String?
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+  assignment   Assignment @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
+  block        Block      @relation(fields: [blockId], references: [id], onDelete: Cascade)
+  driver       Driver     @relation(fields: [driverId], references: [id], onDelete: Cascade)
+
+  @@unique([assignmentId, blockId, date])
+  @@index([assignmentId])
+  @@index([driverId])
+  @@index([blockId])
+  @@index([date])
+}
+
+model PersonalAssignment {
+  id           String    @id @default(cuid())
+  territoryId  String
+  memberId     String
+  assignedDate DateTime  @default(now())
+  returnedDate DateTime?
+  isActive     Boolean   @default(true)
+  notes        String?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  territory    Territory @relation(fields: [territoryId], references: [id], onDelete: Cascade)
+  member       Member    @relation(fields: [memberId], references: [id], onDelete: Cascade)
+
+  @@index([territoryId])
+  @@index([memberId])
+  @@index([isActive])
+  @@index([assignedDate])
+  @@index([returnedDate])
+}
