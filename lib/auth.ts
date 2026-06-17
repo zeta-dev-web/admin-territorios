@@ -34,12 +34,23 @@ export async function createSession(username: string) {
   const session = await encrypt({ isAuthenticated: true, username })
   const cookieStore = await cookies()
   
+  // Forzar secure: false cuando NEXTAUTH_URL es HTTP
+  const isHttps = process.env.NEXTAUTH_URL?.startsWith('https')
+  
   cookieStore.set('session', session, {
     httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
+    secure: isHttps || false, // Solo secure si es HTTPS
     sameSite: 'lax', // Permite navegación entre páginas
     maxAge: 60 * 60 * 24, // 24 horas
     path: '/',
+    domain: undefined, // Dejar que Next.js lo maneje automáticamente
+  })
+  
+  console.log('[Auth] Cookie created:', {
+    secure: isHttps || false,
+    sameSite: 'lax',
+    path: '/',
+    maxAge: 60 * 60 * 24,
   })
 }
 
