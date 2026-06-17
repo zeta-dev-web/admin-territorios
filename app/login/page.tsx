@@ -43,11 +43,6 @@ export default async function LoginPage() {
             <span>Acceso seguro y protegido</span>
           </div>
         </div>
-
-        {/* Info */}
-        <div className="mt-6 text-center text-white/80 text-sm">
-          <p>💡 Contraseña por defecto: <span className="font-mono font-semibold">123456</span></p>
-        </div>
       </div>
     </div>
   )
