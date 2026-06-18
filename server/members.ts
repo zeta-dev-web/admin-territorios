@@ -169,3 +169,34 @@ export async function deleteMember(memberId: string) {
     }
   }
 }
+
+
+export async function getAllMembersForSelect() {
+  try {
+    const members = await prisma.member.findMany({
+      select: {
+        id: true,
+        name: true,
+        group: {
+          select: {
+            name: true,
+          },
+        },
+      },
+      orderBy: {
+        name: 'asc',
+      },
+    })
+
+    return {
+      success: true,
+      data: members,
+    }
+  } catch (error) {
+    console.error('Error al obtener miembros:', error)
+    return {
+      success: false,
+      data: [],
+    }
+  }
+}

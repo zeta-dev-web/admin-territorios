@@ -9,7 +9,8 @@ import { revalidatePath } from 'next/cache'
 export async function createPersonalAssignment(
   territoryId: string,
   memberId: string,
-  notes?: string
+  notes?: string,
+  assignedDate?: Date
 ) {
   try {
     // Verificar que el territorio existe
@@ -53,6 +54,7 @@ export async function createPersonalAssignment(
         territoryId,
         memberId,
         notes,
+        assignedDate: assignedDate || new Date(),
       },
       include: {
         territory: true,

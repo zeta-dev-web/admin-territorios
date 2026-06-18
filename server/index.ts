@@ -47,6 +47,7 @@ export {
   updateMember,
   deleteMember,
   toggleMemberDriver,
+  getAllMembersForSelect,
 } from './members'
 
 // Asignaciones Personales
