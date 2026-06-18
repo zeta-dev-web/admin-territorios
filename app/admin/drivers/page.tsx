@@ -48,8 +48,6 @@ export default async function DriversPage({ searchParams }: PageProps) {
           </div>
           <CreateDriverModal />
         </div>
-
-        {/* Stats */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="bg-[#0F1729] rounded-xl border border-slate-800 p-4">
             <p className="text-sm font-medium text-slate-400">Total Conductores</p>
@@ -68,8 +66,6 @@ export default async function DriversPage({ searchParams }: PageProps) {
             </p>
           </div>
         </div>
-
-        {/* Conductores Table */}
         <div>
           <h2 className="text-lg font-bold text-white mb-4">Conductores</h2>
           <div className="bg-[#0F1729] rounded-xl border border-slate-800">

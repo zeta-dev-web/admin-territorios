@@ -75,6 +75,7 @@ export {
   getDriverById,
   updateDriver,
   deleteDriver,
+  getAllDriversForSelect,
 } from './drivers'
 
 // Territorios
@@ -86,4 +87,5 @@ export {
   updateTerritory,
   addBlocksToTerritory,
   deleteTerritory,
+  getAllTerritoriesForSelect,
 } from './territories'

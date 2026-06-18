@@ -26,7 +26,6 @@ export default async function AssignmentsPage({ searchParams }: PageProps) {
   return (
     <AppLayout title="Asignaciones">
       <div className="p-6 space-y-6">
-        {/* Header */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="w-12 h-12 bg-purple-500/10 rounded-xl flex items-center justify-center">
@@ -39,14 +38,11 @@ export default async function AssignmentsPage({ searchParams }: PageProps) {
               </p>
             </div>
           </div>
-
           <div className="flex gap-3">
             <CreateAssignmentModal />
             <CreatePersonalAssignmentModal />
           </div>
         </div>
-
-        {/* Stats */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <div className="bg-[#0F1729] rounded-xl border border-slate-800 p-4">
             <p className="text-sm font-medium text-slate-400">Total Activas</p>
@@ -65,8 +61,6 @@ export default async function AssignmentsPage({ searchParams }: PageProps) {
             <p className="text-2xl font-bold text-orange-500 mt-1">{uniqueTerritories}</p>
           </div>
         </div>
-
-        {/* Tabla Unificada */}
         <div className="bg-[#0F1729] rounded-xl border border-slate-800">
           <div className="p-4 border-b border-slate-800 flex items-center justify-between">
             <h2 className="text-lg font-bold text-white">Todas las Asignaciones</h2>

@@ -514,3 +514,35 @@ export async function deleteTerritory(territoryId: string) {
     }
   }
 }
+
+
+export async function getAllTerritoriesForSelect() {
+  try {
+    const territories = await prisma.territory.findMany({
+      select: {
+        id: true,
+        number: true,
+        description: true,
+        blocks: {
+          select: {
+            letter: true,
+          },
+        },
+      },
+      orderBy: {
+        number: 'asc',
+      },
+    })
+
+    return {
+      success: true,
+      data: territories,
+    }
+  } catch (error) {
+    console.error('Error al obtener territorios:', error)
+    return {
+      success: false,
+      data: [],
+    }
+  }
+}

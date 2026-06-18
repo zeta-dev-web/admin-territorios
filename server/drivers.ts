@@ -329,3 +329,34 @@ export async function deleteDriver(driverId: string) {
     }
   }
 }
+
+
+export async function getAllDriversForSelect() {
+  try {
+    const drivers = await prisma.driver.findMany({
+      select: {
+        id: true,
+        name: true,
+        group: {
+          select: {
+            name: true,
+          },
+        },
+      },
+      orderBy: {
+        name: 'asc',
+      },
+    })
+
+    return {
+      success: true,
+      data: drivers,
+    }
+  } catch (error) {
+    console.error('Error al obtener conductores:', error)
+    return {
+      success: false,
+      data: [],
+    }
+  }
+}

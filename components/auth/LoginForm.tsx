@@ -31,7 +31,6 @@ export function LoginForm() {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      {/* Mensaje de error */}
       {error && (
         <div className="bg-red-50 border border-red-200 rounded-lg p-3 flex items-start gap-2 animate-in">
           <AlertCircle className="h-5 w-5 text-red-600 flex-shrink-0 mt-0.5" />
@@ -39,7 +38,6 @@ export function LoginForm() {
         </div>
       )}
 
-      {/* Campo de contraseña */}
       <div>
         <label
           htmlFor="password"
@@ -72,7 +70,6 @@ export function LoginForm() {
         </div>
       </div>
 
-      {/* Botón de envío */}
       <button
         type="submit"
         disabled={isLoading}

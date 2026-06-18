@@ -1,8 +1,8 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { Plus, X, Loader2, MapPin, UserCircle } from 'lucide-react'
-import { createAssignment, getAllDrivers, getAllTerritories } from '@/server'
+import { useState, useEffect, useMemo } from 'react'
+import { Plus, X, Loader2, MapPin, Search, Check } from 'lucide-react'
+import { createAssignment, getAllDriversForSelect, getAllTerritoriesForSelect } from '@/server'
 import { useRouter } from 'next/navigation'
 
 interface Driver {
@@ -29,11 +29,16 @@ export function CreateAssignmentModal() {
   const [territories, setTerritories] = useState<Territory[]>([])
   const [selectedDriverId, setSelectedDriverId] = useState('')
   const [selectedTerritoryId, setSelectedTerritoryId] = useState('')
+  
+  const [territorySearch, setTerritorySearch] = useState('')
+  const [driverSearch, setDriverSearch] = useState('')
+  const [showTerritoryDropdown, setShowTerritoryDropdown] = useState(false)
+  const [showDriverDropdown, setShowDriverDropdown] = useState(false)
 
   useEffect(() => {
     if (isOpen) {
       setIsLoading(true)
-      Promise.all([getAllDrivers(), getAllTerritories()]).then(
+      Promise.all([getAllDriversForSelect(), getAllTerritoriesForSelect()]).then(
         ([driversResult, territoriesResult]) => {
           if (driversResult.success) {
             setDrivers(driversResult.data)
@@ -46,6 +51,23 @@ export function CreateAssignmentModal() {
       )
     }
   }, [isOpen])
+
+  const filteredTerritories = useMemo(() => {
+    return territories.filter(t => 
+      t.number.toString().includes(territorySearch) ||
+      (t.description?.toLowerCase().includes(territorySearch.toLowerCase()))
+    )
+  }, [territories, territorySearch])
+
+  const filteredDrivers = useMemo(() => {
+    return drivers.filter(d =>
+      d.name.toLowerCase().includes(driverSearch.toLowerCase()) ||
+      d.group.name.toLowerCase().includes(driverSearch.toLowerCase())
+    )
+  }, [drivers, driverSearch])
+
+  const selectedTerritory = territories.find(t => t.id === selectedTerritoryId)
+  const selectedDriver = drivers.find(d => d.id === selectedDriverId)
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -63,8 +85,6 @@ export function CreateAssignmentModal() {
     setIsLoading(true)
     setError(null)
 
-    // Obtener el territorio seleccionado para sus bloques
-    const selectedTerritory = territories.find(t => t.id === selectedTerritoryId)
     const blockLetters = selectedTerritory?.blocks?.map(b => b.letter) || []
 
     const result = await createAssignment({
@@ -79,6 +99,8 @@ export function CreateAssignmentModal() {
       setIsOpen(false)
       setSelectedDriverId('')
       setSelectedTerritoryId('')
+      setTerritorySearch('')
+      setDriverSearch('')
       router.refresh()
     } else {
       setError(result.message)
@@ -90,7 +112,8 @@ export function CreateAssignmentModal() {
       <button
         onClick={() => setIsOpen(true)}
         className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg hover:from-blue-600 hover:to-blue-700 transition-all shadow-lg shadow-blue-500/20 font-medium"
-      >          <Plus className="h-5 w-5" />
+      >
+        <Plus className="h-5 w-5" />
         <span className="hidden sm:inline">Nueva Asignación</span>
       </button>
 
@@ -140,55 +163,123 @@ export function CreateAssignmentModal() {
                 </p>
               </div>
 
-              {/* Seleccionar Territorio */}
               <div>
-                <label
-                  htmlFor="territory"
-                  className="block text-sm font-medium text-slate-300 mb-2"
-                >
+                <label className="block text-sm font-medium text-slate-300 mb-2">
                   Territorio *
                 </label>
-                <select
-                  id="territory"
-                  value={selectedTerritoryId}
-                  onChange={(e) => setSelectedTerritoryId(e.target.value)}
-                  required
-                  disabled={isLoading}
-                  className="w-full px-4 py-2 bg-slate-800 border border-slate-700 text-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50"
-                >
-                  <option value="">Selecciona un territorio</option>
-                  {territories.map((territory) => (
-                    <option key={territory.id} value={territory.id}>
-                      Territorio {territory.number}
-                      {territory.description ? ` - ${territory.description}` : ''}
-                    </option>
-                  ))}
-                </select>
+                <div className="relative">
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500" />
+                    <input
+                      type="text"
+                      placeholder="Buscar por número o descripción..."
+                      value={territorySearch}
+                      onChange={(e) => setTerritorySearch(e.target.value)}
+                      onFocus={() => setShowTerritoryDropdown(true)}
+                      className="w-full pl-10 pr-4 py-2 bg-slate-800 border border-slate-700 text-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    />
+                  </div>
+                  
+                  {selectedTerritory && (
+                    <div className="mt-2 flex items-center gap-2 p-2 bg-blue-500/10 border border-blue-500/30 rounded-lg">
+                      <Check className="h-4 w-4 text-blue-500" />
+                      <span className="text-sm text-blue-400">
+                        Territorio {selectedTerritory.number}
+                        {selectedTerritory.description && ` - ${selectedTerritory.description}`}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSelectedTerritoryId('')
+                          setTerritorySearch('')
+                        }}
+                        className="ml-auto p-1 hover:bg-slate-800 rounded"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </div>
+                  )}
+
+                  {showTerritoryDropdown && !selectedTerritory && filteredTerritories.length > 0 && (
+                    <div className="absolute z-10 w-full mt-1 max-h-60 overflow-y-auto bg-slate-800 border border-slate-700 rounded-lg shadow-lg">
+                      {filteredTerritories.map((territory) => (
+                        <button
+                          key={territory.id}
+                          type="button"
+                          onClick={() => {
+                            setSelectedTerritoryId(territory.id)
+                            setTerritorySearch('')
+                            setShowTerritoryDropdown(false)
+                          }}
+                          className="w-full px-4 py-2 text-left hover:bg-slate-700 transition-colors text-sm text-slate-200"
+                        >
+                          <span className="font-medium">Territorio {territory.number}</span>
+                          {territory.description && (
+                            <span className="text-slate-400"> - {territory.description}</span>
+                          )}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
 
-              {/* Seleccionar Conductor */}
               <div>
-                <label
-                  htmlFor="driver"
-                  className="block text-sm font-medium text-slate-300 mb-2"
-                >
+                <label className="block text-sm font-medium text-slate-300 mb-2">
                   Conductor *
                 </label>
-                <select
-                  id="driver"
-                  value={selectedDriverId}
-                  onChange={(e) => setSelectedDriverId(e.target.value)}
-                  required
-                  disabled={isLoading}
-                  className="w-full px-4 py-2 bg-slate-800 border border-slate-700 text-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50"
-                >
-                  <option value="">Selecciona un conductor</option>
-                  {drivers.map((driver) => (
-                    <option key={driver.id} value={driver.id}>
-                      {driver.name} - {driver.group.name}
-                    </option>
-                  ))}
-                </select>
+                <div className="relative">
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500" />
+                    <input
+                      type="text"
+                      placeholder="Buscar conductor..."
+                      value={driverSearch}
+                      onChange={(e) => setDriverSearch(e.target.value)}
+                      onFocus={() => setShowDriverDropdown(true)}
+                      className="w-full pl-10 pr-4 py-2 bg-slate-800 border border-slate-700 text-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    />
+                  </div>
+                  
+                  {selectedDriver && (
+                    <div className="mt-2 flex items-center gap-2 p-2 bg-blue-500/10 border border-blue-500/30 rounded-lg">
+                      <Check className="h-4 w-4 text-blue-500" />
+                      <span className="text-sm text-blue-400">
+                        {selectedDriver.name} - {selectedDriver.group.name}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSelectedDriverId('')
+                          setDriverSearch('')
+                        }}
+                        className="ml-auto p-1 hover:bg-slate-800 rounded"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </div>
+                  )}
+
+                  {showDriverDropdown && !selectedDriver && filteredDrivers.length > 0 && (
+                    <div className="absolute z-10 w-full mt-1 max-h-60 overflow-y-auto bg-slate-800 border border-slate-700 rounded-lg shadow-lg">
+                      {filteredDrivers.map((driver) => (
+                        <button
+                          key={driver.id}
+                          type="button"
+                          onClick={() => {
+                            setSelectedDriverId(driver.id)
+                            setDriverSearch('')
+                            setShowDriverDropdown(false)
+                          }}
+                          className="w-full px-4 py-2 text-left hover:bg-slate-700 transition-colors text-sm text-slate-200"
+                        >
+                          <span className="font-medium">{driver.name}</span>
+                          <span className="text-slate-400"> - {driver.group.name}</span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
 
               <div className="flex gap-3 pt-4">
