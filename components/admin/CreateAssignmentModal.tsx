@@ -29,6 +29,7 @@ export function CreateAssignmentModal() {
   const [territories, setTerritories] = useState<Territory[]>([])
   const [selectedDriverId, setSelectedDriverId] = useState('')
   const [selectedTerritoryId, setSelectedTerritoryId] = useState('')
+  const [startDate, setStartDate] = useState(new Date().toISOString().split('T')[0])
   
   const [territorySearch, setTerritorySearch] = useState('')
   const [driverSearch, setDriverSearch] = useState('')
@@ -91,6 +92,7 @@ export function CreateAssignmentModal() {
       territoryId: selectedTerritoryId,
       driverId: selectedDriverId,
       blockLetters,
+      startDate: new Date(startDate + 'T12:00:00'),
     })
 
     setIsLoading(false)
@@ -101,6 +103,7 @@ export function CreateAssignmentModal() {
       setSelectedTerritoryId('')
       setTerritorySearch('')
       setDriverSearch('')
+      setStartDate(new Date().toISOString().split('T')[0])
       router.refresh()
     } else {
       setError(result.message)
@@ -280,6 +283,20 @@ export function CreateAssignmentModal() {
                     </div>
                   )}
                 </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-slate-300 mb-2">
+                  Fecha de Asignación *
+                </label>
+                <input
+                  type="date"
+                  value={startDate}
+                  onChange={(e) => setStartDate(e.target.value)}
+                  max={new Date().toISOString().split('T')[0]}
+                  required
+                  className="w-full px-4 py-2 bg-slate-800 border border-slate-700 text-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                />
               </div>
 
               <div className="flex gap-3 pt-4">

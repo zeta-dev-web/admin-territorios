@@ -69,6 +69,7 @@ export async function createAssignment(input: CreateAssignmentInput) {
         territoryId: input.territoryId,
         driverId: input.driverId,
         isCompleted: false,
+        startDate: input.startDate || new Date(),
         blocks: {
           connect: blocksToConnect,
           create: blocksToCreate,

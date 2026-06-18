@@ -44,7 +44,8 @@ export interface DashboardMetrics {
 export interface CreateAssignmentInput {
   territoryId: string
   driverId: string
-  blockLetters: string[] // Ej. ["A", "B", "C"]
+  blockLetters: string[]
+  startDate?: Date
 }
 
 export interface CreateDailyRecordInput {
