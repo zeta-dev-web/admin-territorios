@@ -3,7 +3,7 @@
 import { useState, useMemo, useEffect } from 'react'
 import { 
   MapPin, UserCircle, Calendar, Clock, CheckCircle2, 
-  Search, Filter, Trash2, AlertTriangle, X,
+  Search, Filter, Trash2, X,
   User, UserCog, Edit2, Loader2
 } from 'lucide-react'
 import { formatDistanceToNow } from 'date-fns'
@@ -12,6 +12,7 @@ import toast from 'react-hot-toast'
 import { deleteHistoryRecord, updateAssignment, updatePersonalAssignment, getAllDriversForSelect, getAllMembersForSelect } from '@/server'
 import { useRouter } from 'next/navigation'
 import { Table } from '@/components/common/Table'
+import { ConfirmDialog } from '@/components/common/ConfirmDialog'
 
 interface UnifiedHistoryRecord {
   id: string
@@ -39,7 +40,7 @@ export function HistoryTable({ assignments }: HistoryTableProps) {
   const [selectedYear, setSelectedYear] = useState<string>('all')
   const [selectedMonth, setSelectedMonth] = useState<string>('all')
   const [selectedType, setSelectedType] = useState<string>('all')
-  const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null)
+  const [deleteConfirm, setDeleteConfirm] = useState<{ id: string; type: 'CONDUCTOR' | 'PERSONAL'; label: string } | null>(null)
   const [deleting, setDeleting] = useState(false)
   const [editModal, setEditModal] = useState<UnifiedHistoryRecord | null>(null)
   const [saving, setSaving] = useState(false)
@@ -90,16 +91,22 @@ export function HistoryTable({ assignments }: HistoryTableProps) {
     })
   }, [assignments, searchTerm, selectedYear, selectedMonth, selectedType])
 
-  const handleDelete = async (id: string, type: 'CONDUCTOR' | 'PERSONAL') => {
+  const handleDelete = async () => {
+    if (!deleteConfirm) return
+
     setDeleting(true)
+    const { id, type } = deleteConfirm
+    setDeleteConfirm(null)
     try {
       const result = await deleteHistoryRecord(id, type)
       if (result.success) {
-        setDeleteConfirm(null)
         router.refresh()
+      } else {
+        toast.error(result.message)
       }
     } catch (error) {
       console.error('Error al eliminar:', error)
+      toast.error('Error al eliminar el registro')
     } finally {
       setDeleting(false)
     }
@@ -421,48 +428,28 @@ export function HistoryTable({ assignments }: HistoryTableProps) {
                 </td>
 
                 <td className="px-6 py-4 text-right">
-                  {deleteConfirm === `${assignment.type}-${assignment.id}` ? (
-                    <div className="flex items-center gap-2 justify-end">
-                      <button
-                        onClick={() => setDeleteConfirm(null)}
-                        className="p-1.5 text-slate-400 hover:text-white transition-colors"
-                        disabled={deleting}
-                      >
-                        <X className="h-4 w-4" />
-                      </button>
-                      <button
-                        onClick={() => handleDelete(assignment.id, assignment.type)}
-                        disabled={deleting}
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-red-500/20 text-red-400 rounded-lg text-xs font-medium hover:bg-red-500/30 transition-colors disabled:opacity-50"
-                      >
-                        {deleting ? (
-                          <span className="animate-pulse">Eliminando...</span>
-                        ) : (
-                          <>
-                            <AlertTriangle className="h-3.5 w-3.5" />
-                            Confirmar
-                          </>
-                        )}
-                      </button>
-                    </div>
-                  ) : (
-                    <div className="flex items-center gap-2 justify-end">
-                      <button
-                        onClick={() => handleEdit(assignment)}
-                        className="p-2 text-slate-500 hover:text-blue-400 hover:bg-blue-500/10 rounded-lg transition-all"
-                        title="Editar asignación"
-                      >
-                        <Edit2 className="h-4 w-4" />
-                      </button>
-                      <button
-                        onClick={() => setDeleteConfirm(`${assignment.type}-${assignment.id}`)}
-                        className="p-2 text-slate-500 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-all"
-                        title="Eliminar del historial"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </button>
-                    </div>
-                  )}
+                  <div className="flex items-center gap-2 justify-end">
+                    <button
+                      onClick={() => handleEdit(assignment)}
+                      className="p-2 text-slate-500 hover:text-blue-400 hover:bg-blue-500/10 rounded-lg transition-all"
+                      title="Editar asignación"
+                    >
+                      <Edit2 className="h-4 w-4" />
+                    </button>
+                    <button
+                      onClick={() =>
+                        setDeleteConfirm({
+                          id: assignment.id,
+                          type: assignment.type,
+                          label: `Territorio ${assignment.territoryNumber} - ${assignment.assigneeName}`,
+                        })
+                      }
+                      className="p-2 text-slate-500 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-all"
+                      title="Eliminar del historial"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  </div>
                 </td>
               </tr>
             ))}
@@ -476,6 +463,19 @@ export function HistoryTable({ assignments }: HistoryTableProps) {
           </div>
         )}
       </div>
+
+      {/* Confirmación de eliminación */}
+      <ConfirmDialog
+        isOpen={!!deleteConfirm}
+        title="Eliminar del Historial"
+        message={`¿Estás seguro de eliminar ${deleteConfirm?.label} del historial? Esta acción no se puede deshacer.`}
+        confirmText="Eliminar"
+        cancelText="Cancelar"
+        variant="danger"
+        onConfirm={handleDelete}
+        onCancel={() => setDeleteConfirm(null)}
+        isLoading={deleting}
+      />
 
       {editModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
