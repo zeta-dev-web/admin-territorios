@@ -65,6 +65,7 @@ export {
 // Asignaciones Unificadas
 export {
   getUnifiedAssignments,
+  getAllUnifiedAssignmentsForAdmin,
   getUnifiedHistory,
   returnUnifiedAssignment,
   deleteHistoryRecord,

@@ -286,3 +286,120 @@ export async function returnUnifiedAssignment(
     return returnAssignment(assignmentId, returnDate)
   }
 }
+
+/**
+ * Obtiene todas las asignaciones activas sin paginación (para filtros del cliente)
+ */
+export async function getAllUnifiedAssignmentsForAdmin() {
+  try {
+    const [driverAssignments, personalAssignments] = await Promise.all([
+      prisma.assignment.findMany({
+        where: { isCompleted: false },
+        include: {
+          territory: {
+            include: {
+              blocks: true,
+            },
+          },
+          driver: {
+            include: { group: true },
+          },
+          blocks: true,
+        },
+        orderBy: { startDate: 'desc' },
+      }),
+      prisma.personalAssignment.findMany({
+        where: { isActive: true },
+        include: {
+          territory: {
+            include: {
+              blocks: true,
+            },
+          },
+          member: {
+            include: { group: true },
+          },
+        },
+        orderBy: { assignedDate: 'desc' },
+      }),
+    ])
+
+    // Calcular bloques completados para conductores
+    const driverWithProgress = await Promise.all(
+      driverAssignments.map(async (assignment) => {
+        const workedBlocks = await prisma.dailyRecord.findMany({
+          where: { assignmentId: assignment.id },
+          select: { blockId: true },
+          distinct: ['blockId'],
+        })
+
+        const completedBlocks = workedBlocks.length
+        const totalBlocks = assignment.blocks.length
+        const progressPercentage = totalBlocks > 0 ? Math.round((completedBlocks / totalBlocks) * 100) : 0
+
+        return {
+          id: assignment.id,
+          type: 'conductor' as const,
+          territoryNumber: assignment.territory.number,
+          territoryDescription: assignment.territory.description,
+          assigneeName: assignment.driver.name,
+          groupName: assignment.driver.group.name,
+          startDate: assignment.startDate,
+          assignedDate: assignment.startDate, // Para compatibilidad con UnifiedAssignmentsTable
+          blocks: assignment.blocks.map(b => ({
+            letter: b.letter,
+            isCompleted: workedBlocks.some(wb => wb.blockId === b.id),
+          })),
+          totalBlocks,
+          completedBlocks,
+          progressPercentage,
+        }
+      })
+    )
+
+    const personalWithProgress = personalAssignments.map((pa) => ({
+      id: pa.id,
+      type: 'personal' as const,
+      territoryNumber: pa.territory.number,
+      territoryDescription: pa.territory.description,
+      assigneeName: pa.member.name,
+      groupName: pa.member.group.name,
+      startDate: pa.assignedDate,
+      assignedDate: pa.assignedDate, // Para compatibilidad con UnifiedAssignmentsTable
+      blocks: [],
+      totalBlocks: 0,
+      completedBlocks: 0,
+      progressPercentage: 0,
+    }))
+
+    const unified = [
+      ...driverWithProgress,
+      ...personalWithProgress,
+    ].sort((a, b) => b.assignedDate.getTime() - a.assignedDate.getTime())
+
+    const total = driverAssignments.length + personalAssignments.length
+    const totalConductor = driverAssignments.length
+    const totalPersonal = personalAssignments.length
+    const totalUniqueTerritories = new Set(unified.map(a => `${a.type}-${a.territoryNumber}`)).size
+
+    return {
+      success: true,
+      data: unified,
+      total,
+      conductorCount: totalConductor,
+      personalCount: totalPersonal,
+      uniqueTerritories: totalUniqueTerritories,
+    }
+  } catch (error) {
+    console.error('Error al obtener asignaciones unificadas:', error)
+    return {
+      success: false,
+      data: [],
+      total: 0,
+      conductorCount: 0,
+      personalCount: 0,
+      uniqueTerritories: 0,
+      message: 'Error al obtener asignaciones',
+    }
+  }
+}
