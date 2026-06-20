@@ -55,3 +55,36 @@ export interface CreateDailyRecordInput {
   date: Date
   notes?: string
 }
+
+// Tipos para Exportación PDF
+
+export interface TerritoryExportData {
+  territoryId: string
+  territoryNumber: number
+  territoryDescription: string | null
+  assignments: AssignmentExportRecord[]
+}
+
+export interface AssignmentExportRecord {
+  id: string
+  type: 'CONDUCTOR' | 'PERSONAL'
+  assigneeName: string
+  assignedDate: Date
+  returnedDate: Date | null
+  createdAt: Date
+}
+
+export interface TerritoryRange {
+  start: number
+  end: number
+  label: string
+  count: number
+}
+
+export interface PdfExportResult {
+  success: boolean
+  data?: Uint8Array
+  filename?: string
+  message?: string
+}
+

@@ -1,6 +1,7 @@
-import { getUnifiedHistory } from '@/server'
+import { getUnifiedHistory, getAvailableTerritoryRanges } from '@/server'
 import { AppLayout } from '@/components/common/AppLayout'
 import { HistoryTable } from '@/components/admin/HistoryTable'
+import { ExportPdfButton } from '@/components/admin/ExportPdfButton'
 import { Pagination } from '@/components/common/Pagination'
 import { History } from 'lucide-react'
 
@@ -21,6 +22,9 @@ export default async function HistoryPage({ searchParams }: PageProps) {
   const thisYearCount = result.success ? (result as any).thisYearCount ?? 0 : 0
   const uniqueTerritories = result.success ? (result as any).uniqueTerritories ?? 0 : 0
 
+  // Obtener rangos para exportación PDF
+  const availableRanges = await getAvailableTerritoryRanges()
+
   return (
     <AppLayout title="Historial">
       <div className="p-6 space-y-6">
@@ -37,6 +41,9 @@ export default async function HistoryPage({ searchParams }: PageProps) {
               </p>
             </div>
           </div>
+
+          {/* Botón de exportación */}
+          <ExportPdfButton availableRanges={availableRanges} />
         </div>
 
         {/* Stats */}

@@ -42,3 +42,9 @@ yarn-error.log*
 next-env.d.ts
 
 /app/generated/prisma
+
+# analysis
+*.txt
+
+# pdf stray copies in root
+/S-13-S*.pdf

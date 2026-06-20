@@ -102,3 +102,9 @@ export {
   deleteMap,
   uploadMapImage,
 } from './maps'
+
+// Exportación PDF
+export {
+  getAvailableTerritoryRanges,
+  exportTerritoryHistoryPdf,
+} from './territoryExport'
