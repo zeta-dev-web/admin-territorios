@@ -546,3 +546,122 @@ export async function getAllTerritoriesForSelect() {
     }
   }
 }
+
+/**
+ * Obtiene todos los territorios sin paginación (para administración con filtros)
+ */
+export async function getAllTerritoriesForAdmin() {
+  try {
+    // Obtener la última fecha de asignación de cada territorio
+    const [lastDriverEnds, lastPersonalReturns] = await Promise.all([
+      prisma.assignment.groupBy({
+        by: ['territoryId'],
+        where: { isCompleted: true },
+        _max: { endDate: true },
+      }),
+      prisma.personalAssignment.groupBy({
+        by: ['territoryId'],
+        where: { isActive: false },
+        _max: { returnedDate: true },
+      }),
+    ])
+
+    // Mapa: territoryId → última fecha
+    const lastDateMap = new Map<string, Date>()
+    lastDriverEnds.forEach((a) => {
+      if (a._max.endDate) {
+        const existing = lastDateMap.get(a.territoryId)
+        if (!existing || a._max.endDate! > existing) {
+          lastDateMap.set(a.territoryId, a._max.endDate!)
+        }
+      }
+    })
+    lastPersonalReturns.forEach((pa) => {
+      if (pa._max.returnedDate) {
+        const existing = lastDateMap.get(pa.territoryId)
+        if (!existing || pa._max.returnedDate! > existing) {
+          lastDateMap.set(pa.territoryId, pa._max.returnedDate!)
+        }
+      }
+    })
+
+    const [territories, total, assignmentsCount, blocksAgg] = await Promise.all([
+      prisma.territory.findMany({
+        include: {
+          blocks: true,
+          group: true,
+          assignments: {
+            where: {
+              isCompleted: false,
+            },
+            include: {
+              driver: {
+                include: {
+                  group: true,
+                },
+              },
+            },
+            orderBy: {
+              startDate: 'desc',
+            },
+            take: 1,
+          },
+          personalAssignments: {
+            where: {
+              isActive: true,
+            },
+            include: {
+              member: {
+                include: {
+                  group: true,
+                },
+              },
+            },
+          },
+          _count: {
+            select: {
+              assignments: true,
+              personalAssignments: true,
+            },
+          },
+        },
+        orderBy: {
+          number: 'asc',
+        },
+      }),
+      prisma.territory.count(),
+      prisma.territory.count({
+        where: {
+          assignments: { some: {} },
+        },
+      }),
+      prisma.block.aggregate({
+        _count: true,
+      }),
+    ])
+
+    // Agregar lastAssignmentDate a cada territorio
+    const enrichedTerritories = territories.map((t) => ({
+      ...t,
+      lastAssignmentDate: lastDateMap.get(t.id) || null,
+    }))
+
+    return {
+      success: true,
+      data: enrichedTerritories,
+      total,
+      territoriesWithAssignments: assignmentsCount,
+      totalBlocks: blocksAgg._count,
+    }
+  } catch (error) {
+    console.error('Error al obtener territorios:', error)
+    return {
+      success: false,
+      data: [],
+      total: 0,
+      territoriesWithAssignments: 0,
+      totalBlocks: 0,
+      message: 'Error al obtener los territorios',
+    }
+  }
+}

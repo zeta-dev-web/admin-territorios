@@ -91,6 +91,7 @@ export {
   addBlocksToTerritory,
   deleteTerritory,
   getAllTerritoriesForSelect,
+  getAllTerritoriesForAdmin,
 } from './territories'
 
 export {
