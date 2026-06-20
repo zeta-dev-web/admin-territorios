@@ -92,3 +92,11 @@ export {
   deleteTerritory,
   getAllTerritoriesForSelect,
 } from './territories'
+
+export {
+  createOrUpdateMap,
+  getAllMaps,
+  getMapByType,
+  deleteMap,
+  uploadMapImage,
+} from './maps'

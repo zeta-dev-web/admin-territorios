@@ -12,6 +12,7 @@ import {
   X,
   TrendingUp,
   History,
+  Map,
 } from 'lucide-react'
 import { logout } from '@/server/auth'
 import { cn } from '@/lib/utils'
@@ -31,6 +32,11 @@ const menuItems = [
     label: 'Territorios',
     icon: MapPin,
     href: '/admin/territories',
+  },
+  {
+    label: 'Mapas',
+    icon: Map,
+    href: '/admin/maps',
   },
   {
     label: 'Conductores',
