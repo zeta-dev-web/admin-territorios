@@ -28,7 +28,8 @@ export async function createMember(name: string, groupId: string) {
     return {
       success: false,
       data: null,
-      message: 'Error al crear el integrante',
+      message:
+        error instanceof Error ? error.message : 'Error al crear el integrante',
     }
   }
 }
@@ -90,7 +91,8 @@ export async function updateMember(memberId: string, name: string, groupId?: str
     return {
       success: false,
       data: null,
-      message: 'Error al actualizar el integrante',
+      message:
+        error instanceof Error ? error.message : 'Error al actualizar el integrante',
     }
   }
 }
@@ -113,7 +115,27 @@ export async function toggleMemberDriver(memberId: string, groupId: string, memb
     })
 
     if (existingDriver) {
-      // Ya es conductor → lo eliminamos
+      // Verificar que no tenga asignaciones activas
+      const driverWithAssignments = await prisma.driver.findUnique({
+        where: { id: existingDriver.id },
+        include: {
+          assignments: {
+            where: { isCompleted: false },
+            include: { territory: { select: { number: true } } },
+          },
+        },
+      })
+
+      if (driverWithAssignments && driverWithAssignments.assignments.length > 0) {
+        const territoryNumbers = driverWithAssignments.assignments
+          .map(a => a.territory.number)
+          .join(', ')
+        throw new Error(
+          `No se puede quitar a "${memberName}" como conductor porque tiene ${driverWithAssignments.assignments.length} asignación(es) activa(s): Territorio(s) ${territoryNumbers}`
+        )
+      }
+
+      // Ya es conductor y no tiene asignaciones activas → lo eliminamos
       await prisma.driver.delete({ where: { id: existingDriver.id } })
       revalidatePath('/admin/groups')
       revalidatePath('/admin/drivers')
@@ -145,7 +167,10 @@ export async function toggleMemberDriver(memberId: string, groupId: string, memb
     return {
       success: false,
       wasAdded: false,
-      message: 'Error al cambiar estado de conductor',
+      message:
+        error instanceof Error
+          ? error.message
+          : 'Error al cambiar estado de conductor',
     }
   }
 }
@@ -170,7 +195,8 @@ export async function deleteMember(memberId: string) {
     console.error('Error al eliminar integrante:', error)
     return {
       success: false,
-      message: 'Error al eliminar el integrante',
+      message:
+        error instanceof Error ? error.message : 'Error al eliminar el integrante',
     }
   }
 }

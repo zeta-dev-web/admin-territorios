@@ -268,7 +268,8 @@ export async function deletePersonalAssignment(assignmentId: string) {
     console.error('Error al eliminar asignación personal:', error)
     return {
       success: false,
-      message: 'Error al eliminar la asignación',
+      message:
+        error instanceof Error ? error.message : 'Error al eliminar la asignación',
     }
   }
 }

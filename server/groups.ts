@@ -53,7 +53,8 @@ export async function createGroup(
     return {
       success: false,
       data: null,
-      message: 'Error al crear el grupo',
+      message:
+        error instanceof Error ? error.message : 'Error al crear el grupo',
     }
   }
 }

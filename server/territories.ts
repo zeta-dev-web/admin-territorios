@@ -469,7 +469,8 @@ export async function addBlocksToTerritory(
     return {
       success: false,
       data: null,
-      message: 'Error al añadir las manzanas',
+      message:
+        error instanceof Error ? error.message : 'Error al añadir las manzanas',
     }
   }
 }
