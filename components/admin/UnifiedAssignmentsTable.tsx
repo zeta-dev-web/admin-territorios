@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import {
   MapPin, UserCircle, Calendar, CheckCircle, User, Loader2,
-  ArrowLeftRight, Grid3x3, X
+  ArrowLeftRight, Grid3x3, X, Eye
 } from 'lucide-react'
 import { formatDistanceToNow } from 'date-fns'
 import { es } from 'date-fns/locale'
@@ -14,6 +14,7 @@ import type { UnifiedAssignment, UnifiedAssignmentType } from '@/server/unifiedA
 import { QuickBlockRegistration } from './QuickBlockRegistration'
 import type { BlockStatus } from '@/types'
 import { Table } from '@/components/common/Table'
+import { ViewBlocksModal } from './ViewBlocksModal'
 
 interface Props {
   assignments: UnifiedAssignment[]
@@ -33,6 +34,11 @@ export function UnifiedAssignmentsTable({ assignments, showHistory = false }: Pr
     territoryNumber: number
     assigneeName: string
     assigneeId: string
+    blocks: BlockStatus[]
+  } | null>(null)
+  const [viewingBlocks, setViewingBlocks] = useState<{
+    territoryNumber: number
+    assigneeName: string
     blocks: BlockStatus[]
   } | null>(null)
 
@@ -258,6 +264,29 @@ export function UnifiedAssignmentsTable({ assignments, showHistory = false }: Pr
                     <div className="flex items-center justify-center gap-2">
                       {!showHistory && (
                         <>
+                          {/* Ver manzanas (solo conductores) */}
+                          {assignment.type === 'CONDUCTOR' && (
+                            <button
+                              onClick={async () => {
+                                const result = await getAssignmentBlocks(assignment.id)
+                                if (result.success && result.data) {
+                                  setViewingBlocks({
+                                    territoryNumber: assignment.territoryNumber,
+                                    assigneeName: assignment.assigneeName,
+                                    blocks: result.data.blocks,
+                                  })
+                                } else {
+                                  toast.error(result.message || 'Error al cargar manzanas')
+                                }
+                              }}
+                              className="flex items-center gap-1.5 px-3 py-1.5 bg-green-500/10 text-green-400 rounded-lg hover:bg-green-500/20 transition-colors text-sm font-medium border border-green-500/30"
+                              title="Ver estado de manzanas"
+                            >
+                              <Eye className="h-4 w-4" />
+                              <span className="hidden sm:inline">Ver</span>
+                            </button>
+                          )}
+
                           {/* Registrar manzanas (solo conductores) */}
                           {assignment.type === 'CONDUCTOR' && (
                             <button
@@ -280,7 +309,7 @@ export function UnifiedAssignmentsTable({ assignments, showHistory = false }: Pr
                               title="Registrar manzanas trabajadas"
                             >
                               <Grid3x3 className="h-4 w-4" />
-                              <span className="hidden sm:inline">Manzanas</span>
+                              <span className="hidden sm:inline">Registrar</span>
                             </button>
                           )}
 
@@ -394,6 +423,16 @@ export function UnifiedAssignmentsTable({ assignments, showHistory = false }: Pr
             setSelectedAssignment(null)
             router.refresh()
           }}
+        />
+      )}
+
+      {/* Modal para ver manzanas */}
+      {viewingBlocks && (
+        <ViewBlocksModal
+          territoryNumber={viewingBlocks.territoryNumber}
+          assigneeName={viewingBlocks.assigneeName}
+          blocks={viewingBlocks.blocks}
+          onClose={() => setViewingBlocks(null)}
         />
       )}
     </>
