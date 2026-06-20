@@ -339,7 +339,7 @@ export async function getAllUnifiedAssignmentsForAdmin() {
 
         return {
           id: assignment.id,
-          type: 'conductor' as const,
+          type: 'CONDUCTOR' as const,
           territoryId: assignment.territoryId,
           territoryNumber: assignment.territory.number,
           territoryDescription: assignment.territory.description,
@@ -364,7 +364,7 @@ export async function getAllUnifiedAssignmentsForAdmin() {
 
     const personalWithProgress = personalAssignments.map((pa) => ({
       id: pa.id,
-      type: 'personal' as const,
+      type: 'PERSONAL' as const,
       territoryId: pa.territoryId,
       territoryNumber: pa.territory.number,
       territoryDescription: pa.territory.description,

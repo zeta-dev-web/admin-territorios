@@ -9,7 +9,7 @@ import { ClientPagination } from '@/components/common/ClientPagination'
 
 interface Assignment {
   id: string
-  type: 'conductor' | 'personal'
+  type: 'CONDUCTOR' | 'PERSONAL'
   territoryId: string
   territoryNumber: number
   territoryDescription: string | null
@@ -44,7 +44,7 @@ export function AssignmentsPageClient({
 }: Props) {
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedGroup, setSelectedGroup] = useState<string>('all')
-  const [selectedType, setSelectedType] = useState<'all' | 'conductor' | 'personal'>('all')
+  const [selectedType, setSelectedType] = useState<'all' | 'CONDUCTOR' | 'PERSONAL'>('all')
   const [currentPage, setCurrentPage] = useState(1)
   const pageSize = 10
 
@@ -91,7 +91,7 @@ export function AssignmentsPageClient({
     setCurrentPage(1)
   }
 
-  const handleTypeChange = (value: 'all' | 'conductor' | 'personal') => {
+  const handleTypeChange = (value: 'all' | 'CONDUCTOR' | 'PERSONAL') => {
     setSelectedType(value)
     setCurrentPage(1)
   }
@@ -204,12 +204,12 @@ export function AssignmentsPageClient({
             </label>
             <select
               value={selectedType}
-              onChange={(e) => handleTypeChange(e.target.value as 'all' | 'conductor' | 'personal')}
+              onChange={(e) => handleTypeChange(e.target.value as 'all' | 'CONDUCTOR' | 'PERSONAL')}
               className="w-full px-4 py-2 bg-slate-800 border border-slate-700 text-slate-200 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
             >
               <option value="all">Todos</option>
-              <option value="conductor">Conductor</option>
-              <option value="personal">Personal</option>
+              <option value="CONDUCTOR">Conductor</option>
+              <option value="PERSONAL">Personal</option>
             </select>
           </div>
         </div>
