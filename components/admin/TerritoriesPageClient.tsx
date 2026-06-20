@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useMemo } from 'react'
-import { Plus, MapPin, Search } from 'lucide-react'
+import { Plus, MapPin, Search, X } from 'lucide-react'
 import { TerritoriesTableWithModal } from './TerritoriesTableWithModal'
 import { TerritoryModal } from './TerritoryModal'
 import { ClientPagination } from '@/components/common/ClientPagination'
@@ -44,10 +44,11 @@ export function TerritoriesPageClient({
   const [createOpen, setCreateOpen] = useState(false)
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedGroup, setSelectedGroup] = useState<string>('all')
+  const [assignmentStatus, setAssignmentStatus] = useState<'all' | 'assigned' | 'free'>('all')
   const [currentPage, setCurrentPage] = useState(1)
   const pageSize = 10
 
-  // Filtrar territorios por búsqueda y grupo
+  // Filtrar territorios por búsqueda, grupo y estado de asignación
   const filteredTerritories = useMemo(() => {
     return territories.filter((territory) => {
       const matchesSearch = 
@@ -59,9 +60,18 @@ export function TerritoriesPageClient({
         selectedGroup === 'all' ||
         territory.groupId === selectedGroup
 
-      return matchesSearch && matchesGroup
+      const hasActiveAssignment = 
+        territory.assignments.length > 0 || 
+        territory.personalAssignments.length > 0
+
+      const matchesStatus = 
+        assignmentStatus === 'all' ||
+        (assignmentStatus === 'assigned' && hasActiveAssignment) ||
+        (assignmentStatus === 'free' && !hasActiveAssignment)
+
+      return matchesSearch && matchesGroup && matchesStatus
     })
-  }, [territories, searchTerm, selectedGroup])
+  }, [territories, searchTerm, selectedGroup, assignmentStatus])
 
   // Paginación local
   const totalPages = Math.ceil(filteredTerritories.length / pageSize)
@@ -78,6 +88,20 @@ export function TerritoriesPageClient({
     setSelectedGroup(value)
     setCurrentPage(1)
   }
+
+  const handleStatusChange = (value: 'all' | 'assigned' | 'free') => {
+    setAssignmentStatus(value)
+    setCurrentPage(1)
+  }
+
+  const clearFilters = () => {
+    setSearchTerm('')
+    setSelectedGroup('all')
+    setAssignmentStatus('all')
+    setCurrentPage(1)
+  }
+
+  const hasActiveFilters = searchTerm !== '' || selectedGroup !== 'all' || assignmentStatus !== 'all'
 
   return (
     <>
@@ -122,7 +146,20 @@ export function TerritoriesPageClient({
 
       {/* Filtros */}
       <div className="bg-[#0F1729] rounded-xl border border-slate-800 p-4">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-sm font-semibold text-white">Filtros</h3>
+          {hasActiveFilters && (
+            <button
+              onClick={clearFilters}
+              className="flex items-center gap-1.5 px-3 py-1.5 text-sm bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-lg transition-colors"
+            >
+              <X className="h-4 w-4" />
+              Limpiar filtros
+            </button>
+          )}
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {/* Buscador */}
           <div>
             <label className="block text-sm font-medium text-slate-300 mb-2">
@@ -158,10 +195,26 @@ export function TerritoriesPageClient({
               ))}
             </select>
           </div>
+
+          {/* Filtro por estado de asignación */}
+          <div>
+            <label className="block text-sm font-medium text-slate-300 mb-2">
+              Estado de asignación
+            </label>
+            <select
+              value={assignmentStatus}
+              onChange={(e) => handleStatusChange(e.target.value as 'all' | 'assigned' | 'free')}
+              className="w-full px-4 py-2 bg-slate-800 border border-slate-700 text-slate-200 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
+            >
+              <option value="all">Todos</option>
+              <option value="assigned">Asignados</option>
+              <option value="free">Libres</option>
+            </select>
+          </div>
         </div>
 
         {/* Contador de resultados */}
-        {(searchTerm || selectedGroup !== 'all') && (
+        {hasActiveFilters && (
           <div className="mt-3 pt-3 border-t border-slate-800">
             <p className="text-sm text-slate-400">
               Mostrando <span className="text-red-500 font-semibold">{filteredTerritories.length}</span> de {total} territorios
