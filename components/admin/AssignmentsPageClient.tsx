@@ -10,12 +10,17 @@ import { ClientPagination } from '@/components/common/ClientPagination'
 interface Assignment {
   id: string
   type: 'conductor' | 'personal'
+  territoryId: string
   territoryNumber: number
   territoryDescription: string | null
+  assigneeId: string
   assigneeName: string
   groupName: string
   startDate: Date
   assignedDate: Date
+  endDate: Date | null
+  isActive: boolean
+  isCompleted: boolean
   blocks: Array<{ letter: string; isCompleted: boolean }>
   totalBlocks: number
   completedBlocks: number

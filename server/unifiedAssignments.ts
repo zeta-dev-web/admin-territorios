@@ -340,12 +340,17 @@ export async function getAllUnifiedAssignmentsForAdmin() {
         return {
           id: assignment.id,
           type: 'conductor' as const,
+          territoryId: assignment.territoryId,
           territoryNumber: assignment.territory.number,
           territoryDescription: assignment.territory.description,
+          assigneeId: assignment.driverId,
           assigneeName: assignment.driver.name,
           groupName: assignment.driver.group.name,
           startDate: assignment.startDate,
-          assignedDate: assignment.startDate, // Para compatibilidad con UnifiedAssignmentsTable
+          assignedDate: assignment.startDate,
+          endDate: assignment.endDate,
+          isActive: !assignment.isCompleted,
+          isCompleted: assignment.isCompleted,
           blocks: assignment.blocks.map(b => ({
             letter: b.letter,
             isCompleted: workedBlocks.some(wb => wb.blockId === b.id),
@@ -360,12 +365,17 @@ export async function getAllUnifiedAssignmentsForAdmin() {
     const personalWithProgress = personalAssignments.map((pa) => ({
       id: pa.id,
       type: 'personal' as const,
+      territoryId: pa.territoryId,
       territoryNumber: pa.territory.number,
       territoryDescription: pa.territory.description,
+      assigneeId: pa.memberId,
       assigneeName: pa.member.name,
       groupName: pa.member.group.name,
       startDate: pa.assignedDate,
-      assignedDate: pa.assignedDate, // Para compatibilidad con UnifiedAssignmentsTable
+      assignedDate: pa.assignedDate,
+      endDate: pa.returnedDate,
+      isActive: pa.isActive,
+      isCompleted: !pa.isActive,
       blocks: [],
       totalBlocks: 0,
       completedBlocks: 0,
