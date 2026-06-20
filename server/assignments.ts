@@ -86,9 +86,12 @@ export async function createAssignment(input: CreateAssignmentInput) {
       },
     })
 
-    // 6. Revalidar las rutas del dashboard
+    // 6. Revalidar rutas
     revalidatePath('/dashboard')
     revalidatePath(`/dashboard/${input.territoryId}`)
+    revalidatePath('/admin/assignments')
+    revalidatePath('/admin/history')
+    revalidatePath('/admin/territories')
 
     return {
       success: true,

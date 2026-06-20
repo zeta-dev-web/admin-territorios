@@ -2,6 +2,8 @@ import { getAllUnifiedAssignmentsForAdmin } from '@/server'
 import { AppLayout } from '@/components/common/AppLayout'
 import { AssignmentsPageClient } from '@/components/admin/AssignmentsPageClient'
 
+export const dynamic = 'force-dynamic'
+
 export default async function AssignmentsPage() {
   const result = await getAllUnifiedAssignmentsForAdmin()
   const assignments = result.success ? result.data : []

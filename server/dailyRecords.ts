@@ -124,9 +124,11 @@ export async function createDailyRecord(input: CreateDailyRecordInput) {
       })
     }
 
-    // 8. Revalidar las rutas del dashboard
+    // 8. Revalidar rutas
     revalidatePath('/dashboard')
     revalidatePath(`/dashboard/${assignment.territoryId}`)
+    revalidatePath('/admin/assignments')
+    revalidatePath('/admin/history')
 
     return {
       success: true,
@@ -274,6 +276,8 @@ export async function deleteDailyRecord(recordId: string) {
     // Revalidar rutas
     revalidatePath('/dashboard')
     revalidatePath(`/dashboard/${record.assignment.territoryId}`)
+    revalidatePath('/admin/assignments')
+    revalidatePath('/admin/history')
 
     return {
       success: true,
