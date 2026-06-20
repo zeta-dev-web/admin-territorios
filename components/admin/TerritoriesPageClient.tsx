@@ -4,7 +4,7 @@ import { useState, useMemo } from 'react'
 import { Plus, MapPin, Search } from 'lucide-react'
 import { TerritoriesTableWithModal } from './TerritoriesTableWithModal'
 import { TerritoryModal } from './TerritoryModal'
-import { Pagination } from '@/components/common/Pagination'
+import { ClientPagination } from '@/components/common/ClientPagination'
 
 interface Territory {
   id: string
@@ -179,11 +179,10 @@ export function TerritoriesPageClient({
             <p className="text-slate-400">No se encontraron territorios con los filtros aplicados</p>
           </div>
         ) : (
-          <Pagination 
+          <ClientPagination 
             page={currentPage} 
-            pageSize={pageSize} 
-            total={filteredTerritories.length} 
-            totalPages={totalPages} 
+            totalPages={totalPages}
+            onPageChange={setCurrentPage}
           />
         )}
       </div>
