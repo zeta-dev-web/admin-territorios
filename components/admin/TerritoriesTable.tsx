@@ -1,7 +1,12 @@
 'use client'
 
+import { useState } from 'react'
 import { MapPin, Package, Edit, Trash2, User, Clock, AlertTriangle } from 'lucide-react'
+import { useRouter } from 'next/navigation'
+import toast from 'react-hot-toast'
 import { Table } from '@/components/common/Table'
+import { ConfirmDialog } from '@/components/common/ConfirmDialog'
+import { deleteTerritory } from '@/server'
 
 interface Territory {
   id: string
@@ -40,6 +45,29 @@ interface TerritoriesTableProps {
 }
 
 export function TerritoriesTable({ territories, onEdit }: TerritoriesTableProps) {
+  const router = useRouter()
+  const [deletingId, setDeletingId] = useState<string | null>(null)
+  const [confirmDelete, setConfirmDelete] = useState<{ id: string; number: number } | null>(null)
+
+  const handleDelete = async () => {
+    if (!confirmDelete) return
+
+    setDeletingId(confirmDelete.id)
+    setConfirmDelete(null)
+    try {
+      const result = await deleteTerritory(confirmDelete.id)
+      if (result.success) {
+        toast.success('Territorio eliminado correctamente')
+        router.refresh()
+      } else {
+        toast.error(result.message)
+      }
+    } catch {
+      toast.error('Error al eliminar territorio')
+    } finally {
+      setDeletingId(null)
+    }
+  }
   if (territories.length === 0) {
     return (
       <div className="p-12 text-center">
@@ -53,7 +81,8 @@ export function TerritoriesTable({ territories, onEdit }: TerritoriesTableProps)
   }
 
   return (
-    <Table minWidth="800px">
+    <>
+      <Table minWidth="800px">
         <thead>
           <tr className="border-b border-slate-800">
             <th className="px-6 py-4 text-left text-xs font-semibold text-slate-300 uppercase tracking-wider">
@@ -207,7 +236,12 @@ export function TerritoriesTable({ territories, onEdit }: TerritoriesTableProps)
                         <Edit className="h-4 w-4 text-slate-400 group-hover:text-blue-400" />
                       </button>
                     )}
-                    <button className="p-2 hover:bg-slate-800 rounded-lg transition-colors group">
+                    <button
+                      onClick={() => setConfirmDelete({ id: territory.id, number: territory.number })}
+                      disabled={deletingId === territory.id}
+                      className="p-2 hover:bg-slate-800 rounded-lg transition-colors group disabled:opacity-50 disabled:cursor-not-allowed"
+                      title="Eliminar territorio"
+                    >
                       <Trash2 className="h-4 w-4 text-slate-400 group-hover:text-red-400" />
                     </button>
                   </div>
@@ -217,5 +251,19 @@ export function TerritoriesTable({ territories, onEdit }: TerritoriesTableProps)
           })}
         </tbody>
       </Table>
+
+      {/* Confirmación de eliminación */}
+      <ConfirmDialog
+        isOpen={!!confirmDelete}
+        title="Eliminar Territorio"
+        message={`¿Estás seguro de eliminar el Territorio ${confirmDelete?.number}? Esta acción no se puede deshacer.`}
+        confirmText="Eliminar"
+        cancelText="Cancelar"
+        variant="danger"
+        onConfirm={handleDelete}
+        onCancel={() => setConfirmDelete(null)}
+        isLoading={!!deletingId}
+      />
+    </>
   )
 }
