@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { X, CheckCircle2, Circle, Loader2 } from 'lucide-react'
 import { createDailyRecord } from '@/server'
 import { useRouter } from 'next/navigation'
+import toast from 'react-hot-toast'
 
 interface Block {
   id: string
@@ -50,7 +51,7 @@ export function QuickBlockRegistration({
 
   const handleSubmit = async () => {
     if (selectedBlocks.length === 0) {
-      alert('Selecciona al menos una manzana')
+      toast.error('Selecciona al menos una manzana')
       return
     }
 
@@ -73,14 +74,14 @@ export function QuickBlockRegistration({
       const allSuccess = results.every((r) => r.success)
 
       if (allSuccess) {
-        alert(`✓ ${selectedBlocks.length} manzana(s) registradas correctamente`)
+        toast.success(`${selectedBlocks.length} manzana(s) registradas correctamente`)
         router.refresh()
         onClose()
       } else {
-        alert('Algunos registros fallaron. Revisa los detalles.')
+        toast.error('Algunos registros fallaron. Revisa los detalles.')
       }
     } catch (error) {
-      alert('Error al registrar las manzanas')
+      toast.error('Error al registrar las manzanas')
     } finally {
       setIsSubmitting(false)
     }

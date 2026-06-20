@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { Plus, X, Loader2, UserCircle, Users, Save } from 'lucide-react'
+import toast from 'react-hot-toast'
 import { createDriver, updateDriver, getAllGroups, getMembersByGroup } from '@/server'
 import { useRouter } from 'next/navigation'
 
@@ -63,12 +64,12 @@ export function CreateDriverModal({ driver, isOpen: controlledOpen, onClose }: C
     e.preventDefault()
     
     if (!groupId) {
-      alert('Grupo es requerido')
+      toast.error('Grupo es requerido')
       return
     }
 
     if (!name.trim()) {
-      alert('Nombre es requerido')
+      toast.error('Nombre es requerido')
       return
     }
 
@@ -92,11 +93,12 @@ export function CreateDriverModal({ driver, isOpen: controlledOpen, onClose }: C
         setGroupId('')
         setUseExistingMember(false)
         router.refresh()
+        toast.success(isEditMode ? 'Conductor actualizado correctamente' : 'Conductor creado correctamente')
       } else {
-        alert(result.message)
+        toast.error(result.message)
       }
     } catch {
-      alert('Error al guardar conductor')
+      toast.error('Error al guardar conductor')
     } finally {
       setIsSubmitting(false)
     }

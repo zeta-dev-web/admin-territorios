@@ -4,6 +4,7 @@ import { User, Trash2, Edit, UserCircle, Loader2 } from 'lucide-react'
 import { deleteMember, toggleMemberDriver } from '@/server'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
+import toast from 'react-hot-toast'
 import { EditMemberModal } from './EditMemberModal'
 import { ConfirmDialog } from '@/components/common/ConfirmDialog'
 
@@ -36,7 +37,7 @@ export function MembersList({ members, groupId, driverNames = [] }: MembersListP
     if (result.success) {
       router.refresh()
     } else {
-      alert(result.message)
+      toast.error(result.message)
     }
   }
 
@@ -51,7 +52,7 @@ export function MembersList({ members, groupId, driverNames = [] }: MembersListP
       setDeletingMember(null)
       router.refresh()
     } else {
-      alert(result.message)
+      toast.error(result.message)
     }
   }
 

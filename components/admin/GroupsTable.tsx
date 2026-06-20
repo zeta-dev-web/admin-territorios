@@ -1,6 +1,7 @@
 'use client'
 
 import { Users, UserCircle, Edit, Trash2, ChevronDown, ChevronUp, Loader2 } from 'lucide-react'
+import toast from 'react-hot-toast'
 import { AddMemberModal } from './AddMemberModal'
 import { MembersList } from './MembersList'
 import { EditGroupModal } from './EditGroupModal'
@@ -58,7 +59,7 @@ export function GroupsTable({ groups }: GroupsTableProps) {
       setDeletingGroup(null)
       router.refresh()
     } else {
-      alert(result.message)
+      toast.error(result.message)
     }
   }
 

@@ -439,3 +439,67 @@ export async function getCompletedAssignmentsHistory() {
     }
   }
 }
+
+export async function updateAssignment(
+  assignmentId: string,
+  data: {
+    driverId?: string
+    startDate?: Date
+    endDate?: Date
+  }
+) {
+  try {
+    const assignment = await prisma.assignment.findUnique({
+      where: { id: assignmentId },
+      include: { territory: true, driver: true },
+    })
+
+    if (!assignment) {
+      throw new Error('Asignación no encontrada')
+    }
+
+    if (data.driverId) {
+      const driver = await prisma.driver.findUnique({
+        where: { id: data.driverId },
+      })
+      if (!driver) {
+        throw new Error('Conductor no encontrado')
+      }
+    }
+
+    const updated = await prisma.assignment.update({
+      where: { id: assignmentId },
+      data: {
+        driverId: data.driverId,
+        startDate: data.startDate,
+        endDate: data.endDate,
+      },
+      include: {
+        territory: true,
+        driver: {
+          include: { group: true },
+        },
+      },
+    })
+
+    revalidatePath('/admin/history')
+    revalidatePath('/admin/assignments')
+    revalidatePath('/admin/territories')
+
+    return {
+      success: true,
+      data: updated,
+      message: 'Asignación actualizada correctamente',
+    }
+  } catch (error) {
+    console.error('Error al actualizar asignación:', error)
+    return {
+      success: false,
+      data: null,
+      message:
+        error instanceof Error
+          ? error.message
+          : 'Error al actualizar la asignación',
+    }
+  }
+}

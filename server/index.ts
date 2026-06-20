@@ -14,6 +14,7 @@ export {
   returnAssignment,
   getCompletedAssignmentsHistory,
   deleteAssignment,
+  updateAssignment,
 } from './assignments'
 
 // Registros Diarios
@@ -58,6 +59,7 @@ export {
   getPersonalAssignmentsByTerritory,
   getPersonalAssignmentsByMember,
   deletePersonalAssignment,
+  updatePersonalAssignment,
 } from './personalAssignments'
 
 // Asignaciones Unificadas

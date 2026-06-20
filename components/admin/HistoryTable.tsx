@@ -1,14 +1,15 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { 
   MapPin, UserCircle, Calendar, Clock, CheckCircle2, 
   Search, Filter, Trash2, AlertTriangle, X,
-  User, UserCog
+  User, UserCog, Edit2, Loader2
 } from 'lucide-react'
 import { formatDistanceToNow } from 'date-fns'
 import { es } from 'date-fns/locale'
-import { deleteHistoryRecord } from '@/server'
+import toast from 'react-hot-toast'
+import { deleteHistoryRecord, updateAssignment, updatePersonalAssignment, getAllDriversForSelect, getAllMembersForSelect } from '@/server'
 import { useRouter } from 'next/navigation'
 import { Table } from '@/components/common/Table'
 
@@ -40,6 +41,24 @@ export function HistoryTable({ assignments }: HistoryTableProps) {
   const [selectedType, setSelectedType] = useState<string>('all')
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null)
   const [deleting, setDeleting] = useState(false)
+  const [editModal, setEditModal] = useState<UnifiedHistoryRecord | null>(null)
+  const [saving, setSaving] = useState(false)
+  const [drivers, setDrivers] = useState<{ id: string; name: string; group: { name: string } }[]>([])
+  const [members, setMembers] = useState<{ id: string; name: string; group: { name: string } }[]>([])
+  const [editData, setEditData] = useState({
+    assigneeId: '',
+    startDate: '',
+    endDate: '',
+  })
+
+  useEffect(() => {
+    Promise.all([getAllDriversForSelect(), getAllMembersForSelect()]).then(
+      ([driversResult, membersResult]) => {
+        if (driversResult.success) setDrivers(driversResult.data)
+        if (membersResult.success) setMembers(membersResult.data)
+      }
+    )
+  }, [])
 
   // Obtener años únicos de las asignaciones
   const availableYears = useMemo(() => {
@@ -83,6 +102,55 @@ export function HistoryTable({ assignments }: HistoryTableProps) {
       console.error('Error al eliminar:', error)
     } finally {
       setDeleting(false)
+    }
+  }
+
+  const handleEdit = (assignment: UnifiedHistoryRecord) => {
+    setEditModal(assignment)
+    setEditData({
+      assigneeId: assignment.assigneeId,
+      startDate: new Date(assignment.assignedDate).toISOString().split('T')[0],
+      endDate: assignment.endDate ? new Date(assignment.endDate).toISOString().split('T')[0] : '',
+    })
+  }
+
+  const handleSaveEdit = async () => {
+    if (!editModal) return
+    setSaving(true)
+
+    try {
+      if (editModal.type === 'CONDUCTOR') {
+        const result = await updateAssignment(editModal.id, {
+          driverId: editData.assigneeId !== editModal.assigneeId ? editData.assigneeId : undefined,
+          startDate: new Date(editData.startDate + 'T12:00:00'),
+          endDate: editData.endDate ? new Date(editData.endDate + 'T12:00:00') : undefined,
+        })
+        if (result.success) {
+          setEditModal(null)
+          router.refresh()
+          toast.success('Asignación actualizada correctamente')
+        } else {
+          toast.error(result.message)
+        }
+      } else {
+        const result = await updatePersonalAssignment(editModal.id, {
+          memberId: editData.assigneeId !== editModal.assigneeId ? editData.assigneeId : undefined,
+          assignedDate: new Date(editData.startDate + 'T12:00:00'),
+          returnedDate: editData.endDate ? new Date(editData.endDate + 'T12:00:00') : undefined,
+        })
+        if (result.success) {
+          setEditModal(null)
+          router.refresh()
+          toast.success('Asignación actualizada correctamente')
+        } else {
+          toast.error(result.message)
+        }
+      }
+    } catch (error) {
+      console.error('Error al guardar:', error)
+      toast.error('Error al guardar cambios')
+    } finally {
+      setSaving(false)
     }
   }
 
@@ -134,7 +202,8 @@ export function HistoryTable({ assignments }: HistoryTableProps) {
   }
 
   return (
-    <div>
+    <>
+      <div>
       {/* Filtros */}
       <div className="p-4 border-b border-slate-800 space-y-4">
         <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
@@ -377,13 +446,22 @@ export function HistoryTable({ assignments }: HistoryTableProps) {
                       </button>
                     </div>
                   ) : (
-                    <button
-                      onClick={() => setDeleteConfirm(`${assignment.type}-${assignment.id}`)}
-                      className="p-2 text-slate-500 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-all"
-                      title="Eliminar del historial"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </button>
+                    <div className="flex items-center gap-2 justify-end">
+                      <button
+                        onClick={() => handleEdit(assignment)}
+                        className="p-2 text-slate-500 hover:text-blue-400 hover:bg-blue-500/10 rounded-lg transition-all"
+                        title="Editar asignación"
+                      >
+                        <Edit2 className="h-4 w-4" />
+                      </button>
+                      <button
+                        onClick={() => setDeleteConfirm(`${assignment.type}-${assignment.id}`)}
+                        className="p-2 text-slate-500 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-all"
+                        title="Eliminar del historial"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    </div>
                   )}
                 </td>
               </tr>
@@ -397,6 +475,118 @@ export function HistoryTable({ assignments }: HistoryTableProps) {
             <p className="text-slate-400">No se encontraron resultados con los filtros seleccionados</p>
           </div>
         )}
-    </div>
+      </div>
+
+      {editModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => !saving && setEditModal(null)} />
+          <div className="relative bg-[#0F1729] rounded-2xl shadow-2xl border border-slate-800 max-w-2xl w-full p-6">
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <h2 className="text-xl font-bold text-white">Editar Asignación</h2>
+                <p className="text-sm text-slate-400">
+                  Territorio {editModal.territoryNumber} - {editModal.type === 'CONDUCTOR' ? 'Conductor' : 'Personal'}
+                </p>
+              </div>
+              <button
+                onClick={() => !saving && setEditModal(null)}
+                disabled={saving}
+                className="p-2 hover:bg-slate-800 rounded-lg transition-colors disabled:opacity-50"
+              >
+                <X className="h-5 w-5 text-slate-400" />
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-slate-300 mb-2">
+                  {editModal.type === 'CONDUCTOR' ? 'Conductor *' : 'Integrante *'}
+                </label>
+                <select
+                  value={editData.assigneeId}
+                  onChange={(e) => setEditData({ ...editData, assigneeId: e.target.value })}
+                  disabled={saving}
+                  className="w-full px-4 py-2 bg-slate-800 border border-slate-700 text-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50"
+                >
+                  {editModal.type === 'CONDUCTOR' ? (
+                    <>
+                      {drivers.map((driver) => (
+                        <option key={driver.id} value={driver.id}>
+                          {driver.name} - {driver.group.name}
+                        </option>
+                      ))}
+                    </>
+                  ) : (
+                    <>
+                      {members.map((member) => (
+                        <option key={member.id} value={member.id}>
+                          {member.name} - {member.group.name}
+                        </option>
+                      ))}
+                    </>
+                  )}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-slate-300 mb-2">
+                  Fecha de Inicio *
+                </label>
+                <input
+                  type="date"
+                  value={editData.startDate}
+                  onChange={(e) => setEditData({ ...editData, startDate: e.target.value })}
+                  disabled={saving}
+                  max={new Date().toISOString().split('T')[0]}
+                  className="w-full px-4 py-2 bg-slate-800 border border-slate-700 text-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-slate-300 mb-2">
+                  Fecha de Finalización *
+                </label>
+                <input
+                  type="date"
+                  value={editData.endDate}
+                  onChange={(e) => setEditData({ ...editData, endDate: e.target.value })}
+                  disabled={saving}
+                  max={new Date().toISOString().split('T')[0]}
+                  min={editData.startDate}
+                  className="w-full px-4 py-2 bg-slate-800 border border-slate-700 text-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50"
+                />
+              </div>
+
+              <div className="flex gap-3 pt-4">
+                <button
+                  onClick={() => setEditModal(null)}
+                  disabled={saving}
+                  className="flex-1 px-4 py-2 border border-slate-700 rounded-lg font-medium text-slate-300 hover:bg-slate-800 transition-colors disabled:opacity-50"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={handleSaveEdit}
+                  disabled={saving}
+                  className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg font-medium hover:from-blue-600 hover:to-blue-700 transition-all shadow-lg shadow-blue-500/20 disabled:from-slate-700 disabled:to-slate-800"
+                >
+                  {saving ? (
+                    <>
+                      <Loader2 className="h-5 w-5 animate-spin" />
+                      <span>Guardando...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Edit2 className="h-5 w-5" />
+                      <span>Guardar Cambios</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   )
 }

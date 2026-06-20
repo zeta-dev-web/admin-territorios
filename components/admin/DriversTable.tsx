@@ -1,6 +1,7 @@
 'use client'
 
 import { UserCircle, Users, MapPin, Trash2, Edit } from 'lucide-react'
+import toast from 'react-hot-toast'
 import { deleteDriver } from '@/server'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
@@ -48,10 +49,10 @@ export function DriversTable({ drivers }: DriversTableProps) {
       if (result.success) {
         router.refresh()
       } else {
-        alert(result.message)
+        toast.error(result.message)
       }
     } catch {
-      alert('Error al eliminar conductor')
+      toast.error('Error al eliminar conductor')
     } finally {
       setDeletingId(null)
     }

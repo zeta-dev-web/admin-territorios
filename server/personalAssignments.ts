@@ -265,3 +265,67 @@ export async function deletePersonalAssignment(assignmentId: string) {
     }
   }
 }
+
+export async function updatePersonalAssignment(
+  assignmentId: string,
+  data: {
+    memberId?: string
+    assignedDate?: Date
+    returnedDate?: Date
+  }
+) {
+  try {
+    const assignment = await prisma.personalAssignment.findUnique({
+      where: { id: assignmentId },
+      include: { territory: true, member: true },
+    })
+
+    if (!assignment) {
+      throw new Error('Asignación no encontrada')
+    }
+
+    if (data.memberId) {
+      const member = await prisma.member.findUnique({
+        where: { id: data.memberId },
+      })
+      if (!member) {
+        throw new Error('Miembro no encontrado')
+      }
+    }
+
+    const updated = await prisma.personalAssignment.update({
+      where: { id: assignmentId },
+      data: {
+        memberId: data.memberId,
+        assignedDate: data.assignedDate,
+        returnedDate: data.returnedDate,
+      },
+      include: {
+        territory: true,
+        member: {
+          include: { group: true },
+        },
+      },
+    })
+
+    revalidatePath('/admin/history')
+    revalidatePath('/admin/assignments')
+    revalidatePath('/admin/territories')
+
+    return {
+      success: true,
+      data: updated,
+      message: 'Asignación actualizada correctamente',
+    }
+  } catch (error) {
+    console.error('Error al actualizar asignación personal:', error)
+    return {
+      success: false,
+      data: null,
+      message:
+        error instanceof Error
+          ? error.message
+          : 'Error al actualizar la asignación',
+    }
+  }
+}

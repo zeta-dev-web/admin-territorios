@@ -8,6 +8,7 @@ import {
 } from 'lucide-react'
 import { formatDistanceToNow } from 'date-fns'
 import { es } from 'date-fns/locale'
+import toast from 'react-hot-toast'
 import { returnUnifiedAssignment, getAssignmentBlocks } from '@/server'
 import type { UnifiedAssignment, UnifiedAssignmentType } from '@/server/unifiedAssignments'
 import { QuickBlockRegistration } from './QuickBlockRegistration'
@@ -49,7 +50,7 @@ export function UnifiedAssignmentsTable({ assignments, showHistory = false }: Pr
     if (result.success) {
       router.refresh()
     } else {
-      alert(result.message)
+      toast.error(result.message)
     }
   }
 
@@ -272,7 +273,7 @@ export function UnifiedAssignmentsTable({ assignments, showHistory = false }: Pr
                                     blocks: result.data.blocks,
                                   })
                                 } else {
-                                  alert(result.message || 'Error al cargar manzanas')
+                                  toast.error(result.message || 'Error al cargar manzanas')
                                 }
                               }}
                               className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-500/10 text-blue-400 rounded-lg hover:bg-blue-500/20 transition-colors text-sm font-medium border border-blue-500/30"
