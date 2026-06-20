@@ -5,6 +5,8 @@ import { TerritoryFrequencyList } from '@/components/territories/TerritoryFreque
 import { AppLayout } from '@/components/common/AppLayout'
 import { Activity, Clock, BarChart3, TrendingUp } from 'lucide-react'
 
+export const dynamic = 'force-dynamic'
+
 export default async function DashboardPage() {
   const metrics = await getDashboardMetrics()
 

@@ -4,6 +4,8 @@ import { GroupsTable } from '@/components/admin/GroupsTable'
 import { CreateGroupModal } from '@/components/admin/CreateGroupModal'
 import { Users } from 'lucide-react'
 
+export const dynamic = 'force-dynamic'
+
 export default async function GroupsPage() {
   const result = await getAllGroups()
   const groups = result.success ? result.data : []

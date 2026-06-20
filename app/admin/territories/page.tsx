@@ -2,6 +2,8 @@ import { getAllTerritoriesForAdmin, getAllGroups } from '@/server'
 import { AppLayout } from '@/components/common/AppLayout'
 import { TerritoriesPageClient } from '@/components/admin/TerritoriesPageClient'
 
+export const dynamic = 'force-dynamic'
+
 export default async function TerritoriesPage() {
   const [territoriesResult, groupsResult] = await Promise.all([
     getAllTerritoriesForAdmin(),

@@ -129,6 +129,7 @@ export async function createDailyRecord(input: CreateDailyRecordInput) {
     revalidatePath(`/dashboard/${assignment.territoryId}`)
     revalidatePath('/admin/assignments')
     revalidatePath('/admin/history')
+    revalidatePath('/admin/territories')
 
     return {
       success: true,
@@ -278,6 +279,7 @@ export async function deleteDailyRecord(recordId: string) {
     revalidatePath(`/dashboard/${record.assignment.territoryId}`)
     revalidatePath('/admin/assignments')
     revalidatePath('/admin/history')
+    revalidatePath('/admin/territories')
 
     return {
       success: true,

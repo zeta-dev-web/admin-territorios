@@ -457,6 +457,7 @@ export async function addBlocksToTerritory(
 
     revalidatePath('/dashboard')
     revalidatePath(`/dashboard/${territoryId}`)
+    revalidatePath('/admin/territories')
 
     return {
       success: true,
@@ -500,6 +501,7 @@ export async function deleteTerritory(territoryId: string) {
     })
 
     revalidatePath('/dashboard')
+    revalidatePath('/admin/territories')
 
     return {
       success: true,

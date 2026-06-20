@@ -16,6 +16,7 @@ export async function createMember(name: string, groupId: string) {
     })
 
     revalidatePath('/admin/groups')
+    revalidatePath('/dashboard')
 
     return {
       success: true,
@@ -77,6 +78,7 @@ export async function updateMember(memberId: string, name: string, groupId?: str
     })
 
     revalidatePath('/admin/groups')
+    revalidatePath('/dashboard')
 
     return {
       success: true,
@@ -115,6 +117,7 @@ export async function toggleMemberDriver(memberId: string, groupId: string, memb
       await prisma.driver.delete({ where: { id: existingDriver.id } })
       revalidatePath('/admin/groups')
       revalidatePath('/admin/drivers')
+      revalidatePath('/dashboard')
       return {
         success: true,
         wasAdded: false,
@@ -130,6 +133,7 @@ export async function toggleMemberDriver(memberId: string, groupId: string, memb
       })
       revalidatePath('/admin/groups')
       revalidatePath('/admin/drivers')
+      revalidatePath('/dashboard')
       return {
         success: true,
         wasAdded: true,
@@ -156,6 +160,7 @@ export async function deleteMember(memberId: string) {
     })
 
     revalidatePath('/admin/groups')
+    revalidatePath('/dashboard')
 
     return {
       success: true,

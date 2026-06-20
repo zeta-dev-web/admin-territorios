@@ -31,6 +31,8 @@ export async function createDriver(data: {
     })
 
     revalidatePath('/dashboard')
+    revalidatePath('/admin/drivers')
+    revalidatePath('/admin/groups')
 
     return {
       success: true,
@@ -315,6 +317,8 @@ export async function deleteDriver(driverId: string) {
     })
 
     revalidatePath('/dashboard')
+    revalidatePath('/admin/drivers')
+    revalidatePath('/admin/groups')
 
     return {
       success: true,

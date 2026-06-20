@@ -107,6 +107,7 @@ export async function deleteMap(mapId: string) {
     })
 
     revalidatePath('/admin/maps')
+    revalidatePath('/dashboard')
 
     return {
       success: true,

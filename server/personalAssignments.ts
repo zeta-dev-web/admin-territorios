@@ -68,6 +68,7 @@ export async function createPersonalAssignment(
 
     revalidatePath('/admin/territories')
     revalidatePath('/admin/assignments')
+    revalidatePath('/dashboard')
 
     return {
       success: true,
@@ -257,6 +258,7 @@ export async function deletePersonalAssignment(assignmentId: string) {
 
     revalidatePath('/admin/territories')
     revalidatePath('/admin/assignments')
+    revalidatePath('/dashboard')
 
     return {
       success: true,
