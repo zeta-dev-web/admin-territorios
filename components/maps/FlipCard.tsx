@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { RotateCw, ZoomIn, X } from 'lucide-react'
+import { TransformWrapper, TransformComponent } from 'react-zoom-pan-pinch'
 
 interface FlipCardProps {
   frontImage: string
@@ -98,31 +99,50 @@ export function FlipCard({ frontImage, backImage, title }: FlipCardProps) {
 
       {isZoomed && (
         <div 
-          className="fixed inset-0 z-[100] bg-black/95 backdrop-blur-sm flex items-center justify-center p-2 md:p-4"
+          className="fixed inset-0 z-[100] bg-black/95 backdrop-blur-sm flex flex-col"
           onClick={() => setIsZoomed(false)}
         >
           <button
             onClick={() => setIsZoomed(false)}
-            className="absolute top-2 right-2 md:top-4 md:right-4 p-2 md:p-3 bg-white/10 hover:bg-white/20 rounded-full transition-colors z-10"
+            className="absolute top-2 right-2 md:top-4 md:right-4 p-2 md:p-3 bg-white/10 hover:bg-white/20 rounded-full transition-colors z-20"
             title="Cerrar"
           >
             <X className="h-5 w-5 md:h-6 md:w-6 text-white" />
           </button>
           
-          <div className="relative w-full h-full overflow-auto touch-pan-x touch-pan-y">
-            <img
-              src={zoomImage}
-              alt="Vista ampliada"
-              className="w-full h-auto md:w-auto md:h-auto md:max-w-[95vw] md:max-h-[95vh] object-contain mx-auto"
-              onClick={(e) => e.stopPropagation()}
-            />
+          <div className="flex-1 flex items-center justify-center overflow-hidden">
+            <TransformWrapper
+              initialScale={1}
+              minScale={1}
+              maxScale={4}
+              centerOnInit
+              centerZoomedOut
+              limitToBounds={false}
+              panning={{ velocityDisabled: true }}
+              doubleClick={{ disabled: false, mode: 'zoomIn' }}
+              wheel={{ disabled: false }}
+            >
+              <TransformComponent
+                wrapperClass="!w-full !h-full"
+                contentClass="!w-full !h-full flex items-center justify-center"
+              >
+                <img
+                  src={zoomImage}
+                  alt="Vista ampliada"
+                  className="max-w-[90vw] max-h-[70vh] w-auto h-auto object-contain"
+                  onClick={(e) => e.stopPropagation()}
+                />
+              </TransformComponent>
+            </TransformWrapper>
           </div>
 
-          <div className="absolute bottom-2 md:bottom-4 left-1/2 -translate-x-1/2 bg-black/60 px-3 py-1.5 md:px-4 md:py-2 rounded-lg max-w-[90vw] text-center">
-            <p className="text-white text-xs md:text-sm">
-              <span className="hidden md:inline">Click fuera para cerrar • Scroll para navegar</span>
-              <span className="md:hidden">Toca fuera para cerrar</span>
-            </p>
+          <div className="flex-shrink-0 pb-2 md:pb-4 px-2">
+            <div className="bg-black/60 px-3 py-1.5 md:px-4 md:py-2 rounded-lg text-center mx-auto w-fit pointer-events-none">
+              <p className="text-white text-xs md:text-sm">
+                <span className="hidden md:inline">Rueda/scroll para zoom • Arrastra para mover • Click fuera para cerrar</span>
+                <span className="md:hidden">Pellizca para zoom • Arrastra para mover</span>
+              </p>
+            </div>
           </div>
         </div>
       )}
