@@ -25,7 +25,7 @@ interface MapsPageClientProps {
 
 const STATIC_MAPS = {
   general: {
-    front: '/mapas/GRAL01.png',
+    front: '/mapas/GRAL01.jpg',
     back: '/mapas/GRAL02.png',
   },
   groups: {
