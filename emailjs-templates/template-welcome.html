@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+        @media only screen and (max-width: 600px) {
+            .container { width: 100% !important; }
+            .content { padding: 24px 20px !important; }
+            .header { padding: 28px 20px !important; }
+            .header h1 { font-size: 20px !important; }
+            .btn { display: block !important; text-align: center !important; }
+            .creds-table { padding: 12px !important; }
+        }
+    </style>
+</head>
+<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #0A0F1C; margin: 0; padding: 0; -webkit-font-smoothing: antialiased;">
+    <table width="100%" cellpadding="0" cellspacing="0" style="background: #0A0F1C; padding: 16px;">
+        <tr>
+            <td align="center">
+                <table class="container" width="480" cellpadding="0" cellspacing="0" style="background: #0F1729; border-radius: 16px; overflow: hidden; border: 1px solid #1e293b; max-width: 100%;">
+                    <tr>
+                        <td class="header" style="background: linear-gradient(135deg, #dc2626, #ef4444); padding: 32px 24px; text-align: center;">
+                            <h1 style="color: #ffffff; font-size: 22px; margin: 0; font-weight: 700;">Territorios App</h1>
+                            <p style="color: #fca5a5; font-size: 14px; margin: 8px 0 0;">Tus credenciales de acceso</p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="content" style="padding: 32px 24px;">
+                            <p style="font-size: 16px; color: #f1f5f9; margin: 0 0 8px;">Hola <strong style="color: #ffffff;">{{to_name}}</strong>,</p>
+                            <p style="font-size: 14px; color: #94a3b8; margin: 0 0 24px;">Estas son tus credenciales de acceso al sistema:</p>
+                            
+                            <table class="creds-table" width="100%" cellpadding="0" cellspacing="0" style="background: #1e293b; border-radius: 12px; padding: 16px; border: 1px solid #334155;">
+                                <tr>
+                                    <td style="padding: 8px 0;">
+                                        <span style="font-size: 11px; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px;">Usuario</span>
+                                        <p style="font-size: 15px; color: #f8fafc; font-weight: 600; margin: 4px 0 0; font-family: 'Courier New', monospace;">{{to_email}}</p>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td style="padding: 8px 0; border-top: 1px solid #334155;">
+                                        <span style="font-size: 11px; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px;">Contraseña</span>
+                                        <p style="font-size: 15px; color: #f8fafc; font-weight: 600; margin: 4px 0 0; font-family: 'Courier New', monospace;">{{password}}</p>
+                                    </td>
+                                </tr>
+                            </table>
+                            
+                            <table width="100%" cellpadding="0" cellspacing="0" style="margin-top: 24px;">
+                                <tr>
+                                    <td align="center">
+                                        <a href="{{app_url}}" class="btn" style="display: inline-block; background: linear-gradient(135deg, #dc2626, #ef4444); color: #ffffff; text-decoration: none; padding: 14px 32px; border-radius: 10px; font-weight: 600; font-size: 14px; box-shadow: 0 4px 12px rgba(220,38,38,0.3);">Ir al sistema</a>
+                                    </td>
+                                </tr>
+                            </table>
+                            
+                            <p style="font-size: 13px; color: #64748b; margin: 24px 0 0; border-top: 1px solid #1e293b; padding-top: 16px;">Por seguridad, no compartas esta contraseña con nadie.</p>
+                        </td>
+                    </tr>
+                </table>
+                
+                <p style="font-size: 11px; color: #475569; margin-top: 12px;">Territorios App — Sistema de Gestión</p>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>
