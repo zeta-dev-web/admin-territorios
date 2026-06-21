@@ -5,18 +5,33 @@ import type {
 } from '@/types'
 import * as server from '@/server'
 import { withTenantContext } from '@/lib/request-context'
-
-// ── Config ──
-
-const API_KEY = process.env.AI_API_KEY
+import { prisma } from '@/lib/prisma'
 
 // ── Auth ──
 
-function validateApiKey(request: NextRequest): boolean {
+async function validateApiKey(request: NextRequest): Promise<{ valid: boolean; tenantId?: string }> {
   const authHeader = request.headers.get('authorization')
-  if (!authHeader || !authHeader.startsWith('Bearer ')) return false
+  if (!authHeader || !authHeader.startsWith('Bearer ')) return { valid: false }
   const token = authHeader.slice(7)
-  return !!API_KEY && token === API_KEY
+
+  try {
+    const apiKey = await prisma.apiKey.findUnique({
+      where: { key: token },
+      select: { id: true, tenantId: true, isActive: true },
+    })
+
+    if (!apiKey || !apiKey.isActive) return { valid: false }
+
+    // Actualizar último uso (fire & forget)
+    prisma.apiKey.update({
+      where: { id: apiKey.id },
+      data: { lastUsedAt: new Date() },
+    }).catch(() => {})
+
+    return { valid: true, tenantId: apiKey.tenantId }
+  } catch {
+    return { valid: false }
+  }
 }
 
 // ── Tipos ──
@@ -342,8 +357,9 @@ function error(action: string, message: string): AgentResponse {
 // ── Handler ──
 
 export async function POST(request: NextRequest) {
-  // 1. Validar API key
-  if (!validateApiKey(request)) {
+  // 1. Validar API key contra DB (obtiene tenantId automáticamente)
+  const auth = await validateApiKey(request)
+  if (!auth.valid) {
     return NextResponse.json(
       { success: false, message: 'API key inválida o no proporcionada' },
       { status: 401 },
@@ -384,16 +400,21 @@ export async function POST(request: NextRequest) {
     )
   }
 
-  // 4. Extraer tenantId (opcional, para IA externa sin session cookie)
-  const targetTenantId = typeof tenantId === 'string' ? tenantId : undefined
+  // 4. Determinar tenantId: primero del body, si no, del API key
+  const targetTenantId = typeof tenantId === 'string' ? tenantId : auth.tenantId
 
-  // 5. Ejecutar dentro del contexto del tenant (si se proporcionó)
+  if (!targetTenantId) {
+    return NextResponse.json(
+      { success: false, message: 'No se pudo determinar el tenant. Revisá tu API key.' },
+      { status: 400 },
+    )
+  }
+
+  // 5. Ejecutar dentro del contexto del tenant
   const execute = () => handler(params)
 
   try {
-    const result = targetTenantId
-      ? await withTenantContext(targetTenantId, execute)
-      : await execute()
+    const result = await withTenantContext(targetTenantId, execute)
 
     // Si el resultado ya es un objeto con success/data (formato server action),
     // lo devolvemos directo para evitar doble anidamiento

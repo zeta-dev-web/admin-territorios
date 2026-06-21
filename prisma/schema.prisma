@@ -26,6 +26,7 @@ model Tenant {
   members             Member[]
   personalAssignments PersonalAssignment[]
   maps                TerritoryMap[]
+  apiKeys             ApiKey[]
 }
 
 model User {
@@ -38,7 +39,8 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  tenant    Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  apiKeys   ApiKey[]
 
   @@index([email])
   @@index([tenantId])
@@ -272,4 +274,27 @@ model MapImage {
   map TerritoryMap @relation(fields: [mapId], references: [id], onDelete: Cascade)
 
   @@index([mapId])
+}
+
+// ═══════════════════════════════════════════
+//  API KEYS (por usuario, para IA externa)
+// ═══════════════════════════════════════════
+
+model ApiKey {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  userId    String
+  tenantId  String
+  name      String   @default("default")
+  lastUsedAt DateTime?
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([key])
+  @@index([userId])
+  @@index([tenantId])
 }

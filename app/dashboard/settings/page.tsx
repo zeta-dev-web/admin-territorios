@@ -2,12 +2,10 @@
 
 import { useState, useEffect } from 'react'
 import { AppLayout } from '@/components/common/AppLayout'
-import { changeOwnPassword, getCurrentUserInfo } from '@/server/auth'
+import { changeOwnPassword, getCurrentUserInfo, getOrCreateApiKey, regenerateApiKey } from '@/server/auth'
 import { toast } from 'react-hot-toast'
 import {
   Lock,
-  Eye,
-  EyeOff,
   CheckCircle,
   Loader2,
   Fingerprint,
@@ -19,9 +17,20 @@ import {
   KeyRound,
   ChevronDown,
   ChevronUp,
+  RefreshCw,
+  Eye,
+  EyeOff,
 } from 'lucide-react'
 
-function buildAiPrompt(tenantId: string): string {
+function getBaseUrl(): string {
+  if (typeof window !== 'undefined') {
+    return window.location.origin
+  }
+  return 'http://localhost:3000'
+}
+
+function buildAiPrompt(apiKey: string): string {
+  const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000'
   return [
     'Eres un asistente de IA para la app Territorios App, un sistema de gestion de territorios para congregaciones.',
     '',
@@ -29,15 +38,13 @@ function buildAiPrompt(tenantId: string): string {
     '',
     '## Instrucciones',
     '',
-    '1. **Endpoint**: POST a la URL del sistema (preguntale al usuario cual es la URL de su instancia)',
-    "2. **Autenticacion**: envia el header `Authorization: Bearer <API_KEY>` (preguntale al usuario su API Key)",
-    '3. **Tenant ID**: el tenant de este usuario es `' + tenantId + '`. Inclui `"tenantId": "' + tenantId + '"` en TODAS las llamadas.',
-    '4. **Formato del body**:',
+    '1. **Endpoint**: POST a `' + baseUrl + '/api/agent`',
+    '2. **Autenticacion**: envia el header `Authorization: Bearer ' + apiKey + '`',
+    '3. **Body**: JSON con la accion a ejecutar. El `tenantId` es opcional (tu API key ya identifica tu usuario).',
     '   ```json',
     '   {',
-    '     "action": "nombreDeLaAccion",',
-    '     "params": { ... },',
-    '     "tenantId": "' + tenantId + '"',
+    '     "action": "getAllTerritories",',
+    '     "params": { "page": 1, "pageSize": 10 }',
     '   }',
     '   ```',
     '',
@@ -45,52 +52,48 @@ function buildAiPrompt(tenantId: string): string {
     '',
     'Usa `{ "action": "listActions" }` para descubrir todas las acciones disponibles.',
     '',
-    '## Ejemplo',
+    '## Ejemplo completo',
     '',
     'Para listar todos los territorios:',
-    '```json',
-    '{',
-    '  "action": "getAllTerritories",',
-    '  "params": { "page": 1, "pageSize": 10 },',
-    '  "tenantId": "' + tenantId + '"',
-    '}',
+    '```',
+    'curl -X POST "' + baseUrl + '/api/agent" \\',
+    '  -H "Authorization: Bearer ' + apiKey + '" \\',
+    '  -H "Content-Type: application/json" \\',
+    '  -d \'{"action":"getAllTerritories","params":{"page":1,"pageSize":10}}\'',
     '```',
     '',
     'Responde siempre en espanol, con un tono profesional y claro. Ayuda al usuario a gestionar sus datos de forma eficiente.',
   ].join('\n')
 }
 
-function buildZapiaPrompt(tenantId: string): string {
+function buildZapiaPrompt(apiKey: string): string {
+  const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000'
   return [
     'Sos un asistente conectado a una API REST que administra la app Territorios App.',
     '',
     '## Configuracion de la API',
     '',
-    '- **Endpoint base**: Preguntale al usuario la URL de su instancia',
-    '- **API Key**: Preguntale al usuario su API Key',
-    '- **Tenant ID**: ' + tenantId,
+    '- **Endpoint**: ' + baseUrl + '/api/agent',
+    '- **API Key**: ' + apiKey,
+    '- **Metodo**: POST con Content-Type: application/json',
     '',
     '## Como hacer las llamadas',
     '',
-    'Cada llamada que hagas a la API debe ser un POST con este formato:',
+    'Cada llamada que hagas a la API debe ser un POST con este formato. El tenantId es opcional porque la API Key ya identifica al usuario:',
     '',
     '```json',
     '{',
-    '  "action": "nombreDeLaAccion",',
-    '  "params": {},',
-    '  "tenantId": "' + tenantId + '"',
+    '  "action": "listActions",',
+    '  "params": {}',
     '}',
     '```',
     '',
-    '## Acciones disponibles',
-    '',
-    'Primero llama a `listActions` para descubrir que acciones tenes disponibles. Despues usa las que necesites segun lo que te pida el usuario.',
+    'Primero llama a `listActions` para descubrir las acciones disponibles, luego usa las que necesites.',
     '',
     '## Reglas',
     '',
     '- Responde siempre en espanol argentino, claro y directo',
-    '- Si necesitas la URL de la instancia o la API Key, pediselas al usuario',
-    '- No inventes acciones que no existen — siempre usa `listActions` primero para ver que esta disponible',
+    '- No inventes acciones que no existen — usa `listActions` primero',
     '- Ayuda al usuario a sacar el maximo provecho del sistema',
   ].join('\n')
 }
@@ -112,12 +115,28 @@ export default function SettingsPage() {
     tenantId: string
     role: string
   } | null>(null)
-  const [copied, setCopied] = useState<'tenant' | 'prompt' | 'zapia' | null>(null)
+  const [copied, setCopied] = useState<'tenant' | 'prompt' | 'zapia' | 'apiKey' | null>(null)
   const [showAiSection, setShowAiSection] = useState(false)
+  const [apiKey, setApiKey] = useState<string | null>(null)
+  const [apiKeyLoading, setApiKeyLoading] = useState(false)
+  const [apiKeyRevealed, setApiKeyRevealed] = useState(false)
+  const [regenerating, setRegenerating] = useState(false)
 
   useEffect(() => {
     getCurrentUserInfo().then(setUserInfo)
   }, [])
+
+  useEffect(() => {
+    if (showAiSection && !apiKey && !apiKeyLoading) {
+      setApiKeyLoading(true)
+      getOrCreateApiKey().then((result) => {
+        if (result.success && result.data) {
+          setApiKey(result.data)
+        }
+        setApiKeyLoading(false)
+      })
+    }
+  }, [showAiSection])
 
   // ── Handlers ──
 
@@ -161,7 +180,27 @@ export default function SettingsPage() {
     }
   }
 
-  async function copyToClipboard(text: string, type: 'tenant' | 'prompt' | 'zapia') {
+  async function handleRegenerateKey() {
+    const confirmed = window.confirm('Al regenerar la API key, la anterior dejará de funcionar inmediatamente. Los agentes de IA configurados con la key anterior dejarán de funcionar hasta que los actualices.')
+    if (!confirmed) return
+
+    setRegenerating(true)
+    try {
+      const result = await regenerateApiKey()
+      if (result.success && result.data) {
+        setApiKey(result.data)
+        toast.success('API key regenerada correctamente')
+      } else {
+        toast.error(result.message || 'Error al regenerar')
+      }
+    } catch {
+      toast.error('Error al regenerar la API key')
+    } finally {
+      setRegenerating(false)
+    }
+  }
+
+  async function copyToClipboard(text: string, type: 'tenant' | 'prompt' | 'zapia' | 'apiKey') {
     try {
       await navigator.clipboard.writeText(text)
       setCopied(type)
@@ -169,6 +208,7 @@ export default function SettingsPage() {
         tenant: 'Tenant ID copiado',
         prompt: 'Prompt copiado',
         zapia: 'Prompt para ZAPIA copiado',
+        apiKey: 'API Key copiada',
       }
       toast.success(msgs[type])
       setTimeout(() => setCopied(null), 2000)
@@ -403,7 +443,7 @@ export default function SettingsPage() {
           <div className="px-5 sm:px-6 pb-5 sm:pb-6">
             {!showAiSection && (
               <p className="text-xs text-slate-500 -mt-2">
-                Endpoint /api/agent, API Key, prompts listos para copiar
+                Endpoint, API Key personal, prompts listos para copiar
               </p>
             )}
 
@@ -411,99 +451,180 @@ export default function SettingsPage() {
               <div className="space-y-6 mt-0">
                 <hr className="border-slate-800" />
 
+                {/* TU API KEY (tarjeta destacada) */}
+                <div className="bg-slate-800/50 rounded-lg border border-slate-700 p-4">
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="w-9 h-9 bg-yellow-500/10 rounded-lg flex items-center justify-center shrink-0">
+                      <KeyRound className="h-4.5 w-4.5 text-yellow-500" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-bold text-white">Tu API Key personal</p>
+                      <p className="text-xs text-slate-400">Identifica tu usuario automáticamente</p>
+                    </div>
+                  </div>
+
+                  {apiKeyLoading || regenerating ? (
+                    <div className="flex items-center gap-3 p-3 bg-slate-900/50 rounded-lg">
+                      <Loader2 className="h-4 w-4 text-slate-400 animate-spin" />
+                      <p className="text-xs text-slate-400">
+                        {regenerating ? 'Regenerando...' : 'Cargando...'}
+                      </p>
+                    </div>
+                  ) : apiKey ? (
+                    <>
+                      <div className="flex items-center gap-2">
+                        <code className="flex-1 text-xs font-mono text-yellow-400 bg-slate-900/70 rounded-lg p-3 border border-slate-700 break-all select-all min-h-[42px]">
+                          {apiKeyRevealed ? apiKey : apiKey.slice(0, 12) + '••••••••••••••••••••••••••••'}
+                        </code>
+                        <button
+                          onClick={() => setApiKeyRevealed(!apiKeyRevealed)}
+                          className="shrink-0 w-9 h-9 bg-slate-700/50 rounded-lg flex items-center justify-center hover:bg-slate-700 transition-colors"
+                          title={apiKeyRevealed ? 'Ocultar' : 'Mostrar'}
+                        >
+                          {apiKeyRevealed ? <EyeOff className="h-4 w-4 text-slate-400" /> : <Eye className="h-4 w-4 text-slate-400" />}
+                        </button>
+                        <button
+                          onClick={() => copyToClipboard(apiKey, 'apiKey')}
+                          className="shrink-0 w-9 h-9 bg-slate-700/50 rounded-lg flex items-center justify-center hover:bg-slate-700 transition-colors"
+                          title="Copiar API Key"
+                        >
+                          {copied === 'apiKey' ? (
+                            <Check className="h-4 w-4 text-green-500" />
+                          ) : (
+                            <Copy className="h-4 w-4 text-slate-400" />
+                          )}
+                        </button>
+                      </div>
+
+                      <button
+                        onClick={handleRegenerateKey}
+                        disabled={regenerating}
+                        className="mt-2 flex items-center gap-1.5 text-xs text-slate-400 hover:text-yellow-400 transition-colors disabled:opacity-50"
+                      >
+                        <RefreshCw className={"h-3.5 w-3.5 " + (regenerating ? 'animate-spin' : '')} />
+                        Regenerar API key
+                      </button>
+                    </>
+                  ) : (
+                    <div className="flex items-center gap-3 p-3 bg-slate-900/50 rounded-lg">
+                      <p className="text-xs text-slate-400">No se pudo cargar la API key</p>
+                    </div>
+                  )}
+
+                  <div className="mt-3 bg-slate-900/30 rounded-lg p-3 border border-slate-700/50">
+                    <p className="text-xs text-slate-400">
+                      Esta key es personal y única. Identifica tu usuario automáticamente,
+                      por lo que <strong className="text-slate-300">no necesitás enviar el tenantId</strong> en las llamadas.
+                      Si la regenerás, la anterior deja de funcionar al instante.
+                    </p>
+                  </div>
+                </div>
+
                 {/* Info en grid */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                   <div className="flex items-start gap-3 p-4 bg-slate-800/50 rounded-lg border border-slate-700">
                     <Terminal className="h-5 w-5 text-slate-400 mt-0.5 shrink-0" />
                     <div className="min-w-0">
                       <p className="text-sm font-medium text-white mb-1">Endpoint</p>
-                      <code className="text-xs font-mono text-red-400 block break-all">
-                        /api/agent
+                      <code className="text-xs font-mono text-red-400 block break-all select-all">
+                        {getBaseUrl()}/api/agent
                       </code>
-                      <p className="text-xs text-slate-500 mt-1">POST con JSON + API Key</p>
-                    </div>
-                  </div>
-
-                  <div className="flex items-start gap-3 p-4 bg-slate-800/50 rounded-lg border border-slate-700">
-                    <KeyRound className="h-5 w-5 text-slate-400 mt-0.5 shrink-0" />
-                    <div className="min-w-0">
-                      <p className="text-sm font-medium text-white mb-1">API Key</p>
-                      <code className="text-xs font-mono text-red-400 block">AI_API_KEY</code>
-                      <p className="text-xs text-slate-500 mt-1">Header: Authorization: Bearer</p>
+                      <p className="text-xs text-slate-500 mt-1">POST con JSON</p>
                     </div>
                   </div>
 
                   <div className="flex items-start gap-3 p-4 bg-slate-800/50 rounded-lg border border-slate-700">
                     <Fingerprint className="h-5 w-5 text-slate-400 mt-0.5 shrink-0" />
                     <div className="min-w-0">
-                      <p className="text-sm font-medium text-white mb-1">Tenant ID</p>
-                      <code className="text-xs font-mono text-red-400 block truncate">
-                        {userInfo.tenantId}
+                      <p className="text-sm font-medium text-white mb-1">Autenticación</p>
+                      <code className="text-xs font-mono text-red-400 block truncate select-all">
+                        Authorization: Bearer &lt;tu-api-key&gt;
                       </code>
-                      <p className="text-xs text-slate-500 mt-1">Incluilo en cada request</p>
+                      <p className="text-xs text-slate-500 mt-1">La API key identifica tu usuario</p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-start gap-3 p-4 bg-slate-800/50 rounded-lg border border-slate-700">
+                    <Terminal className="h-5 w-5 text-slate-400 mt-0.5 shrink-0" />
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium text-white mb-1">Ejemplo curl</p>
+                      <code className="text-xs font-mono text-green-400 block break-all select-all">
+                        {`curl -X POST "${getBaseUrl()}/api/agent" -H "Authorization: Bearer TU_KEY" -H "Content-Type: application/json" -d '{"action":"listActions"}'`}
+                      </code>
                     </div>
                   </div>
                 </div>
 
                 {/* Prompt principal */}
-                <div>
-                  <div className="flex items-center justify-between mb-2">
-                    <p className="text-sm font-medium text-white">
-                      Prompt para tu asistente de IA
-                    </p>
-                    <button
-                      onClick={() => copyToClipboard(buildAiPrompt(userInfo.tenantId), 'prompt')}
-                      className="flex items-center gap-1.5 text-xs text-slate-400 hover:text-white transition-colors"
-                    >
-                      {copied === 'prompt' ? (
-                        <><Check className="h-3.5 w-3.5 text-green-500" /><span className="text-green-500">Copiado</span></>
-                      ) : (
-                        <><Copy className="h-3.5 w-3.5" />Copiar</>
-                      )}
-                    </button>
+                {apiKey && (
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <p className="text-sm font-medium text-white">
+                        Prompt para tu asistente de IA
+                      </p>
+                      <button
+                        onClick={() => copyToClipboard(buildAiPrompt(apiKey), 'prompt')}
+                        className="flex items-center gap-1.5 text-xs text-slate-400 hover:text-white transition-colors"
+                      >
+                        {copied === 'prompt' ? (
+                          <><Check className="h-3.5 w-3.5 text-green-500" /><span className="text-green-500">Copiado</span></>
+                        ) : (
+                          <><Copy className="h-3.5 w-3.5" />Copiar</>
+                        )}
+                      </button>
+                    </div>
+                    <pre className="text-xs text-slate-300 bg-slate-900/70 rounded-lg p-3 sm:p-4 border border-slate-700 overflow-x-auto max-h-72 overflow-y-auto whitespace-pre-wrap font-mono leading-relaxed select-all">
+                      {buildAiPrompt(apiKey)}
+                    </pre>
                   </div>
-                  <pre className="text-xs text-slate-300 bg-slate-900/70 rounded-lg p-3 sm:p-4 border border-slate-700 overflow-x-auto max-h-72 overflow-y-auto whitespace-pre-wrap font-mono leading-relaxed select-all">
-                    {buildAiPrompt(userInfo.tenantId)}
-                  </pre>
-                </div>
+                )}
 
                 {/* ZAPIA */}
-                <div className="bg-slate-800/30 rounded-lg border border-slate-700/50 p-4 sm:p-5">
-                  <div className="flex items-start gap-3 mb-3">
-                    <div className="w-8 h-8 bg-green-500/10 rounded-lg flex items-center justify-center shrink-0">
-                      <Bot className="h-4 w-4 text-green-500" />
+                {apiKey && (
+                  <div className="bg-slate-800/30 rounded-lg border border-slate-700/50 p-4 sm:p-5">
+                    <div className="flex items-start gap-3 mb-3">
+                      <div className="w-8 h-8 bg-green-500/10 rounded-lg flex items-center justify-center shrink-0">
+                        <Bot className="h-4 w-4 text-green-500" />
+                      </div>
+                      <div>
+                        <h3 className="text-sm font-bold text-white">Recomendación: ZAPIA</h3>
+                        <p className="text-xs text-slate-400">Creá agentes de IA personalizados sin programar</p>
+                      </div>
+                      <a
+                        href="https://zapia.com"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="ml-auto shrink-0 inline-flex items-center gap-1.5 text-xs text-green-500 hover:text-green-400 transition-colors font-medium"
+                      >
+                        <ExternalLink className="h-3.5 w-3.5" />Ir
+                      </a>
                     </div>
-                    <div>
-                      <h3 className="text-sm font-bold text-white">Recomendación: ZAPIA</h3>
-                      <p className="text-xs text-slate-400">Creá agentes de IA personalizados sin programar</p>
-                    </div>
-                    <a
-                      href="https://zapia.com"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="ml-auto shrink-0 inline-flex items-center gap-1.5 text-xs text-green-500 hover:text-green-400 transition-colors font-medium"
-                    >
-                      <ExternalLink className="h-3.5 w-3.5" />Ir
-                    </a>
-                  </div>
 
-                  <div className="flex items-center justify-between mb-2">
-                    <p className="text-xs font-medium text-slate-300">Prompt para ZAPIA</p>
-                    <button
-                      onClick={() => copyToClipboard(buildZapiaPrompt(userInfo.tenantId), 'zapia')}
-                      className="flex items-center gap-1.5 text-xs text-slate-400 hover:text-white transition-colors"
-                    >
-                      {copied === 'zapia' ? (
-                        <><Check className="h-3.5 w-3.5 text-green-500" /><span className="text-green-500">Copiado</span></>
-                      ) : (
-                        <><Copy className="h-3.5 w-3.5" />Copiar</>
-                      )}
-                    </button>
+                    <div className="flex items-center justify-between mb-2">
+                      <p className="text-xs font-medium text-slate-300">Prompt para ZAPIA</p>
+                      <button
+                        onClick={() => copyToClipboard(buildZapiaPrompt(apiKey), 'zapia')}
+                        className="flex items-center gap-1.5 text-xs text-slate-400 hover:text-white transition-colors"
+                      >
+                        {copied === 'zapia' ? (
+                          <><Check className="h-3.5 w-3.5 text-green-500" /><span className="text-green-500">Copiado</span></>
+                        ) : (
+                          <><Copy className="h-3.5 w-3.5" />Copiar</>
+                        )}
+                      </button>
+                    </div>
+                    <pre className="text-xs text-slate-300 bg-slate-900/70 rounded-lg p-3 border border-slate-700 overflow-x-auto max-h-48 overflow-y-auto whitespace-pre-wrap font-mono leading-relaxed select-all">
+                      {buildZapiaPrompt(apiKey)}
+                    </pre>
                   </div>
-                  <pre className="text-xs text-slate-300 bg-slate-900/70 rounded-lg p-3 border border-slate-700 overflow-x-auto max-h-48 overflow-y-auto whitespace-pre-wrap font-mono leading-relaxed select-all">
-                    {buildZapiaPrompt(userInfo.tenantId)}
-                  </pre>
-                </div>
+                )}
+
+                {/* Sin API key - loading */}
+                {!apiKey && !apiKeyLoading && (
+                  <div className="text-center py-8 text-slate-500">
+                    <p className="text-sm">Cargando tu API key...</p>
+                  </div>
+                )}
               </div>
             )}
           </div>

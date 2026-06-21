@@ -117,4 +117,6 @@ export {
   changeOwnPassword,
   getCurrentUserRole,
   getCurrentUserInfo,
+  getOrCreateApiKey,
+  regenerateApiKey,
 } from './auth'

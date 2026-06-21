@@ -341,6 +341,99 @@ export async function changeOwnPassword(data: {
   }
 }
 
+// ── API Keys (para IA externa) ──
+
+/**
+ * Genera una API key única usando crypto.
+ */
+function generateApiKey(): string {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
+  let key = 'ta_'
+  const array = new Uint8Array(48)
+  crypto.getRandomValues(array)
+  for (let i = 0; i < 48; i++) {
+    key += chars[array[i] % chars.length]
+  }
+  return key
+}
+
+/**
+ * Obtiene o crea la API key del usuario autenticado.
+ */
+export async function getOrCreateApiKey() {
+  try {
+    const session = await getSession()
+    if (!session?.isAuthenticated) {
+      return { success: false, data: null, message: 'No autorizado' }
+    }
+
+    // Buscar si ya tiene una API key activa
+    let apiKey = await prisma.apiKey.findFirst({
+      where: { userId: session.userId, isActive: true },
+    })
+
+    // Si no tiene, crear una
+    if (!apiKey) {
+      const newKey = generateApiKey()
+      apiKey = await prisma.apiKey.create({
+        data: {
+          key: newKey,
+          userId: session.userId,
+          tenantId: session.tenantId,
+          name: 'default',
+        },
+      })
+    }
+
+    return { success: true, data: apiKey.key }
+  } catch (error) {
+    console.error('Error al obtener API key:', error)
+    return {
+      success: false,
+      data: null,
+      message: error instanceof Error ? error.message : 'Error al obtener API key',
+    }
+  }
+}
+
+/**
+ * Regenera la API key del usuario autenticado (invalida la anterior).
+ */
+export async function regenerateApiKey() {
+  try {
+    const session = await getSession()
+    if (!session?.isAuthenticated) {
+      return { success: false, data: null, message: 'No autorizado' }
+    }
+
+    // Desactivar keys anteriores
+    await prisma.apiKey.updateMany({
+      where: { userId: session.userId, isActive: true },
+      data: { isActive: false },
+    })
+
+    // Crear nueva key
+    const newKey = generateApiKey()
+    const apiKey = await prisma.apiKey.create({
+      data: {
+        key: newKey,
+        userId: session.userId,
+        tenantId: session.tenantId,
+        name: 'default',
+      },
+    })
+
+    return { success: true, data: apiKey.key }
+  } catch (error) {
+    console.error('Error al regenerar API key:', error)
+    return {
+      success: false,
+      data: null,
+      message: error instanceof Error ? error.message : 'Error al regenerar API key',
+    }
+  }
+}
+
 export async function deleteUser(userId: string) {
   try {
     const session = await getSession()
