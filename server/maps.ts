@@ -2,8 +2,6 @@
 
 import { prisma } from '@/lib/prisma'
 import { revalidatePath } from 'next/cache'
-import { writeFile, mkdir } from 'fs/promises'
-import { join } from 'path'
 import { getCurrentTenantId } from '@/lib/tenant'
 
 export async function createOrUpdateMap(
@@ -132,32 +130,3 @@ export async function deleteMap(mapId: string) {
   }
 }
 
-export async function uploadMapImage(formData: FormData, filename: string) {
-  try {
-    const file = formData.get('file') as File
-    if (!file) {
-      throw new Error('No se proporcionó archivo')
-    }
-
-    const bytes = await file.arrayBuffer()
-    const buffer = Buffer.from(bytes)
-
-    const uploadsDir = join(process.cwd(), 'public', 'mapas')
-    await mkdir(uploadsDir, { recursive: true })
-
-    const path = join(uploadsDir, filename)
-    await writeFile(path, buffer)
-
-    return {
-      success: true,
-      path: `/mapas/${filename}`,
-    }
-  } catch (error) {
-    console.error('Error al subir imagen:', error)
-    return {
-      success: false,
-      path: null,
-      message: 'Error al subir la imagen',
-    }
-  }
-}

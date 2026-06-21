@@ -100,7 +100,6 @@ export {
   getAllMaps,
   getMapByType,
   deleteMap,
-  uploadMapImage,
 } from './maps'
 
 // Exportación PDF
