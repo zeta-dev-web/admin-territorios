@@ -2,6 +2,7 @@
 
 import { prisma } from '@/lib/prisma'
 import { revalidatePath } from 'next/cache'
+import { getCurrentTenantId } from '@/lib/tenant'
 
 /**
  * Crea una asignación personal de territorio a un miembro
@@ -13,9 +14,11 @@ export async function createPersonalAssignment(
   assignedDate?: Date
 ) {
   try {
+    const tenantId = await getCurrentTenantId()
+
     // Verificar que el territorio existe
-    const territory = await prisma.territory.findUnique({
-      where: { id: territoryId },
+    const territory = await prisma.territory.findFirst({
+      where: { id: territoryId, tenantId },
     })
 
     if (!territory) {
@@ -23,8 +26,8 @@ export async function createPersonalAssignment(
     }
 
     // Verificar que el miembro existe
-    const member = await prisma.member.findUnique({
-      where: { id: memberId },
+    const member = await prisma.member.findFirst({
+      where: { id: memberId, tenantId },
       include: { group: true },
     })
 
@@ -37,6 +40,7 @@ export async function createPersonalAssignment(
       where: {
         territoryId,
         isActive: true,
+        tenantId,
       },
       include: {
         member: true,
@@ -55,6 +59,7 @@ export async function createPersonalAssignment(
         memberId,
         notes,
         assignedDate: assignedDate || new Date(),
+        tenantId,
       },
       include: {
         territory: true,
@@ -94,8 +99,9 @@ export async function createPersonalAssignment(
  */
 export async function returnPersonalAssignment(assignmentId: string, returnDate?: Date) {
   try {
-    const assignment = await prisma.personalAssignment.findUnique({
-      where: { id: assignmentId },
+    const tenantId = await getCurrentTenantId()
+    const assignment = await prisma.personalAssignment.findFirst({
+      where: { id: assignmentId, tenantId },
       include: {
         territory: true,
         member: true,
@@ -150,9 +156,11 @@ export async function returnPersonalAssignment(assignmentId: string, returnDate?
  */
 export async function getActivePersonalAssignments() {
   try {
+    const tenantId = await getCurrentTenantId()
     const assignments = await prisma.personalAssignment.findMany({
       where: {
         isActive: true,
+        tenantId,
       },
       include: {
         territory: true,
@@ -186,9 +194,11 @@ export async function getActivePersonalAssignments() {
  */
 export async function getPersonalAssignmentsByTerritory(territoryId: string) {
   try {
+    const tenantId = await getCurrentTenantId()
     const assignments = await prisma.personalAssignment.findMany({
       where: {
         territoryId,
+        tenantId,
       },
       include: {
         member: {
@@ -221,9 +231,11 @@ export async function getPersonalAssignmentsByTerritory(territoryId: string) {
  */
 export async function getPersonalAssignmentsByMember(memberId: string) {
   try {
+    const tenantId = await getCurrentTenantId()
     const assignments = await prisma.personalAssignment.findMany({
       where: {
         memberId,
+        tenantId,
       },
       include: {
         territory: true,
@@ -283,8 +295,9 @@ export async function updatePersonalAssignment(
   }
 ) {
   try {
-    const assignment = await prisma.personalAssignment.findUnique({
-      where: { id: assignmentId },
+    const tenantId = await getCurrentTenantId()
+    const assignment = await prisma.personalAssignment.findFirst({
+      where: { id: assignmentId, tenantId },
       include: { territory: true, member: true },
     })
 
@@ -293,8 +306,8 @@ export async function updatePersonalAssignment(
     }
 
     if (data.memberId) {
-      const member = await prisma.member.findUnique({
-        where: { id: data.memberId },
+      const member = await prisma.member.findFirst({
+        where: { id: data.memberId, tenantId },
       })
       if (!member) {
         throw new Error('Miembro no encontrado')

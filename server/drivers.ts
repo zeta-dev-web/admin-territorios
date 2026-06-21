@@ -2,6 +2,7 @@
 
 import { prisma } from '@/lib/prisma'
 import { revalidatePath } from 'next/cache'
+import { getCurrentTenantId } from '@/lib/tenant'
 
 /**
  * Crea un nuevo conductor
@@ -11,6 +12,8 @@ export async function createDriver(data: {
   groupId: string
 }) {
   try {
+    const tenantId = await getCurrentTenantId()
+
     // Verificar que el grupo existe
     const group = await prisma.group.findUnique({
       where: { id: data.groupId },
@@ -24,6 +27,7 @@ export async function createDriver(data: {
       data: {
         name: data.name,
         groupId: data.groupId,
+        tenantId,
       },
       include: {
         group: true,
@@ -55,12 +59,14 @@ export async function createDriver(data: {
  */
 export async function getAllDrivers(page = 1, pageSize = 10) {
   try {
+    const tenantId = await getCurrentTenantId()
     const skip = (page - 1) * pageSize
 
     const [drivers, total, activeCount] = await Promise.all([
       prisma.driver.findMany({
         skip,
         take: pageSize,
+        where: { tenantId },
         include: {
           group: true,
           assignments: {
@@ -85,9 +91,10 @@ export async function getAllDrivers(page = 1, pageSize = 10) {
           name: 'asc',
         },
       }),
-      prisma.driver.count(),
+      prisma.driver.count({ where: { tenantId } }),
       prisma.driver.count({
         where: {
+          tenantId,
           assignments: {
             some: {
               isCompleted: false,
@@ -126,9 +133,11 @@ export async function getAllDrivers(page = 1, pageSize = 10) {
  */
 export async function getDriversByGroup(groupId: string) {
   try {
+    const tenantId = await getCurrentTenantId()
     const drivers = await prisma.driver.findMany({
       where: {
         groupId,
+        tenantId,
       },
       include: {
         group: true,
@@ -163,8 +172,9 @@ export async function getDriversByGroup(groupId: string) {
  */
 export async function getDriverById(driverId: string) {
   try {
-    const driver = await prisma.driver.findUnique({
-      where: { id: driverId },
+    const tenantId = await getCurrentTenantId()
+    const driver = await prisma.driver.findFirst({
+      where: { id: driverId, tenantId },
       include: {
         group: true,
         assignments: {
@@ -224,9 +234,11 @@ export async function updateDriver(
   groupId: string
 ) {
   try {
+    const tenantId = await getCurrentTenantId()
+
     // Obtener datos actuales del conductor y su grupo
-    const currentDriver = await prisma.driver.findUnique({
-      where: { id: driverId },
+    const currentDriver = await prisma.driver.findFirst({
+      where: { id: driverId, tenantId },
       include: {
         group: true,
       },
@@ -295,8 +307,9 @@ export async function updateDriver(
  */
 export async function deleteDriver(driverId: string) {
   try {
-    const driver = await prisma.driver.findUnique({
-      where: { id: driverId },
+    const tenantId = await getCurrentTenantId()
+    const driver = await prisma.driver.findFirst({
+      where: { id: driverId, tenantId },
       include: {
         assignments: true,
       },
@@ -337,7 +350,9 @@ export async function deleteDriver(driverId: string) {
 
 export async function getAllDriversForSelect() {
   try {
+    const tenantId = await getCurrentTenantId()
     const drivers = await prisma.driver.findMany({
+      where: { tenantId },
       select: {
         id: true,
         name: true,

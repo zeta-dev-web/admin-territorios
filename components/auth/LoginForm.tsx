@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { login } from '@/server/auth'
-import { LogIn, Loader2, AlertCircle, Eye, EyeOff } from 'lucide-react'
+import { LogIn, Loader2, AlertCircle, Eye, EyeOff, Mail } from 'lucide-react'
 
 export function LoginForm() {
   const [isLoading, setIsLoading] = useState(false)
@@ -30,7 +30,7 @@ export function LoginForm() {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
+    <form onSubmit={handleSubmit} className="space-y-5">
       {error && (
         <div className="bg-red-50 border border-red-200 rounded-lg p-3 flex items-start gap-2 animate-in">
           <AlertCircle className="h-5 w-5 text-red-600 flex-shrink-0 mt-0.5" />
@@ -40,10 +40,31 @@ export function LoginForm() {
 
       <div>
         <label
+          htmlFor="email"
+          className="block text-sm font-medium text-white mb-2"
+        >
+          Email
+        </label>
+        <div className="relative">
+          <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-white/50" />
+          <input
+            type="email"
+            id="email"
+            name="email"
+            required
+            disabled={isLoading}
+            placeholder="admin@territorios.com"
+            className="block w-full pl-10 pr-4 py-3 border border-white/20 rounded-lg bg-white/10 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-white/50 focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed backdrop-blur-sm"
+          />
+        </div>
+      </div>
+
+      <div>
+        <label
           htmlFor="password"
           className="block text-sm font-medium text-white mb-2"
         >
-          Contraseña de Administrador
+          Contraseña
         </label>
         <div className="relative">
           <input
@@ -53,7 +74,7 @@ export function LoginForm() {
             required
             disabled={isLoading}
             placeholder="Ingresa tu contraseña"
-            className="block w-full pr-10 py-3 px-4 border border-white/20 rounded-lg bg-white/10 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-white/50 focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed backdrop-blur-sm"
+            className="block w-full pr-10 pl-4 py-3 border border-white/20 rounded-lg bg-white/10 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-white/50 focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed backdrop-blur-sm"
           />
           <button
             type="button"

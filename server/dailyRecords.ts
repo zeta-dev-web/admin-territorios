@@ -3,6 +3,7 @@
 import { prisma } from '@/lib/prisma'
 import { CreateDailyRecordInput } from '@/types'
 import { revalidatePath } from 'next/cache'
+import { getCurrentTenantId } from '@/lib/tenant'
 
 /**
  * Crea un nuevo registro de trabajo diario
@@ -11,9 +12,11 @@ import { revalidatePath } from 'next/cache'
  */
 export async function createDailyRecord(input: CreateDailyRecordInput) {
   try {
+    const tenantId = await getCurrentTenantId()
+
     // 1. Validar la existencia de la asignación
-    const assignment = await prisma.assignment.findUnique({
-      where: { id: input.assignmentId },
+    const assignment = await prisma.assignment.findFirst({
+      where: { id: input.assignmentId, tenantId },
       include: {
         blocks: true,
         territory: true,
@@ -29,8 +32,8 @@ export async function createDailyRecord(input: CreateDailyRecordInput) {
     }
 
     // 2. Validar la existencia del conductor
-    const driver = await prisma.driver.findUnique({
-      where: { id: input.driverId },
+    const driver = await prisma.driver.findFirst({
+      where: { id: input.driverId, tenantId },
     })
 
     if (!driver) {
@@ -72,6 +75,7 @@ export async function createDailyRecord(input: CreateDailyRecordInput) {
         blockId: input.blockId,
         date: input.date,
         notes: input.notes,
+        tenantId,
       },
       include: {
         block: true,
@@ -201,9 +205,11 @@ export async function getDailyRecordsByDriver(
   endDate?: Date
 ) {
   try {
+    const tenantId = await getCurrentTenantId()
     const records = await prisma.dailyRecord.findMany({
       where: {
         driverId,
+        tenantId,
         ...(startDate &&
           endDate && {
             date: {
@@ -244,8 +250,9 @@ export async function getDailyRecordsByDriver(
  */
 export async function deleteDailyRecord(recordId: string) {
   try {
-    const record = await prisma.dailyRecord.findUnique({
-      where: { id: recordId },
+    const tenantId = await getCurrentTenantId()
+    const record = await prisma.dailyRecord.findFirst({
+      where: { id: recordId, tenantId },
       include: {
         assignment: {
           include: {

@@ -2,6 +2,7 @@
 
 import { prisma } from '@/lib/prisma'
 import { revalidatePath } from 'next/cache'
+import { getCurrentTenantId } from '@/lib/tenant'
 
 /**
  * Crea un nuevo grupo
@@ -12,26 +13,29 @@ export async function createGroup(
   auxiliary?: string
 ) {
   try {
+    const tenantId = await getCurrentTenantId()
+
     const group = await prisma.group.create({
       data: {
         name,
         superintendent: superintendent || null,
         auxiliary: auxiliary || null,
+        tenantId,
       },
     })
 
     // Crear conductores e integrantes automáticamente para superintendente y auxiliar
-    const driversToCreate: Array<{ name: string; groupId: string }> = []
-    const membersToCreate: Array<{ name: string; groupId: string }> = []
-    
+    const driversToCreate: Array<{ name: string; groupId: string; tenantId: string }> = []
+    const membersToCreate: Array<{ name: string; groupId: string; tenantId: string }> = []
+
     if (superintendent) {
-      driversToCreate.push({ name: superintendent, groupId: group.id })
-      membersToCreate.push({ name: superintendent, groupId: group.id })
+      driversToCreate.push({ name: superintendent, groupId: group.id, tenantId })
+      membersToCreate.push({ name: superintendent, groupId: group.id, tenantId })
     }
-    
+
     if (auxiliary) {
-      driversToCreate.push({ name: auxiliary, groupId: group.id })
-      membersToCreate.push({ name: auxiliary, groupId: group.id })
+      driversToCreate.push({ name: auxiliary, groupId: group.id, tenantId })
+      membersToCreate.push({ name: auxiliary, groupId: group.id, tenantId })
     }
 
     await Promise.all([
@@ -64,7 +68,9 @@ export async function createGroup(
  */
 export async function getAllGroups() {
   try {
+    const tenantId = await getCurrentTenantId()
     const groups = await prisma.group.findMany({
+      where: { tenantId },
       include: {
         drivers: {
           include: {
@@ -124,9 +130,11 @@ export async function updateGroup(
   auxiliary?: string
 ) {
   try {
+    const tenantId = await getCurrentTenantId()
+
     // Obtener el grupo actual para comparar valores viejos
-    const currentGroup = await prisma.group.findUnique({
-      where: { id: groupId },
+    const currentGroup = await prisma.group.findFirst({
+      where: { id: groupId, tenantId },
       include: {
         drivers: {
           select: { id: true, name: true },
@@ -174,20 +182,20 @@ export async function updateGroup(
           await Promise.all([
             existingDriver
               ? Promise.resolve()
-              : prisma.driver.create({ data: { name: newName, groupId } }),
+              : prisma.driver.create({ data: { name: newName, groupId, tenantId } }),
             existingMember
               ? Promise.resolve()
-              : prisma.member.create({ data: { name: newName, groupId } }),
+              : prisma.member.create({ data: { name: newName, groupId, tenantId } }),
           ])
         } else {
           // Nombre diferente: actualizar existentes o crear si no hay
           await Promise.all([
             existingDriver
               ? prisma.driver.update({ where: { id: existingDriver.id }, data: { name: newName } })
-              : prisma.driver.create({ data: { name: newName, groupId } }),
+              : prisma.driver.create({ data: { name: newName, groupId, tenantId } }),
             existingMember
               ? prisma.member.update({ where: { id: existingMember.id }, data: { name: newName } })
-              : prisma.member.create({ data: { name: newName, groupId } }),
+              : prisma.member.create({ data: { name: newName, groupId, tenantId } }),
           ])
         }
         return
@@ -198,10 +206,10 @@ export async function updateGroup(
         await Promise.all([
           existingDriver
             ? Promise.resolve()
-            : prisma.driver.create({ data: { name: newName, groupId } }),
+            : prisma.driver.create({ data: { name: newName, groupId, tenantId } }),
           existingMember
             ? Promise.resolve()
-            : prisma.member.create({ data: { name: newName, groupId } }),
+            : prisma.member.create({ data: { name: newName, groupId, tenantId } }),
         ])
         return
       }
@@ -249,8 +257,9 @@ export async function updateGroup(
  */
 export async function deleteGroup(groupId: string) {
   try {
-    const group = await prisma.group.findUnique({
-      where: { id: groupId },
+    const tenantId = await getCurrentTenantId()
+    const group = await prisma.group.findFirst({
+      where: { id: groupId, tenantId },
       include: {
         drivers: true,
         members: true,

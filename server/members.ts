@@ -2,16 +2,19 @@
 
 import { prisma } from '@/lib/prisma'
 import { revalidatePath } from 'next/cache'
+import { getCurrentTenantId } from '@/lib/tenant'
 
 /**
  * Crea un nuevo integrante en un grupo
  */
 export async function createMember(name: string, groupId: string) {
   try {
+    const tenantId = await getCurrentTenantId()
     const member = await prisma.member.create({
       data: {
         name,
         groupId,
+        tenantId,
       },
     })
 
@@ -39,9 +42,11 @@ export async function createMember(name: string, groupId: string) {
  */
 export async function getMembersByGroup(groupId: string) {
   try {
+    const tenantId = await getCurrentTenantId()
     const members = await prisma.member.findMany({
       where: {
         groupId,
+        tenantId,
       },
       orderBy: {
         name: 'asc',
@@ -67,6 +72,7 @@ export async function getMembersByGroup(groupId: string) {
  */
 export async function updateMember(memberId: string, name: string, groupId?: string) {
   try {
+    const tenantId = await getCurrentTenantId()
     const data: { name: string; groupId?: string } = { name }
     
     if (groupId) {
@@ -103,10 +109,13 @@ export async function updateMember(memberId: string, name: string, groupId?: str
  */
 export async function toggleMemberDriver(memberId: string, groupId: string, memberName: string) {
   try {
+    const tenantId = await getCurrentTenantId()
+
     // Buscar si ya existe un conductor con ese nombre en el grupo
     const existingDriver = await prisma.driver.findFirst({
       where: {
         groupId,
+        tenantId,
         name: {
           equals: memberName,
           mode: 'insensitive',
@@ -151,6 +160,7 @@ export async function toggleMemberDriver(memberId: string, groupId: string, memb
         data: {
           name: memberName,
           groupId,
+          tenantId,
         },
       })
       revalidatePath('/admin/groups')
@@ -204,7 +214,9 @@ export async function deleteMember(memberId: string) {
 
 export async function getAllMembersForSelect() {
   try {
+    const tenantId = await getCurrentTenantId()
     const members = await prisma.member.findMany({
+      where: { tenantId },
       select: {
         id: true,
         name: true,

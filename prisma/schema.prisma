@@ -6,70 +6,148 @@ datasource db {
   provider = "postgresql"
 }
 
+// ═══════════════════════════════════════════
+//  TENANT / USER (multi-tenancy)
+// ═══════════════════════════════════════════
+
+model Tenant {
+  id        String   @id @default(cuid())
+  name      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  users               User[]
+  groups              Group[]
+  drivers             Driver[]
+  territories         Territory[]
+  blocks              Block[]
+  assignments         Assignment[]
+  dailyRecords        DailyRecord[]
+  members             Member[]
+  personalAssignments PersonalAssignment[]
+  maps                TerritoryMap[]
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String
+  name      String?
+  role      String   @default("USER") // ADMIN | USER
+  tenantId  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([email])
+  @@index([tenantId])
+}
+
+// ═══════════════════════════════════════════
+//  GRUPOS
+// ═══════════════════════════════════════════
+
 model Group {
   id              String      @id @default(cuid())
   name            String
   superintendent  String?
   auxiliary       String?
+  tenantId        String?
   createdAt       DateTime    @default(now())
   updatedAt       DateTime    @updatedAt
-  drivers         Driver[]
-  members         Member[]
-  territories     Territory[]
+
+  tenant      Tenant?     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  drivers     Driver[]
+  members     Member[]
+  territories Territory[]
 
   @@index([name])
+  @@index([tenantId])
 }
+
+// ═══════════════════════════════════════════
+//  INTEGRANTES
+// ═══════════════════════════════════════════
 
 model Member {
   id                  String              @id @default(cuid())
   name                String
   groupId             String
+  tenantId            String?
   createdAt           DateTime            @default(now())
   updatedAt           DateTime            @updatedAt
+
+  tenant              Tenant?             @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   group               Group               @relation(fields: [groupId], references: [id], onDelete: Cascade)
   personalAssignments PersonalAssignment[]
 
   @@index([groupId])
   @@index([name])
+  @@index([tenantId])
 }
+
+// ═══════════════════════════════════════════
+//  CONDUCTORES
+// ═══════════════════════════════════════════
 
 model Driver {
   id           String        @id @default(cuid())
   name         String
   groupId      String
+  tenantId     String?
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
+
+  tenant       Tenant?       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   assignments  Assignment[]
   dailyRecords DailyRecord[]
   group        Group         @relation(fields: [groupId], references: [id], onDelete: Cascade)
 
   @@index([groupId])
   @@index([name])
+  @@index([tenantId])
 }
+
+// ═══════════════════════════════════════════
+//  TERRITORIOS
+// ═══════════════════════════════════════════
 
 model Territory {
   id                  String              @id @default(cuid())
-  number              Int                 @unique
+  number              Int
   description         String?
   groupId             String
+  tenantId            String?
   createdAt           DateTime            @default(now())
   updatedAt           DateTime            @updatedAt
+
+  tenant              Tenant?             @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   group               Group               @relation(fields: [groupId], references: [id], onDelete: Cascade)
   assignments         Assignment[]
   blocks              Block[]
   personalAssignments PersonalAssignment[]
 
+  @@unique([tenantId, number])  // El numero es unico por tenant, no global
   @@index([number])
   @@index([groupId])
+  @@index([tenantId])
 }
+
+// ═══════════════════════════════════════════
+//  MANZANAS (BLOQUES)
+// ═══════════════════════════════════════════
 
 model Block {
   id           String        @id @default(cuid())
   letter       String
   territoryId  String
   assignmentId String?
+  tenantId     String?
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
+
+  tenant       Tenant?       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   assignment   Assignment?   @relation(fields: [assignmentId], references: [id])
   territory    Territory     @relation(fields: [territoryId], references: [id], onDelete: Cascade)
   dailyRecords DailyRecord[]
@@ -77,7 +155,12 @@ model Block {
   @@unique([territoryId, letter])
   @@index([territoryId])
   @@index([assignmentId])
+  @@index([tenantId])
 }
+
+// ═══════════════════════════════════════════
+//  ASIGNACIONES (Conductor)
+// ═══════════════════════════════════════════
 
 model Assignment {
   id           String        @id @default(cuid())
@@ -86,8 +169,11 @@ model Assignment {
   startDate    DateTime      @default(now())
   endDate      DateTime?
   isCompleted  Boolean       @default(false)
+  tenantId     String?
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
+
+  tenant       Tenant?       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   driver       Driver        @relation(fields: [driverId], references: [id], onDelete: Cascade)
   territory    Territory     @relation(fields: [territoryId], references: [id], onDelete: Cascade)
   blocks       Block[]
@@ -97,7 +183,12 @@ model Assignment {
   @@index([driverId])
   @@index([isCompleted])
   @@index([endDate])
+  @@index([tenantId])
 }
+
+// ═══════════════════════════════════════════
+//  REGISTROS DIARIOS
+// ═══════════════════════════════════════════
 
 model DailyRecord {
   id           String     @id @default(cuid())
@@ -106,8 +197,11 @@ model DailyRecord {
   blockId      String
   date         DateTime   @default(now())
   notes        String?
+  tenantId     String?
   createdAt    DateTime   @default(now())
   updatedAt    DateTime   @updatedAt
+
+  tenant       Tenant?    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   assignment   Assignment @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
   block        Block      @relation(fields: [blockId], references: [id], onDelete: Cascade)
   driver       Driver     @relation(fields: [driverId], references: [id], onDelete: Cascade)
@@ -117,7 +211,12 @@ model DailyRecord {
   @@index([driverId])
   @@index([blockId])
   @@index([date])
+  @@index([tenantId])
 }
+
+// ═══════════════════════════════════════════
+//  ASIGNACIONES PERSONALES
+// ═══════════════════════════════════════════
 
 model PersonalAssignment {
   id           String    @id @default(cuid())
@@ -127,8 +226,11 @@ model PersonalAssignment {
   returnedDate DateTime?
   isActive     Boolean   @default(true)
   notes        String?
+  tenantId     String?
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
+
+  tenant       Tenant?   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   territory    Territory @relation(fields: [territoryId], references: [id], onDelete: Cascade)
   member       Member    @relation(fields: [memberId], references: [id], onDelete: Cascade)
 
@@ -137,7 +239,12 @@ model PersonalAssignment {
   @@index([isActive])
   @@index([assignedDate])
   @@index([returnedDate])
+  @@index([tenantId])
 }
+
+// ═══════════════════════════════════════════
+//  MAPAS
+// ═══════════════════════════════════════════
 
 model TerritoryMap {
   id          String   @id @default(cuid())
@@ -145,9 +252,13 @@ model TerritoryMap {
   groupId     String?
   frontImage  String
   backImage   String
+  tenantId    String?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
+  tenant      Tenant?  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
   @@index([type])
   @@index([groupId])
+  @@index([tenantId])
 }

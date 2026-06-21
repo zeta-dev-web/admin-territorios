@@ -1,6 +1,7 @@
 'use server'
 
 import { prisma } from '@/lib/prisma'
+import { getCurrentTenantId } from '@/lib/tenant'
 import type { TerritoryRange, PdfExportResult } from '@/types'
 import { PDFDocument } from 'pdf-lib'
 import fs from 'fs/promises'
@@ -54,7 +55,9 @@ function getBaseNameForSlot(slotIdx: number): number {
  */
 export async function getAvailableTerritoryRanges(): Promise<TerritoryRange[]> {
   try {
+    const tenantId = await getCurrentTenantId()
     const territories = await prisma.territory.findMany({
+      where: { tenantId },
       select: { number: true },
       orderBy: { number: 'asc' },
     })
@@ -100,6 +103,8 @@ export async function exportTerritoryHistoryPdf(
   includeActive: boolean = false
 ): Promise<PdfExportResult> {
   try {
+    const tenantId = await getCurrentTenantId()
+
     // ── Validaciones ──
     if (startNumber < 1 || endNumber < startNumber || endNumber - startNumber > 9) {
       return {
@@ -128,6 +133,7 @@ export async function exportTerritoryHistoryPdf(
     const territories = await prisma.territory.findMany({
       where: {
         number: { gte: startNumber, lte: endNumber },
+        tenantId,
       },
       include: {
         assignments: {

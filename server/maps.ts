@@ -4,6 +4,7 @@ import { prisma } from '@/lib/prisma'
 import { revalidatePath } from 'next/cache'
 import { writeFile, mkdir } from 'fs/promises'
 import { join } from 'path'
+import { getCurrentTenantId } from '@/lib/tenant'
 
 export async function createOrUpdateMap(
   type: 'GENERAL' | 'GROUP',
@@ -12,10 +13,13 @@ export async function createOrUpdateMap(
   groupId?: string
 ) {
   try {
+    const tenantId = await getCurrentTenantId()
+
     const existing = await prisma.territoryMap.findFirst({
       where: {
         type,
         groupId: groupId || null,
+        tenantId,
       },
     })
 
@@ -35,6 +39,7 @@ export async function createOrUpdateMap(
           groupId,
           frontImage,
           backImage,
+          tenantId,
         },
       })
     }
@@ -59,7 +64,9 @@ export async function createOrUpdateMap(
 
 export async function getAllMaps() {
   try {
+    const tenantId = await getCurrentTenantId()
     const maps = await prisma.territoryMap.findMany({
+      where: { tenantId },
       orderBy: [{ type: 'asc' }, { groupId: 'asc' }],
     })
 
@@ -79,10 +86,12 @@ export async function getAllMaps() {
 
 export async function getMapByType(type: 'GENERAL' | 'GROUP', groupId?: string) {
   try {
+    const tenantId = await getCurrentTenantId()
     const map = await prisma.territoryMap.findFirst({
       where: {
         type,
         groupId: groupId || null,
+        tenantId,
       },
     })
 
@@ -102,6 +111,7 @@ export async function getMapByType(type: 'GENERAL' | 'GROUP', groupId?: string) 
 
 export async function deleteMap(mapId: string) {
   try {
+    const tenantId = await getCurrentTenantId()
     await prisma.territoryMap.delete({
       where: { id: mapId },
     })

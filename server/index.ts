@@ -108,3 +108,10 @@ export {
   getAvailableTerritoryRanges,
   exportTerritoryHistoryPdf,
 } from './territoryExport'
+
+// Usuarios (admin)
+export {
+  getUsers,
+  createUser,
+  deleteUser,
+} from './auth'

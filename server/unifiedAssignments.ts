@@ -1,6 +1,7 @@
 'use server'
 
 import { prisma } from '@/lib/prisma'
+import { getCurrentTenantId } from '@/lib/tenant'
 
 export type UnifiedAssignmentType = 'CONDUCTOR' | 'PERSONAL'
 
@@ -27,9 +28,11 @@ export interface UnifiedAssignment {
  */
 export async function getUnifiedAssignments(page = 1, pageSize = 10) {
   try {
+    const tenantId = await getCurrentTenantId()
+
     const [driverAssignments, personalAssignments] = await Promise.all([
       prisma.assignment.findMany({
-        where: { isCompleted: false },
+        where: { isCompleted: false, tenantId },
         include: {
           territory: true,
           driver: {
@@ -40,7 +43,7 @@ export async function getUnifiedAssignments(page = 1, pageSize = 10) {
         orderBy: { startDate: 'desc' },
       }),
       prisma.personalAssignment.findMany({
-        where: { isActive: true },
+        where: { isActive: true, tenantId },
         include: {
           territory: true,
           member: {
@@ -146,11 +149,12 @@ export async function getUnifiedAssignments(page = 1, pageSize = 10) {
  */
 export async function getUnifiedHistory(page = 1, pageSize = 10) {
   try {
+    const tenantId = await getCurrentTenantId()
     const skip = (page - 1) * pageSize
 
     const [completedAssignments, returnedPersonals, totalAssignments, totalPersonals] = await Promise.all([
       prisma.assignment.findMany({
-        where: { isCompleted: true },
+        where: { isCompleted: true, tenantId },
         include: {
           territory: true,
           driver: {
@@ -160,7 +164,7 @@ export async function getUnifiedHistory(page = 1, pageSize = 10) {
         orderBy: { endDate: 'desc' },
       }),
       prisma.personalAssignment.findMany({
-        where: { isActive: false },
+        where: { isActive: false, tenantId },
         include: {
           territory: true,
           member: {
@@ -169,8 +173,8 @@ export async function getUnifiedHistory(page = 1, pageSize = 10) {
         },
         orderBy: { returnedDate: 'desc' },
       }),
-      prisma.assignment.count({ where: { isCompleted: true } }),
-      prisma.personalAssignment.count({ where: { isActive: false } }),
+      prisma.assignment.count({ where: { isCompleted: true, tenantId } }),
+      prisma.personalAssignment.count({ where: { isActive: false, tenantId } }),
     ])
 
     const driverHistory = completedAssignments.map((a) => ({
@@ -292,9 +296,11 @@ export async function returnUnifiedAssignment(
  */
 export async function getAllUnifiedAssignmentsForAdmin() {
   try {
+    const tenantId = await getCurrentTenantId()
+
     const [driverAssignments, personalAssignments] = await Promise.all([
       prisma.assignment.findMany({
-        where: { isCompleted: false },
+        where: { isCompleted: false, tenantId },
         include: {
           territory: {
             include: {
@@ -309,7 +315,7 @@ export async function getAllUnifiedAssignmentsForAdmin() {
         orderBy: { startDate: 'desc' },
       }),
       prisma.personalAssignment.findMany({
-        where: { isActive: true },
+        where: { isActive: true, tenantId },
         include: {
           territory: {
             include: {

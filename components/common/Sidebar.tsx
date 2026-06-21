@@ -13,6 +13,7 @@ import {
   TrendingUp,
   History,
   Map,
+  Shield,
 } from 'lucide-react'
 import { logout } from '@/server/auth'
 import { cn } from '@/lib/utils'
@@ -57,6 +58,11 @@ const menuItems = [
     label: 'Historial',
     icon: History,
     href: '/admin/history',
+  },
+  {
+    label: 'Usuarios',
+    icon: Shield,
+    href: '/admin/users',
   },
 ]
 

@@ -1,6 +1,7 @@
 'use server'
 
 import { prisma } from '@/lib/prisma'
+import { getCurrentTenantId } from '@/lib/tenant'
 import {
   DashboardMetrics,
   TerritoryProgress,
@@ -15,10 +16,13 @@ import {
  */
 export async function getDashboardMetrics(): Promise<DashboardMetrics> {
   try {
+    const tenantId = await getCurrentTenantId()
+
     // 1. TERRITORIOS ACTIVOS CON PROGRESO
     const activeAssignments = await prisma.assignment.findMany({
       where: {
         isCompleted: false,
+        tenantId,
       },
       include: {
         territory: {
@@ -96,13 +100,13 @@ export async function getDashboardMetrics(): Promise<DashboardMetrics> {
       // Última asignación de conductor (completada o devuelta)
       prisma.assignment.groupBy({
         by: ['territoryId'],
-        where: { isCompleted: true },
+        where: { isCompleted: true, tenantId },
         _max: { endDate: true },
       }),
       // Última asignación personal devuelta
       prisma.personalAssignment.groupBy({
         by: ['territoryId'],
-        where: { isActive: false },
+        where: { isActive: false, tenantId },
         _max: { returnedDate: true },
       }),
     ])
@@ -133,6 +137,7 @@ export async function getDashboardMetrics(): Promise<DashboardMetrics> {
 
     // Obtener todos los territorios para tener números y filtrar
     const allTerritories = await prisma.territory.findMany({
+      where: { tenantId },
       select: { id: true, number: true },
       orderBy: { number: 'asc' },
     })
@@ -170,13 +175,14 @@ export async function getDashboardMetrics(): Promise<DashboardMetrics> {
         if (a.daysSinceLastAssignment === null) return -1
         if (b.daysSinceLastAssignment === null) return 1
         return b.daysSinceLastAssignment - a.daysSinceLastAssignment
-})
+    })
 
     // 3. HISTORIAL Y FRECUENCIA DE TERRITORIOS
     const territoryStats = await prisma.assignment.groupBy({
       by: ['territoryId'],
       where: {
         isCompleted: true,
+        tenantId,
       },
       _count: {
         id: true,
@@ -190,6 +196,7 @@ export async function getDashboardMetrics(): Promise<DashboardMetrics> {
         id: {
           in: territoryIds,
         },
+        tenantId,
       },
       select: {
         id: true,
@@ -228,10 +235,12 @@ export async function getDashboardMetrics(): Promise<DashboardMetrics> {
  */
 export async function getTerritoryProgress(territoryId: string) {
   try {
+    const tenantId = await getCurrentTenantId()
     const activeAssignment = await prisma.assignment.findFirst({
       where: {
         territoryId,
         isCompleted: false,
+        tenantId,
       },
       include: {
         territory: true,
@@ -319,8 +328,9 @@ export async function getTerritoryProgress(territoryId: string) {
  */
 export async function getAssignmentBlocks(assignmentId: string) {
   try {
-    const assignment = await prisma.assignment.findUnique({
-      where: { id: assignmentId },
+    const tenantId = await getCurrentTenantId()
+    const assignment = await prisma.assignment.findFirst({
+      where: { id: assignmentId, tenantId },
       include: {
         territory: true,
         driver: {
@@ -392,6 +402,7 @@ export async function getAssignmentBlocks(assignmentId: string) {
  */
 export async function getGeneralStats() {
   try {
+    const tenantId = await getCurrentTenantId()
     const [
       totalTerritories,
       totalDrivers,
@@ -399,11 +410,11 @@ export async function getGeneralStats() {
       activeAssignments,
       completedAssignments,
     ] = await Promise.all([
-      prisma.territory.count(),
-      prisma.driver.count(),
-      prisma.group.count(),
-      prisma.assignment.count({ where: { isCompleted: false } }),
-      prisma.assignment.count({ where: { isCompleted: true } }),
+      prisma.territory.count({ where: { tenantId } }),
+      prisma.driver.count({ where: { tenantId } }),
+      prisma.group.count({ where: { tenantId } }),
+      prisma.assignment.count({ where: { isCompleted: false, tenantId } }),
+      prisma.assignment.count({ where: { isCompleted: true, tenantId } }),
     ])
 
     return {
