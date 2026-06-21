@@ -12,6 +12,7 @@ interface FlipCardProps {
 export function FlipCard({ images, title }: FlipCardProps) {
   const [currentIndex, setCurrentIndex] = useState(0)
   const [isZoomed, setIsZoomed] = useState(false)
+  const [isFlipping, setIsFlipping] = useState(false)
 
   if (images.length === 0) return null
 
@@ -19,18 +20,46 @@ export function FlipCard({ images, title }: FlipCardProps) {
 
   const goNext = (e: React.MouseEvent) => {
     e.stopPropagation()
-    setCurrentIndex((prev) => (prev + 1) % images.length)
+    if (isFlipping) return
+    setIsFlipping(true)
+    setTimeout(() => {
+      setCurrentIndex((prev) => (prev + 1) % images.length)
+      setTimeout(() => setIsFlipping(false), 300)
+    }, 300)
   }
 
   const goPrev = (e: React.MouseEvent) => {
     e.stopPropagation()
-    setCurrentIndex((prev) => (prev - 1 + images.length) % images.length)
+    if (isFlipping) return
+    setIsFlipping(true)
+    setTimeout(() => {
+      setCurrentIndex((prev) => (prev - 1 + images.length) % images.length)
+      setTimeout(() => setIsFlipping(false), 300)
+    }, 300)
+  }
+
+  const jumpToIndex = (index: number) => {
+    if (isFlipping || index === currentIndex) return
+    setIsFlipping(true)
+    setTimeout(() => {
+      setCurrentIndex(index)
+      setTimeout(() => setIsFlipping(false), 300)
+    }, 300)
   }
 
   return (
     <>
-      <div className="relative">
-        <div className="relative w-full aspect-video bg-slate-800 rounded-xl overflow-hidden border border-slate-700 shadow-xl group">
+      <div className="relative" style={{ perspective: '1000px' }}>
+        <div 
+          className={`relative w-full aspect-video bg-slate-800 rounded-xl overflow-hidden border border-slate-700 shadow-xl group transition-transform duration-600 ${
+            isFlipping ? 'animate-flip' : ''
+          }`}
+          style={{
+            transformStyle: 'preserve-3d',
+            transform: isFlipping ? 'rotateY(90deg)' : 'rotateY(0deg)',
+            transition: 'transform 0.6s ease-in-out'
+          }}
+        >
           <img
             src={currentImage}
             alt={`${title} - Imagen ${currentIndex + 1}`}
@@ -83,8 +112,9 @@ export function FlipCard({ images, title }: FlipCardProps) {
             {images.map((_, i) => (
               <button
                 key={i}
-                onClick={() => setCurrentIndex(i)}
-                className={`w-2 h-2 rounded-full transition-all ${
+                onClick={() => jumpToIndex(i)}
+                disabled={isFlipping}
+                className={`w-2 h-2 rounded-full transition-all disabled:cursor-not-allowed ${
                   i === currentIndex
                     ? 'bg-blue-500 w-4'
                     : 'bg-slate-600 hover:bg-slate-500'

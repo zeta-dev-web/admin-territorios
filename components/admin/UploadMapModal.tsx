@@ -1,25 +1,61 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { X, Link, Loader2, Plus, Trash2, AlertCircle, Image as ImageIcon } from 'lucide-react'
-import { createOrUpdateMap } from '@/server'
+import { createOrUpdateMap, deleteMap } from '@/server'
 import { useRouter } from 'next/navigation'
 import toast from 'react-hot-toast'
 
+interface MapImage {
+  id: string
+  url: string
+  order: number
+}
+
+interface TerritoryMap {
+  id: string
+  type: string
+  groupId: string | null
+  images: MapImage[]
+}
+
 interface UploadMapModalProps {
   type: 'GENERAL' | 'GROUP'
-  groupId?: string
-  groupName?: string
+  currentMap?: TerritoryMap
   onClose: () => void
 }
 
-export function UploadMapModal({ type, groupId, groupName, onClose }: UploadMapModalProps) {
+export function UploadMapModal({ type, currentMap, onClose }: UploadMapModalProps) {
   const router = useRouter()
   const [isSaving, setIsSaving] = useState(false)
+  const [isDeleting, setIsDeleting] = useState(false)
   const [urls, setUrls] = useState<string[]>(['', ''])
   const [errors, setErrors] = useState<Record<number, boolean>>({})
 
-  const title = type === 'GENERAL' ? 'Mapa General' : `Mapa de ${groupName || 'Grupo'}`
+  // Cargar URLs del mapa actual si existe
+  useEffect(() => {
+    if (currentMap && currentMap.images.length > 0) {
+      setUrls(currentMap.images.sort((a, b) => a.order - b.order).map(img => img.url))
+    }
+  }, [currentMap])
+
+  const title = type === 'GENERAL' ? 'Mapa General' : 'Mapa de Grupos'
+
+  const handleDelete = async () => {
+    if (!currentMap) return
+    if (!confirm('¿Estás seguro de eliminar este mapa?')) return
+
+    setIsDeleting(true)
+    const result = await deleteMap(currentMap.id)
+    if (result.success) {
+      toast.success(result.message)
+      onClose()
+      router.refresh()
+    } else {
+      toast.error(result.message)
+    }
+    setIsDeleting(false)
+  }
 
   const addUrl = () => {
     setUrls([...urls, ''])
@@ -69,7 +105,7 @@ export function UploadMapModal({ type, groupId, groupName, onClose }: UploadMapM
       const result = await createOrUpdateMap(
         type,
         validUrls,
-        groupId
+        undefined // No groupId, es un mapa tipo GROUP sin asociar a grupo específico
       )
 
       if (result.success) {
@@ -96,19 +132,41 @@ export function UploadMapModal({ type, groupId, groupName, onClose }: UploadMapM
 
       <div className="relative bg-[#0F1729] rounded-2xl shadow-2xl border border-slate-800 max-w-3xl w-full max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between p-6 border-b border-slate-800 sticky top-0 bg-[#0F1729] z-10">
-          <div>
+          <div className="flex-1">
             <h2 className="text-xl font-bold text-white">{title}</h2>
             <p className="text-sm text-slate-400">
-              Agregá URLs de imágenes — podés poner 1, 2, 5, las que quieras
+              {currentMap ? 'Editá o eliminá el mapa actual' : 'Agregá URLs de imágenes — podés poner 1, 2, 5, las que quieras'}
             </p>
           </div>
-          <button
-            onClick={() => !isSaving && onClose()}
-            disabled={isSaving}
-            className="p-2 hover:bg-slate-800 rounded-lg transition-colors disabled:opacity-50"
-          >
-            <X className="h-5 w-5 text-slate-400" />
-          </button>
+          <div className="flex items-center gap-2">
+            {currentMap && (
+              <button
+                onClick={handleDelete}
+                disabled={isDeleting || isSaving}
+                className="flex items-center gap-2 px-3 py-2 bg-red-500/10 text-red-400 hover:bg-red-500/20 rounded-lg transition-colors disabled:opacity-50 text-sm font-medium"
+                title="Eliminar mapa"
+              >
+                {isDeleting ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    <span className="hidden sm:inline">Eliminando...</span>
+                  </>
+                ) : (
+                  <>
+                    <Trash2 className="h-4 w-4" />
+                    <span className="hidden sm:inline">Eliminar</span>
+                  </>
+                )}
+              </button>
+            )}
+            <button
+              onClick={() => !isSaving && !isDeleting && onClose()}
+              disabled={isSaving || isDeleting}
+              className="p-2 hover:bg-slate-800 rounded-lg transition-colors disabled:opacity-50"
+            >
+              <X className="h-5 w-5 text-slate-400" />
+            </button>
+          </div>
         </div>
 
         <form onSubmit={handleSubmit} className="p-6 space-y-6">
@@ -190,14 +248,14 @@ export function UploadMapModal({ type, groupId, groupName, onClose }: UploadMapM
             <button
               type="button"
               onClick={onClose}
-              disabled={isSaving}
+              disabled={isSaving || isDeleting}
               className="flex-1 px-4 py-2 border border-slate-700 rounded-lg font-medium text-slate-300 hover:bg-slate-800 transition-colors disabled:opacity-50"
             >
               Cancelar
             </button>
             <button
               type="submit"
-              disabled={isSaving || urls.every(u => !u.trim())}
+              disabled={isSaving || isDeleting || urls.every(u => !u.trim())}
               className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg font-medium hover:from-blue-600 hover:to-blue-700 transition-all shadow-lg shadow-blue-500/20 disabled:from-slate-700 disabled:to-slate-800"
             >
               {isSaving ? (
@@ -208,7 +266,7 @@ export function UploadMapModal({ type, groupId, groupName, onClose }: UploadMapM
               ) : (
                 <>
                   <ImageIcon className="h-5 w-5" />
-                  <span>Guardar {urls.filter(u => u.trim()).length} imagen{urls.filter(u => u.trim()).length !== 1 ? 'es' : ''}</span>
+                  <span>{currentMap ? 'Actualizar' : 'Guardar'} {urls.filter(u => u.trim()).length} imagen{urls.filter(u => u.trim()).length !== 1 ? 'es' : ''}</span>
                 </>
               )}
             </button>

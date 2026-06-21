@@ -2,8 +2,10 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { getUsers, createUser, deleteUser, resetPassword } from '@/server'
-import { Loader2, Plus, Trash2, UserPlus, Shield, User as UserIcon, Mail, Lock, X, RefreshCw, Copy, Check } from 'lucide-react'
+import { Loader2, Trash2, UserPlus, Shield, User as UserIcon, Mail, Lock, X, RefreshCw, Copy, Check } from 'lucide-react'
 import toast from 'react-hot-toast'
+import { Table } from '@/components/common/Table'
+import { ConfirmDialog } from '@/components/common/ConfirmDialog'
 
 interface User {
   id: string
@@ -11,6 +13,10 @@ interface User {
   name: string | null
   role: string
   createdAt: Date
+}
+
+interface UsersClientProps {
+  headerOnly?: boolean
 }
 
 function generateSecurePassword(): string {
@@ -24,7 +30,7 @@ function generateSecurePassword(): string {
   return password
 }
 
-export function UsersClient() {
+export function UsersClient({ headerOnly }: UsersClientProps = {}) {
   const [users, setUsers] = useState<User[]>([])
   const [loading, setLoading] = useState(true)
   const [showCreate, setShowCreate] = useState(false)
@@ -37,7 +43,7 @@ export function UsersClient() {
   const [showResetModal, setShowResetModal] = useState(false)
   const [resetUserId, setResetUserId] = useState<string | null>(null)
   const [resetUserEmail, setResetUserEmail] = useState('')
-  const [resetNewPassword, setResetNewPassword] = useState('')
+  const [confirmDelete, setConfirmDelete] = useState<{ id: string; email: string } | null>(null)
 
   const loadUsers = useCallback(async () => {
     setLoading(true)
@@ -49,8 +55,10 @@ export function UsersClient() {
   }, [])
 
   useEffect(() => {
-    loadUsers()
-  }, [loadUsers])
+    if (!headerOnly) {
+      loadUsers()
+    }
+  }, [loadUsers, headerOnly])
 
   function handleGeneratePassword() {
     const pw = generateSecurePassword()
@@ -88,10 +96,11 @@ export function UsersClient() {
     setCreating(false)
   }
 
-  async function handleDelete(userId: string, email: string) {
-    if (!confirm(`¿Eliminar al usuario ${email}?`)) return
+  async function handleDelete() {
+    if (!confirmDelete) return
 
-    const result = await deleteUser(userId)
+    const result = await deleteUser(confirmDelete.id)
+    setConfirmDelete(null)
     if (result.success) {
       toast.success(result.message)
       loadUsers()
@@ -103,7 +112,6 @@ export function UsersClient() {
   function openResetModal(userId: string, email: string) {
     setResetUserId(userId)
     setResetUserEmail(email)
-    setResetNewPassword(generateSecurePassword())
     setShowResetModal(true)
   }
 
@@ -124,17 +132,34 @@ export function UsersClient() {
     setResettingId(null)
   }
 
+  // Si es headerOnly, renderizar solo el header con el botón
+  if (headerOnly) {
+    return (
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <div className="w-12 h-12 bg-amber-500/10 rounded-xl flex items-center justify-center">
+            <Shield className="h-6 w-6 text-amber-500" />
+          </div>
+          <div>
+            <h1 className="text-2xl font-bold text-white">Usuarios</h1>
+            <p className="text-sm text-slate-400">
+              Gestioná los usuarios del sistema
+            </p>
+          </div>
+        </div>
+        <button
+          onClick={() => setShowCreate(true)}
+          className="flex items-center gap-2 bg-gradient-to-r from-amber-500 to-amber-600 text-white px-4 py-2 rounded-lg font-medium hover:from-amber-600 hover:to-amber-700 transition-all shadow-lg shadow-amber-500/20"
+        >
+          <UserPlus className="h-5 w-5" />
+          <span className="hidden sm:inline">Nuevo Usuario</span>
+        </button>
+      </div>
+    )
+  }
+
   return (
     <div className="space-y-4">
-      {/* Boton crear */}
-      <button
-        onClick={() => setShowCreate(true)}
-        className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg hover:from-blue-600 hover:to-blue-700 transition-all font-medium text-sm shadow-lg shadow-blue-500/20"
-      >
-        <UserPlus className="h-4 w-4" />
-        Nuevo Usuario
-      </button>
-
       {/* Modal crear usuario */}
       {showCreate && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -345,8 +370,8 @@ export function UsersClient() {
         </div>
       ) : (
         <div className="bg-[#0F1729] rounded-xl border border-slate-800 overflow-hidden">
-          <table className="min-w-full divide-y divide-slate-800">
-            <thead>
+          <Table minWidth="700px">
+            <thead className="border-b border-slate-800">
               <tr>
                 <th className="px-6 py-4 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">
                   Usuario
@@ -357,7 +382,7 @@ export function UsersClient() {
                 <th className="px-6 py-4 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">
                   Rol
                 </th>
-                <th className="px-6 py-4 text-right text-xs font-medium text-slate-400 uppercase tracking-wider">
+                <th className="px-6 py-4 text-center text-xs font-medium text-slate-400 uppercase tracking-wider">
                   Acciones
                 </th>
               </tr>
@@ -397,8 +422,8 @@ export function UsersClient() {
                       {user.role === 'ADMIN' ? 'Admin' : 'Usuario'}
                     </span>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-right">
-                    <div className="flex items-center justify-end gap-1">
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="flex items-center justify-center gap-1">
                       {user.role !== 'ADMIN' && (
                         <>
                           <button
@@ -409,7 +434,7 @@ export function UsersClient() {
                             <RefreshCw className="h-4 w-4" />
                           </button>
                           <button
-                            onClick={() => handleDelete(user.id, user.email)}
+                            onClick={() => setConfirmDelete({ id: user.id, email: user.email })}
                             className="p-2 text-red-400 hover:bg-red-500/10 rounded-lg transition-colors"
                             title="Eliminar usuario"
                           >
@@ -422,9 +447,21 @@ export function UsersClient() {
                 </tr>
               ))}
             </tbody>
-          </table>
+          </Table>
         </div>
       )}
+
+      {/* Confirmación de eliminación */}
+      <ConfirmDialog
+        isOpen={!!confirmDelete}
+        title="Eliminar Usuario"
+        message={`¿Estás seguro de eliminar al usuario "${confirmDelete?.email}"? Esta acción no se puede deshacer.`}
+        confirmText="Eliminar"
+        cancelText="Cancelar"
+        variant="danger"
+        onConfirm={handleDelete}
+        onCancel={() => setConfirmDelete(null)}
+      />
     </div>
   )
 }

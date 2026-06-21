@@ -30,7 +30,7 @@ export default async function LoginPage() {
               Gestión de Territorios
             </h1>
             <p className="text-white/80 text-sm">
-              Sistema de administración y seguimiento
+              Sistema de administración y seguimiento de territorios para congregaciones
             </p>
           </div>
 

@@ -46,16 +46,16 @@ export function LoginForm() {
           Email
         </label>
         <div className="relative">
-          <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-white/50" />
           <input
             type="email"
             id="email"
             name="email"
             required
             disabled={isLoading}
-            placeholder="admin@territorios.com"
-            className="block w-full pl-10 pr-4 py-3 border border-white/20 rounded-lg bg-white/10 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-white/50 focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed backdrop-blur-sm"
+            placeholder="ejemplo@gmail.com"
+            className="block w-full pl-4 pr-10 py-3 border border-white/20 rounded-lg bg-white/10 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-white/50 focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed backdrop-blur-sm"
           />
+          <Mail className="absolute right-3 top-1/2 -translate-y-1/2 h-5 w-5 text-white/50" />
         </div>
       </div>
 
