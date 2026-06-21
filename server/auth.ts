@@ -256,6 +256,20 @@ export async function getCurrentUserRole() {
 }
 
 /**
+ * Obtiene la información completa del usuario autenticado (id, email, tenantId, role).
+ */
+export async function getCurrentUserInfo() {
+  const session = await getSession()
+  if (!session?.isAuthenticated) return null
+  return {
+    userId: session.userId,
+    email: session.email,
+    tenantId: session.tenantId,
+    role: session.role,
+  }
+}
+
+/**
  * Genera una contraseña segura de 16 caracteres.
  */
 function generateSecurePassword(): string {

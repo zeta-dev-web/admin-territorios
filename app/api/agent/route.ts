@@ -4,6 +4,7 @@ import type {
   CreateDailyRecordInput,
 } from '@/types'
 import * as server from '@/server'
+import { withTenantContext } from '@/lib/request-context'
 
 // ── Config ──
 
@@ -23,6 +24,7 @@ function validateApiKey(request: NextRequest): boolean {
 interface AgentRequest {
   action: string
   params?: Record<string, unknown>
+  tenantId?: string
 }
 
 interface AgentResponse {
@@ -359,7 +361,7 @@ export async function POST(request: NextRequest) {
     )
   }
 
-  const { action, params = {} } = body
+  const { action, params = {}, tenantId } = body
 
   if (!action || typeof action !== 'string') {
     return NextResponse.json(
@@ -382,9 +384,17 @@ export async function POST(request: NextRequest) {
     )
   }
 
-  // 4. Ejecutar
+  // 4. Extraer tenantId (opcional, para IA externa sin session cookie)
+  const targetTenantId = typeof tenantId === 'string' ? tenantId : undefined
+
+  // 5. Ejecutar dentro del contexto del tenant (si se proporcionó)
+  const execute = () => handler(params)
+
   try {
-    const result = await handler(params)
+    const result = targetTenantId
+      ? await withTenantContext(targetTenantId, execute)
+      : await execute()
+
     // Si el resultado ya es un objeto con success/data (formato server action),
     // lo devolvemos directo para evitar doble anidamiento
     if (result && typeof result === 'object' && 'success' in (result as Record<string, unknown>)) {

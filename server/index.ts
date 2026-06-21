@@ -116,4 +116,5 @@ export {
   resetPassword,
   changeOwnPassword,
   getCurrentUserRole,
+  getCurrentUserInfo,
 } from './auth'
