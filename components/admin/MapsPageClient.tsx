@@ -1,19 +1,24 @@
 'use client'
 
 import { useState } from 'react'
-import { Plus, Map, Users, Trash2, ExternalLink } from 'lucide-react'
+import { Plus, Map, Users, Trash2 } from 'lucide-react'
 import { FlipCard } from '@/components/maps/FlipCard'
 import { UploadMapModal } from './UploadMapModal'
 import { deleteMap } from '@/server'
 import { useRouter } from 'next/navigation'
 import toast from 'react-hot-toast'
 
+interface MapImage {
+  id: string
+  url: string
+  order: number
+}
+
 interface TerritoryMap {
   id: string
   type: string
   groupId: string | null
-  frontImage: string
-  backImage: string
+  images: MapImage[]
 }
 
 interface Group {
@@ -107,14 +112,9 @@ export function MapsPageClient({ initialMaps, groups }: MapsPageClientProps) {
                 <Trash2 className="h-4 w-4 text-white" />
               </button>
               <FlipCard
-                frontImage={generalMap.frontImage}
-                backImage={generalMap.backImage}
+                images={generalMap.images.map(i => i.url)}
                 title="Mapa General de Territorios"
               />
-              <p className="text-xs text-slate-500 mt-2 text-center break-all">
-                <ExternalLink className="inline h-3 w-3 mr-1" />
-                {generalMap.frontImage}
-              </p>
             </div>
           ) : (
             <div className="text-center py-16 max-w-4xl mx-auto">
@@ -180,8 +180,7 @@ export function MapsPageClient({ initialMaps, groups }: MapsPageClientProps) {
                     </div>
                     {groupMap ? (
                       <FlipCard
-                        frontImage={groupMap.frontImage}
-                        backImage={groupMap.backImage}
+                        images={groupMap.images.map(i => i.url)}
                         title={`Mapa - ${group.name}`}
                       />
                     ) : (

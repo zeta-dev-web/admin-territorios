@@ -113,4 +113,7 @@ export {
   getUsers,
   createUser,
   deleteUser,
+  resetPassword,
+  changeOwnPassword,
+  getCurrentUserRole,
 } from './auth'

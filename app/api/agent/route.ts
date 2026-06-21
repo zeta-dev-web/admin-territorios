@@ -290,13 +290,15 @@ const actions: Record<string, ActionHandler> = {
   //  MAPAS
   // ═══════════════════════════════════════════
 
-  createOrUpdateMap: (p) =>
-    server.createOrUpdateMap(
+  createOrUpdateMap: (p) => {
+    const images = (p.images as string[]) ||
+      (p.frontImage ? [p.frontImage as string, p.backImage as string].filter(Boolean) : [])
+    return server.createOrUpdateMap(
       p.type as 'GENERAL' | 'GROUP',
-      p.frontImage as string,
-      p.backImage as string,
+      images,
       p.groupId as string | undefined,
-    ),
+    )
+  },
 
   getAllMaps: () => server.getAllMaps(),
 

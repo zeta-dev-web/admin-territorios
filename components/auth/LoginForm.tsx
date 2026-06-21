@@ -2,28 +2,35 @@
 
 import { useState } from 'react'
 import { login } from '@/server/auth'
-import { LogIn, Loader2, AlertCircle, Eye, EyeOff, Mail } from 'lucide-react'
+import { LogIn, Loader2, Eye, EyeOff, Mail } from 'lucide-react'
+import toast from 'react-hot-toast'
 
 export function LoginForm() {
   const [isLoading, setIsLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
   const [showPassword, setShowPassword] = useState(false)
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
     setIsLoading(true)
-    setError(null)
 
     const formData = new FormData(e.currentTarget)
-    
+
     try {
       const result = await login(formData)
-      
-      if (!result.success) {
-        setError(result.message)
+
+      if (result?.success && result?.redirect) {
+        toast.success('Inicio de sesión exitoso')
+        setTimeout(() => {
+          window.location.href = result.redirect as string
+        }, 500)
+        return
       }
-    } catch (error) {
-      setError('Error al iniciar sesión')
+
+      if (result && !result.success) {
+        toast.error(result.message || 'Error al iniciar sesión')
+      }
+    } catch {
+      toast.error('Error de conexión')
     } finally {
       setIsLoading(false)
     }
@@ -31,13 +38,6 @@ export function LoginForm() {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-5">
-      {error && (
-        <div className="bg-red-50 border border-red-200 rounded-lg p-3 flex items-start gap-2 animate-in">
-          <AlertCircle className="h-5 w-5 text-red-600 flex-shrink-0 mt-0.5" />
-          <p className="text-sm text-red-800">{error}</p>
-        </div>
-      )}
-
       <div>
         <label
           htmlFor="email"

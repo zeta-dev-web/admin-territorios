@@ -12,6 +12,7 @@ import { prisma } from '@/lib/prisma'
 import { hashPassword } from '@/lib/auth'
 import { redirect } from 'next/navigation'
 import { revalidatePath } from 'next/cache'
+import { sendWelcomeEmail, sendPasswordChangedEmail } from '@/lib/resend'
 
 // ── Login ──
 
@@ -50,7 +51,7 @@ export async function login(formData: FormData) {
       }
     }
 
-    redirect('/dashboard')
+    return { success: true, redirect: '/dashboard' }
   }
 
   // Login normal
@@ -78,7 +79,7 @@ export async function login(formData: FormData) {
     return { success: false, message: 'Error al iniciar sesión' }
   }
 
-  redirect('/dashboard')
+  return { success: true, redirect: '/dashboard' }
 }
 
 // ── Logout ──
@@ -97,8 +98,10 @@ export async function getUsers() {
       return { success: false, data: [], message: 'No autorizado' }
     }
 
+    // ADMIN puede ver TODOS los usuarios del sistema
+    // USER solo ve los de su propio tenant (que es solo él mismo)
     const users = await prisma.user.findMany({
-      where: { tenantId: session.tenantId },
+      where: session.role === 'ADMIN' ? {} : { tenantId: session.tenantId },
       select: {
         id: true,
         email: true,
@@ -138,13 +141,18 @@ export async function createUser(data: {
 
     const hashedPw = await hashPassword(data.password)
 
+    // Cada usuario tiene su PROPIO tenant para aislar sus datos
+    const userTenant = await prisma.tenant.create({
+      data: { name: `Usuario: ${data.email}` },
+    })
+
     const user = await prisma.user.create({
       data: {
         email: data.email,
         password: hashedPw,
         name: data.name || data.email.split('@')[0],
         role: 'USER',
-        tenantId: session.tenantId,
+        tenantId: userTenant.id,
       },
       select: {
         id: true,
@@ -157,10 +165,25 @@ export async function createUser(data: {
 
     revalidatePath('/admin/users')
 
+    // Enviar email con credenciales (fire & forget — no bloquea si falla)
+    sendWelcomeEmail({
+      to: data.email,
+      name: data.name || data.email.split('@')[0],
+      email: data.email,
+      password: data.password,
+      appUrl: process.env.NEXTAUTH_URL || 'http://localhost:3000',
+    }).then((emailResult) => {
+      if (!emailResult.success) {
+        console.warn(`No se pudo enviar el email a ${data.email}`)
+      }
+    }).catch((err) => {
+      console.error(`Error al enviar email a ${data.email}:`, err)
+    })
+
     return {
       success: true,
       data: user,
-      message: `Usuario ${data.email} creado correctamente`,
+      message: `Usuario ${data.email} creado correctamente. Se le enviaron las credenciales por email.`,
     }
   } catch (error) {
     console.error('Error al crear usuario:', error)
@@ -168,6 +191,138 @@ export async function createUser(data: {
       success: false,
       data: null,
       message: error instanceof Error ? error.message : 'Error al crear usuario',
+    }
+  }
+}
+
+export async function resetPassword(userId: string) {
+  try {
+    const session = await getSession()
+    if (!session?.isAuthenticated || session.role !== 'ADMIN') {
+      return { success: false, message: 'No autorizado' }
+    }
+
+    const user = await prisma.user.findUnique({ where: { id: userId } })
+    if (!user) {
+      return { success: false, message: 'Usuario no encontrado' }
+    }
+
+    if (user.role === 'ADMIN') {
+      return { success: false, message: 'No puedes resetear la contraseña del admin' }
+    }
+
+    // Generar nueva contraseña segura
+    const newPassword = generateSecurePassword()
+    const hashedPw = await hashPassword(newPassword)
+
+    await prisma.user.update({
+      where: { id: userId },
+      data: { password: hashedPw },
+    })
+
+    // Enviar email con la nueva credencial
+    sendWelcomeEmail({
+      to: user.email,
+      name: user.name || user.email.split('@')[0],
+      email: user.email,
+      password: newPassword,
+      appUrl: process.env.NEXTAUTH_URL || 'http://localhost:3000',
+    }).catch((err) => {
+      console.error(`Error al enviar email a ${user.email}:`, err)
+    })
+
+    revalidatePath('/admin/users')
+
+    return {
+      success: true,
+      data: { newPassword },
+      message: 'Contraseña reseteada correctamente. Se envió un email al usuario.',
+    }
+  } catch (error) {
+    console.error('Error al resetear contraseña:', error)
+    return {
+      success: false,
+      message: error instanceof Error ? error.message : 'Error al resetear contraseña',
+    }
+  }
+}
+
+/**
+ * Obtiene el rol del usuario autenticado.
+ */
+export async function getCurrentUserRole() {
+  const session = await getSession()
+  return session?.role || null
+}
+
+/**
+ * Genera una contraseña segura de 16 caracteres.
+ */
+function generateSecurePassword(): string {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789!@#$%&'
+  let password = ''
+  const array = new Uint8Array(16)
+  crypto.getRandomValues(array)
+  for (let i = 0; i < 16; i++) {
+    password += chars[array[i] % chars.length]
+  }
+  return password
+}
+
+/**
+ * Cambia la contraseña del usuario autenticado.
+ * Verifica la contraseña actual antes de cambiarla y envía un email de notificación.
+ */
+export async function changeOwnPassword(data: {
+  currentPassword: string
+  newPassword: string
+}) {
+  try {
+    const session = await getSession()
+    if (!session?.isAuthenticated) {
+      return { success: false, message: 'No autorizado' }
+    }
+
+    if (!data.currentPassword || !data.newPassword) {
+      return { success: false, message: 'Todos los campos son requeridos' }
+    }
+
+    if (data.newPassword.length < 6) {
+      return { success: false, message: 'La nueva contraseña debe tener al menos 6 caracteres' }
+    }
+
+    const user = await prisma.user.findUnique({ where: { id: session.userId } })
+    if (!user) {
+      return { success: false, message: 'Usuario no encontrado' }
+    }
+
+    const isValid = await comparePassword(data.currentPassword, user.password)
+    if (!isValid) {
+      return { success: false, message: 'La contraseña actual no es correcta' }
+    }
+
+    const hashedPw = await hashPassword(data.newPassword)
+
+    await prisma.user.update({
+      where: { id: session.userId },
+      data: { password: hashedPw },
+    })
+
+    // Notificar por email (fire & forget)
+    sendPasswordChangedEmail({
+      to: user.email,
+      name: user.name || user.email.split('@')[0],
+      appUrl: process.env.NEXTAUTH_URL || 'http://localhost:3000',
+    }).catch((err) => {
+      console.error(`Error al enviar notificación de cambio a ${user.email}:`, err)
+    })
+
+    return { success: true, message: 'Contraseña actualizada correctamente' }
+  } catch (error) {
+    console.error('Error al cambiar contraseña:', error)
+    return {
+      success: false,
+      message: error instanceof Error ? error.message : 'Error al cambiar contraseña',
     }
   }
 }

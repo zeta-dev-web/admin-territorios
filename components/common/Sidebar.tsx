@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import {
@@ -14,8 +14,9 @@ import {
   History,
   Map,
   Shield,
+  Settings,
 } from 'lucide-react'
-import { logout } from '@/server/auth'
+import { logout, getCurrentUserRole } from '@/server/auth'
 import { cn } from '@/lib/utils'
 
 interface SidebarProps {
@@ -24,51 +25,30 @@ interface SidebarProps {
 }
 
 const menuItems = [
-  {
-    label: 'Dashboard',
-    icon: LayoutDashboard,
-    href: '/dashboard',
-  },
-  {
-    label: 'Territorios',
-    icon: MapPin,
-    href: '/admin/territories',
-  },
-  {
-    label: 'Mapas',
-    icon: Map,
-    href: '/admin/maps',
-  },
-  {
-    label: 'Conductores',
-    icon: UserCircle,
-    href: '/admin/drivers',
-  },
-  {
-    label: 'Grupos',
-    icon: Users,
-    href: '/admin/groups',
-  },
-  {
-    label: 'Asignaciones',
-    icon: TrendingUp,
-    href: '/admin/assignments',
-  },
-  {
-    label: 'Historial',
-    icon: History,
-    href: '/admin/history',
-  },
-  {
-    label: 'Usuarios',
-    icon: Shield,
-    href: '/admin/users',
-  },
+  { label: 'Dashboard', icon: LayoutDashboard, href: '/dashboard' },
+  { label: 'Territorios', icon: MapPin, href: '/admin/territories' },
+  { label: 'Mapas', icon: Map, href: '/admin/maps' },
+  { label: 'Conductores', icon: UserCircle, href: '/admin/drivers' },
+  { label: 'Grupos', icon: Users, href: '/admin/groups' },
+  { label: 'Asignaciones', icon: TrendingUp, href: '/admin/assignments' },
+  { label: 'Historial', icon: History, href: '/admin/history' },
+  { label: 'Usuarios', icon: Shield, href: '/admin/users', adminOnly: true },
+  { label: 'Configuración', icon: Settings, href: '/dashboard/settings' },
 ]
 
 export function Sidebar({ isOpen, onClose }: SidebarProps) {
   const pathname = usePathname()
   const [isLoggingOut, setIsLoggingOut] = useState(false)
+  const [isAdmin, setIsAdmin] = useState(false)
+
+  useEffect(() => {
+    getCurrentUserRole().then((role) => setIsAdmin(role === 'ADMIN'))
+  }, [])
+
+  const visibleItems = menuItems.filter((item: any) => {
+    if (item.adminOnly && !isAdmin) return false
+    return true
+  })
 
   async function handleLogout() {
     setIsLoggingOut(true)
@@ -115,7 +95,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
           {/* Menu */}
           <nav className="flex-1 p-4 overflow-y-auto">
             <ul className="space-y-1">
-              {menuItems.map((item) => {
+              {visibleItems.map((item) => {
                 const Icon = item.icon
                 const isActive = pathname === item.href
 

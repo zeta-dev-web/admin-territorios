@@ -6,12 +6,15 @@ import { getCurrentTenantId } from '@/lib/tenant'
 
 export async function createOrUpdateMap(
   type: 'GENERAL' | 'GROUP',
-  frontImage: string,
-  backImage: string,
+  images: string[],
   groupId?: string
 ) {
   try {
     const tenantId = await getCurrentTenantId()
+
+    if (images.length === 0) {
+      throw new Error('Debes proporcionar al menos una imagen')
+    }
 
     const existing = await prisma.territoryMap.findFirst({
       where: {
@@ -19,15 +22,25 @@ export async function createOrUpdateMap(
         groupId: groupId || null,
         tenantId,
       },
+      include: { images: true },
     })
 
     let map
     if (existing) {
+      // Eliminar imágenes viejas y crear las nuevas
+      await prisma.mapImage.deleteMany({ where: { mapId: existing.id } })
       map = await prisma.territoryMap.update({
         where: { id: existing.id },
         data: {
-          frontImage,
-          backImage,
+          images: {
+            create: images.map((url, i) => ({
+              url,
+              order: i,
+            })),
+          },
+        },
+        include: {
+          images: { orderBy: { order: 'asc' } },
         },
       })
     } else {
@@ -35,9 +48,16 @@ export async function createOrUpdateMap(
         data: {
           type,
           groupId,
-          frontImage,
-          backImage,
           tenantId,
+          images: {
+            create: images.map((url, i) => ({
+              url,
+              order: i,
+            })),
+          },
+        },
+        include: {
+          images: { orderBy: { order: 'asc' } },
         },
       })
     }
@@ -55,7 +75,8 @@ export async function createOrUpdateMap(
     return {
       success: false,
       data: null,
-      message: 'Error al guardar el mapa',
+      message:
+        error instanceof Error ? error.message : 'Error al guardar el mapa',
     }
   }
 }
@@ -65,6 +86,9 @@ export async function getAllMaps() {
     const tenantId = await getCurrentTenantId()
     const maps = await prisma.territoryMap.findMany({
       where: { tenantId },
+      include: {
+        images: { orderBy: { order: 'asc' } },
+      },
       orderBy: [{ type: 'asc' }, { groupId: 'asc' }],
     })
 
@@ -90,6 +114,9 @@ export async function getMapByType(type: 'GENERAL' | 'GROUP', groupId?: string) 
         type,
         groupId: groupId || null,
         tenantId,
+      },
+      include: {
+        images: { orderBy: { order: 'asc' } },
       },
     })
 
@@ -125,8 +152,8 @@ export async function deleteMap(mapId: string) {
     console.error('Error al eliminar mapa:', error)
     return {
       success: false,
-      message: 'Error al eliminar el mapa',
+      message:
+        error instanceof Error ? error.message : 'Error al eliminar el mapa',
     }
   }
 }
-

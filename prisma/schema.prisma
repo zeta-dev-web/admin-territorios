@@ -247,18 +247,29 @@ model PersonalAssignment {
 // ═══════════════════════════════════════════
 
 model TerritoryMap {
-  id          String   @id @default(cuid())
-  type        String
-  groupId     String?
-  frontImage  String
-  backImage   String
-  tenantId    String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id        String   @id @default(cuid())
+  type      String                    // GENERAL | GROUP
+  groupId   String?
+  tenantId  String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  tenant      Tenant?  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  tenant  Tenant?     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  images  MapImage[]
 
   @@index([type])
   @@index([groupId])
   @@index([tenantId])
+}
+
+model MapImage {
+  id        String   @id @default(cuid())
+  mapId     String
+  url       String
+  order     Int      @default(0)
+  createdAt DateTime @default(now())
+
+  map TerritoryMap @relation(fields: [mapId], references: [id], onDelete: Cascade)
+
+  @@index([mapId])
 }
