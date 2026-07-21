@@ -14,7 +14,7 @@ This implementation plan breaks down the feature into discrete coding tasks. The
   - _Requirements: 2.1, 2.2_
 
 - [ ] 2. Implement data models and types
-  - [~] 2.1 Create TypeScript interfaces for export data structures
+  - [ ] 2.1 Create TypeScript interfaces for export data structures
     - Define `TerritoryExportData` interface with territoryId, territoryNumber, territoryDescription, assignments
     - Define `AssignmentExportRecord` interface with id, type, assigneeName, assignedDate, returnedDate, createdAt
     - Define `TerritoryRange` interface with start, end, label, count
@@ -29,7 +29,7 @@ This implementation plan breaks down the feature into discrete coding tasks. The
     - Test that ranges start at multiples of 10 (1-10, 11-20, etc.)
 
 - [ ] 3. Implement server-side data retrieval
-  - [~] 3.1 Create getAvailableTerritoryRanges function
+  - [ ] 3.1 Create getAvailableTerritoryRanges function
     - Query all territory numbers from database using Prisma
     - Calculate ranges of 10 consecutive territories
     - Count territories in each range
@@ -42,7 +42,7 @@ This implementation plan breaks down the feature into discrete coding tasks. The
     - **Validates: Requirements 1.6**
     - Test that displayed count equals actual territories in range
 
-  - [~] 3.3 Create getTerritoryHistoryForExport function
+  - [ ] 3.3 Create getTerritoryHistoryForExport function
     - Query territories in specified range with Prisma includes
     - Include both Assignment and PersonalAssignment records
     - Include related driver and member names
@@ -65,11 +65,11 @@ This implementation plan breaks down the feature into discrete coding tasks. The
     - Test that both conductor and personal assignments are included
     - Test that they're combined into single chronological list
 
-- [~] 4. Checkpoint - Verify data retrieval logic
+- [ ] 4. Checkpoint - Verify data retrieval logic
   - Ensure all tests pass, ask the user if questions arise.
 
 - [ ] 5. Implement PDF document components
-  - [~] 5.1 Create S13SPdfDocument component
+  - [ ] 5.1 Create S13SPdfDocument component
     - Import Document, Page from @react-pdf/renderer
     - Create component accepting territories and rangeLabel props
     - Implement 2-page structure (5 territories per page)
@@ -97,7 +97,7 @@ This implementation plan breaks down the feature into discrete coding tasks. The
     - Test that document has exactly 10 territory column slots
     - Test with varying actual territory counts (0-10)
 
-  - [~] 5.5 Create TerritoryColumn component
+  - [ ] 5.5 Create TerritoryColumn component
     - Import View, Text from @react-pdf/renderer
     - Create component accepting territory prop
     - Render column header with "Núm. de terr. {number}"
@@ -133,7 +133,7 @@ This implementation plan breaks down the feature into discrete coding tasks. The
     - Test that territories with no assignments have header and empty rows
 
 - [ ] 6. Implement PDF styling
-  - [~] 6.1 Create StyleSheet for S-13-S format
+  - [ ] 6.1 Create StyleSheet for S-13-S format
     - Define page styles (A4 portrait, 10mm margins)
     - Define header styles (20mm height, title 16pt bold)
     - Define column styles (20% width, borders)
@@ -144,11 +144,11 @@ This implementation plan breaks down the feature into discrete coding tasks. The
     - Location: Within `components/pdf/S13SPdfDocument.tsx`
     - _Requirements: 2.7, 3.5, 3.6, 4.6_
 
-- [~] 7. Checkpoint - Verify PDF rendering logic
+- [ ] 7. Checkpoint - Verify PDF rendering logic
   - Ensure all tests pass, ask the user if questions arise.
 
 - [ ] 8. Implement server action for PDF generation
-  - [~] 8.1 Create exportTerritoryHistoryPdf server action
+  - [ ] 8.1 Create exportTerritoryHistoryPdf server action
     - Mark function with 'use server' directive
     - Accept startNumber and endNumber parameters
     - Validate range (1-10 territories, startNumber <= endNumber)
@@ -192,7 +192,7 @@ This implementation plan breaks down the feature into discrete coding tasks. The
     - Test that errors are logged
 
 - [ ] 9. Implement client-side UI components
-  - [~] 9.1 Create ExportPdfButton component
+  - [ ] 9.1 Create ExportPdfButton component
     - Mark with 'use client' directive
     - Accept availableRanges prop
     - Render button with FileDown icon and "Exportar a PDF" text
@@ -202,7 +202,7 @@ This implementation plan breaks down the feature into discrete coding tasks. The
     - Location: `components/admin/ExportPdfButton.tsx`
     - _Requirements: 1.1, 9.1_
 
-  - [~] 9.2 Create ExportRangeModal component
+  - [ ] 9.2 Create ExportRangeModal component
     - Mark with 'use client' directive
     - Accept isOpen, onClose, availableRanges, onExport props
     - Render modal dialog with range selection UI
@@ -215,7 +215,7 @@ This implementation plan breaks down the feature into discrete coding tasks. The
     - Location: `components/admin/ExportRangeModal.tsx`
     - _Requirements: 9.2, 9.3, 9.4, 9.5, 9.6, 9.7_
 
-  - [~] 9.3 Implement PDF download logic in modal
+  - [ ] 9.3 Implement PDF download logic in modal
     - Create downloadPdf helper function
     - Convert Uint8Array to Blob with type "application/pdf"
     - Create object URL from blob
@@ -238,7 +238,7 @@ This implementation plan breaks down the feature into discrete coding tasks. The
     - Test that modal closes after successful export
 
 - [ ] 10. Integrate export UI into History page
-  - [~] 10.1 Add ExportPdfButton to History page
+  - [ ] 10.1 Add ExportPdfButton to History page
     - Import ExportPdfButton component
     - Call getAvailableTerritoryRanges in server component
     - Pass availableRanges as prop to ExportPdfButton
@@ -254,7 +254,7 @@ This implementation plan breaks down the feature into discrete coding tasks. The
     - Test with ranges where some territories have no data
 
 - [ ] 11. Implement comprehensive error handling
-  - [~] 11.1 Add client-side error handling
+  - [ ] 11.1 Add client-side error handling
     - Wrap server action calls in try-catch
     - Display user-friendly error messages in modal
     - Handle network timeouts gracefully
@@ -262,7 +262,7 @@ This implementation plan breaks down the feature into discrete coding tasks. The
     - Location: `components/admin/ExportRangeModal.tsx`
     - _Requirements: 10.2, 10.5_
 
-  - [~] 11.2 Add server-side error handling and logging
+  - [ ] 11.2 Add server-side error handling and logging
     - Catch database query errors with specific messages
     - Catch PDF generation errors with context logging
     - Log all errors to console with timestamps and input data
@@ -277,7 +277,7 @@ This implementation plan breaks down the feature into discrete coding tasks. The
     - Verify error messages are appropriate
 
 - [ ] 12. Final checkpoint - Integration testing and verification
-  - [~] 12.1 Manual testing checklist
+  - [ ] 12.1 Manual testing checklist
     - Test export with single range selection
     - Test export with multiple range selections
     - Test with territories that have no assignments
@@ -290,13 +290,13 @@ This implementation plan breaks down the feature into discrete coding tasks. The
     - Verify all dates display in DD/MM/YYYY format
     - _Requirements: All_
 
-  - [~] 12.2 Run all property-based tests
+  - [ ] 12.2 Run all property-based tests
     - Execute all property tests with 100 iterations minimum
     - Verify all 19 properties pass
     - Document any edge cases discovered
     - Fix any issues found
 
-  - [~] 12.3 Visual comparison with S-13-S format
+  - [ ] 12.3 Visual comparison with S-13-S format
     - Generate sample PDF with test data
     - Compare layout with official S-13-S form
     - Verify typography (fonts, sizes, weights)
@@ -304,7 +304,7 @@ This implementation plan breaks down the feature into discrete coding tasks. The
     - Verify borders and column widths
     - Verify header content and positioning
 
-- [~] 13. Final checkpoint - Ensure all tests pass
+- [ ] 13. Final checkpoint - Ensure all tests pass
   - Ensure all tests pass, ask the user if questions arise.
 
 ## Notes

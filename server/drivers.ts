@@ -6,6 +6,7 @@ import { getCurrentTenantId } from '@/lib/tenant'
 
 /**
  * Crea un nuevo conductor
+ * También lo agrega automáticamente como integrante del grupo si no existía.
  */
 export async function createDriver(data: {
   name: string
@@ -33,6 +34,25 @@ export async function createDriver(data: {
         group: true,
       },
     })
+
+    // También crear como integrante del grupo si no existe ya
+    const existingMember = await prisma.member.findFirst({
+      where: {
+        name: { equals: data.name, mode: 'insensitive' },
+        groupId: data.groupId,
+        tenantId,
+      },
+    })
+
+    if (!existingMember) {
+      await prisma.member.create({
+        data: {
+          name: data.name,
+          groupId: data.groupId,
+          tenantId,
+        },
+      })
+    }
 
     revalidatePath('/dashboard')
     revalidatePath('/admin/drivers')
@@ -227,6 +247,7 @@ export async function getDriverById(driverId: string) {
  * Actualiza un conductor
  * Si el conductor es el superintendente o auxiliar del grupo,
  * también actualiza el nombre correspondiente en el grupo.
+ * También refleja los cambios en el integrante del grupo asociado.
  */
 export async function updateDriver(
   driverId: string,
@@ -263,8 +284,24 @@ export async function updateDriver(
       },
     })
 
-    // Si cambió el nombre, verificar si este conductor era superintendente o auxiliar
+    // También actualizar el nombre del integrante correspondiente
     if (oldName !== name) {
+      const member = await prisma.member.findFirst({
+        where: {
+          name: { equals: oldName, mode: 'insensitive' },
+          groupId,
+          tenantId,
+        },
+      })
+
+      if (member) {
+        await prisma.member.update({
+          where: { id: member.id },
+          data: { name },
+        })
+      }
+
+      // Verificar si este conductor era superintendente o auxiliar
       const updates: { superintendent?: string | null; auxiliary?: string | null } = {}
 
       if (group.superintendent?.toLowerCase() === oldName.toLowerCase()) {
@@ -304,6 +341,8 @@ export async function updateDriver(
 
 /**
  * Elimina un conductor (solo si no tiene asignaciones)
+ * NOTA: No elimina al integrante del grupo, solo el rol de conductor.
+ *       Si querés eliminar al integrante, hacelo desde Grupos.
  */
 export async function deleteDriver(driverId: string) {
   try {
