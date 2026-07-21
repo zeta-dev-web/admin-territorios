@@ -171,7 +171,7 @@ export async function createUser(data: {
       name: data.name || data.email.split('@')[0],
       email: data.email,
       password: data.password,
-      appUrl: process.env.NEXTAUTH_URL || 'http://localhost:3000',
+      appUrl: 'https://territoriosapp.duckdns.org',
     }).then((emailResult) => {
       if (!emailResult.success) {
         console.warn(`No se pudo enviar el email a ${data.email}`)
@@ -226,7 +226,7 @@ export async function resetPassword(userId: string) {
       name: user.name || user.email.split('@')[0],
       email: user.email,
       password: newPassword,
-      appUrl: process.env.NEXTAUTH_URL || 'http://localhost:3000',
+      appUrl: 'https://territoriosapp.duckdns.org',
     }).catch((err) => {
       console.error(`Error al enviar email a ${user.email}:`, err)
     })
@@ -326,7 +326,7 @@ export async function changeOwnPassword(data: {
     sendPasswordChangedEmail({
       to: user.email,
       name: user.name || user.email.split('@')[0],
-      appUrl: process.env.NEXTAUTH_URL || 'http://localhost:3000',
+      appUrl: 'https://territoriosapp.duckdns.org',
     }).catch((err) => {
       console.error(`Error al enviar notificación de cambio a ${user.email}:`, err)
     })

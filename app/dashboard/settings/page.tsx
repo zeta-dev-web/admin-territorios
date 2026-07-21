@@ -22,15 +22,13 @@ import {
   EyeOff,
 } from 'lucide-react'
 
+const APP_URL = 'https://territoriosapp.duckdns.org'
+
 function getBaseUrl(): string {
-  if (typeof window !== 'undefined') {
-    return window.location.origin
-  }
-  return 'http://localhost:3000'
+  return APP_URL
 }
 
 function buildAiPrompt(apiKey: string): string {
-  const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000'
   return [
     'Eres un asistente de IA para la app Territorios App, un sistema de gestion de territorios para congregaciones.',
     '',
@@ -38,7 +36,7 @@ function buildAiPrompt(apiKey: string): string {
     '',
     '## Instrucciones',
     '',
-    '1. **Endpoint**: POST a `' + baseUrl + '/api/agent`',
+    '1. **Endpoint**: POST a `' + APP_URL + '/api/agent`',
     '2. **Autenticacion**: envia el header `Authorization: Bearer ' + apiKey + '`',
     '3. **Body**: JSON con la accion a ejecutar. El `tenantId` es opcional (tu API key ya identifica tu usuario).',
     '   ```json',
@@ -56,7 +54,7 @@ function buildAiPrompt(apiKey: string): string {
     '',
     'Para listar todos los territorios:',
     '```',
-    'curl -X POST "' + baseUrl + '/api/agent" \\',
+    'curl -X POST "' + APP_URL + '/api/agent" \\',
     '  -H "Authorization: Bearer ' + apiKey + '" \\',
     '  -H "Content-Type: application/json" \\',
     '  -d \'{"action":"getAllTerritories","params":{"page":1,"pageSize":10}}\'',
@@ -67,13 +65,12 @@ function buildAiPrompt(apiKey: string): string {
 }
 
 function buildZapiaPrompt(apiKey: string): string {
-  const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000'
   return [
     'Sos un asistente conectado a una API REST que administra la app Territorios App.',
     '',
     '## Configuracion de la API',
     '',
-    '- **Endpoint**: ' + baseUrl + '/api/agent',
+    '- **Endpoint**: ' + APP_URL + '/api/agent',
     '- **API Key**: ' + apiKey,
     '- **Metodo**: POST con Content-Type: application/json',
     '',
@@ -115,7 +112,7 @@ export default function SettingsPage() {
     tenantId: string
     role: string
   } | null>(null)
-  const [copied, setCopied] = useState<'tenant' | 'prompt' | 'zapia' | 'apiKey' | null>(null)
+  const [copied, setCopied] = useState<'prompt' | 'zapia' | 'apiKey' | null>(null)
   const [showAiSection, setShowAiSection] = useState(false)
   const [apiKey, setApiKey] = useState<string | null>(null)
   const [apiKeyLoading, setApiKeyLoading] = useState(false)
@@ -200,12 +197,11 @@ export default function SettingsPage() {
     }
   }
 
-  async function copyToClipboard(text: string, type: 'tenant' | 'prompt' | 'zapia' | 'apiKey') {
+  async function copyToClipboard(text: string, type: 'prompt' | 'zapia' | 'apiKey') {
     try {
       await navigator.clipboard.writeText(text)
       setCopied(type)
       const msgs = {
-        tenant: 'Tenant ID copiado',
         prompt: 'Prompt copiado',
         zapia: 'Prompt para ZAPIA copiado',
         apiKey: 'API Key copiada',
@@ -228,10 +224,8 @@ export default function SettingsPage() {
           </p>
         </div>
 
-        {/* ── FILA 1: CONTRASEÑA + TENANT ID ── */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* ── CAMBIAR CONTRASEÑA ── */}
-          <div className="bg-[#0F1729] rounded-xl border border-slate-800 p-5 sm:p-6">
+        {/* ── CAMBIAR CONTRASEÑA ── */}
+        <div className="bg-[#0F1729] rounded-xl border border-slate-800 p-5 sm:p-6">
             <div className="flex items-center gap-3 mb-5">
               <div className="w-10 h-10 bg-blue-500/10 rounded-xl flex items-center justify-center shrink-0">
                 <Lock className="h-5 w-5 text-blue-500" />
@@ -343,80 +337,7 @@ export default function SettingsPage() {
             </div>
           </div>
 
-          {/* ── TU TENANT ID ── */}
-          <div className="bg-[#0F1729] rounded-xl border border-slate-800 p-5 sm:p-6">
-            <div className="flex items-center gap-3 mb-5">
-              <div className="w-10 h-10 bg-purple-500/10 rounded-xl flex items-center justify-center shrink-0">
-                <Fingerprint className="h-5 w-5 text-purple-500" />
-              </div>
-              <div>
-                <h2 className="text-lg font-bold text-white">Tu Tenant ID</h2>
-                <p className="text-xs sm:text-sm text-slate-400">
-                  Identificador único de tus datos
-                </p>
-              </div>
-            </div>
-
-            {userInfo ? (
-              <div className="p-4 bg-slate-800/50 rounded-lg border border-slate-700">
-                <div className="flex items-center justify-between gap-3">
-                  <div className="min-w-0 flex-1">
-                    <p className="text-xs text-slate-500 uppercase tracking-wider mb-1 font-medium">
-                      Tenant ID
-                    </p>
-                    <p className="text-sm font-mono text-white break-all select-all">
-                      {userInfo.tenantId}
-                    </p>
-                  </div>
-                  <button
-                    onClick={() => copyToClipboard(userInfo.tenantId, 'tenant')}
-                    className="shrink-0 w-10 h-10 bg-slate-700/50 rounded-lg flex items-center justify-center hover:bg-slate-700 transition-colors"
-                    title="Copiar Tenant ID"
-                  >
-                    {copied === 'tenant' ? (
-                      <Check className="h-4 w-4 text-green-500" />
-                    ) : (
-                      <Copy className="h-4 w-4 text-slate-400" />
-                    )}
-                  </button>
-                </div>
-
-                <div className="mt-4 pt-4 border-t border-slate-700/50">
-                  <p className="text-xs text-slate-500 uppercase tracking-wider mb-1 font-medium">
-                    Email
-                  </p>
-                  <p className="text-sm text-white">{userInfo.email}</p>
-                </div>
-
-                <div className="mt-3">
-                  <span
-                    className={'inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ' + (
-                      userInfo.role === 'ADMIN'
-                        ? 'bg-red-500/10 text-red-400'
-                        : 'bg-slate-500/10 text-slate-400'
-                    )}
-                  >
-                    {userInfo.role === 'ADMIN' ? 'Administrador' : 'Usuario'}
-                  </span>
-                </div>
-              </div>
-            ) : (
-              <div className="flex items-center gap-3 p-4 bg-slate-800/50 rounded-lg border border-slate-700">
-                <Loader2 className="h-5 w-5 text-slate-400 animate-spin shrink-0" />
-                <p className="text-sm text-slate-400">Cargando información...</p>
-              </div>
-            )}
-
-            <div className="mt-4 bg-slate-800/30 rounded-lg p-3 sm:p-4 border border-slate-700/50">
-              <p className="text-xs sm:text-sm text-slate-400">
-                Este ID identifica tus datos en el sistema. Lo necesitás para las integraciones con IA.
-                Cada usuario tiene su propio Tenant ID único.
-              </p>
-            </div>
-          </div>
-        </div>
-
-        {/* ── FILA 2: INTEGRACIÓN IA (colapsable) ── */}
+        {/* ── INTEGRACIÓN IA (colapsable) ── */}
         <div className="bg-[#0F1729] rounded-xl border border-slate-800">
           <button
             onClick={() => setShowAiSection(!showAiSection)}

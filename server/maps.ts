@@ -3,6 +3,7 @@
 import { prisma } from '@/lib/prisma'
 import { revalidatePath } from 'next/cache'
 import { getCurrentTenantId } from '@/lib/tenant'
+import { convertGoogleDriveUrl } from '@/lib/google-drive'
 
 export async function createOrUpdateMap(
   type: 'GENERAL' | 'GROUP',
@@ -25,6 +26,9 @@ export async function createOrUpdateMap(
       include: { images: true },
     })
 
+    // Convertir URLs de Google Drive a formato directo de imagen
+    const convertedImages = images.map(convertGoogleDriveUrl)
+
     let map
     if (existing) {
       // Eliminar imágenes viejas y crear las nuevas
@@ -33,7 +37,7 @@ export async function createOrUpdateMap(
         where: { id: existing.id },
         data: {
           images: {
-            create: images.map((url, i) => ({
+            create: convertedImages.map((url, i) => ({
               url,
               order: i,
             })),
@@ -50,7 +54,7 @@ export async function createOrUpdateMap(
           groupId,
           tenantId,
           images: {
-            create: images.map((url, i) => ({
+            create: convertedImages.map((url, i) => ({
               url,
               order: i,
             })),
