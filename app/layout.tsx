@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { Toaster } from "react-hot-toast";
-import { TermsGuard } from "@/components/auth/TermsGuard";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -22,9 +21,7 @@ export default function RootLayout({
   return (
     <html lang="es">
       <body className="min-h-screen antialiased">
-        <TermsGuard>
-          {children}
-        </TermsGuard>
+        {children}
         <Toaster
           position="top-right"
           toastOptions={{

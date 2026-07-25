@@ -1,410 +1,409 @@
 'use client'
 
-import { AppLayout } from '@/components/common/AppLayout'
-import {
-  BookOpen,
-  MapPin,
-  Users,
-  TrendingUp,
-  Map,
-  UserCircle,
-  PlayCircle,
-  CheckCircle2,
-  History,
-  Settings,
-} from 'lucide-react'
 import { useState } from 'react'
+import type { LucideIcon } from 'lucide-react'
+import {
+  BarChart3,
+  BookOpen,
+  Check,
+  ChevronDown,
+  CirclePlay,
+  History,
+  Lightbulb,
+  Map,
+  MapPin,
+  Route,
+  Settings,
+  UserCircle,
+  Users,
+} from 'lucide-react'
+import { AppLayout } from '@/components/common/AppLayout'
+
+const VIDEO_URL = 'https://www.image2url.com/r2/default/videos/1784995980517-d2e7a08f-9314-4ba9-9dfc-b44ddfe9e620.mp4'
+
+interface TutorialStep {
+  title: string
+  description: string
+}
 
 interface TutorialSection {
   id: string
   title: string
-  icon: any
   description: string
-  steps: {
-    title: string
-    description: string
-    tip?: string
-  }[]
+  icon: LucideIcon
+  steps: TutorialStep[]
+  tip?: string
 }
 
 const tutorialSections: TutorialSection[] = [
   {
     id: 'dashboard',
     title: 'Dashboard',
-    icon: TrendingUp,
-    description: 'VisiÃ³n general del estado de los territorios',
+    description: 'Consulta el estado general del trabajo.',
+    icon: BarChart3,
     steps: [
       {
-        title: 'EstadÃ­sticas principales',
-        description: 'El dashboard muestra tres mÃ©tricas clave: Activos (territorios en progreso), Atrasados (sin asignar en +6 meses) y Total Trabajados (asignaciones completadas).',
+        title: 'Revisa las estadísticas',
+        description:
+          'Activos muestra los territorios en progreso, Atrasados los que llevan más de 6 meses sin trabajarse y Total Trabajados las asignaciones completadas.',
       },
       {
-        title: 'Territorios Activos',
-        description: 'Visualiza los territorios actualmente en progreso con navegaciÃ³n entre tarjetas.',
-      },
-      {
-        title: 'Territorios Atrasados',
-        description: 'Lista de territorios que no se asignaron en mÃ¡s de 6 meses, requieren atenciÃ³n prioritaria.',
-      },
-      {
-        title: 'Frecuencia de Trabajo',
-        description: 'Muestra los territorios mÃ¡s trabajados con grÃ¡fico de barras indicando la cantidad de asignaciones completadas.',
-        tip: 'Esta vista te da una lectura rÃ¡pida del estado general antes de crear los programas de salidas.',
+        title: 'Detecta prioridades',
+        description:
+          'Debajo puedes consultar los territorios activos, los atrasados y la frecuencia con la que se trabajó cada uno.',
       },
     ],
   },
   {
     id: 'grupos',
     title: 'Grupos',
+    description: 'Organiza los grupos y sus integrantes.',
     icon: Users,
-    description: 'Estructura base de la congregaciÃ³n',
     steps: [
       {
-        title: 'Crear un grupo',
-        description: 'Usa "Nuevo Grupo" para crear grupos. Campos principales: nombre del grupo, superintendente y auxiliar.',
+        title: 'Crea un grupo',
+        description:
+          'Pulsa Nuevo Grupo e indica su nombre, por ejemplo Grupo 1. El superintendente y el auxiliar son opcionales.',
       },
       {
-        title: 'Ver integrantes',
-        description: 'Haz clic en el nÃºmero de integrantes para ver el detalle interno del grupo y administrar sus miembros.',
-      },
-      {
-        title: 'Agregar integrantes',
-        description: 'Desde el detalle del grupo, usa "Agregar Integrante" para incorporar nuevos publicadores.',
-        tip: 'Los integrantes son necesarios agregar cuando se les quiere asignar un territorio personal.',
-      },
-      {
-        title: 'Habilitar como conductor',
-        description: 'Toca el botÃ³n "Conductor" sobre un integrante para habilitarlo como conductor del grupo.',
+        title: 'Agrega integrantes',
+        description:
+          'Los integrantes podrán recibir asignaciones personales. Desde el listado también puedes convertir un integrante en conductor con el botón Conductor.',
       },
     ],
   },
   {
     id: 'conductores',
     title: 'Conductores',
+    description: 'Administra a quienes reciben trabajo grupal.',
     icon: UserCircle,
-    description: 'Alta manual de conductores por grupo',
     steps: [
       {
-        title: 'Crear conductor',
-        description: 'Usa "Nuevo Conductor" para dar de alta un conductor nuevo de manera manual.',
+        title: 'Crea un conductor',
+        description:
+          'Pulsa Nuevo Conductor, selecciona el grupo y elige un miembro existente.',
       },
       {
-        title: 'Seleccionar grupo y nombre',
-        description: 'En el formulario selecciona primero el grupo y luego el nombre del conductor.',
-        tip: 'TambiÃ©n puedes elegir un miembro existente y asignarle formalmente el rol de conductor.',
-      },
-      {
-        title: 'Ver detalles',
-        description: 'La tabla muestra grupo, territorios activos asignados y total de asignaciones histÃ³ricas de cada conductor.',
+        title: 'Dos caminos, el mismo resultado',
+        description:
+          'Crear un conductor desde esta sección equivale a pulsar Conductor sobre un integrante desde Grupos.',
       },
     ],
   },
   {
     id: 'territorios',
     title: 'Territorios',
+    description: 'Registra territorios, grupos y manzanas.',
     icon: MapPin,
-    description: 'Carga de territorios, grupo y manzanas',
     steps: [
       {
-        title: 'Crear territorio',
-        description: 'Cada territorio se carga con nÃºmero, grupo asignado y opcionalmente una descripciÃ³n de la zona.',
+        title: 'Crea el territorio',
+        description:
+          'Indica el número, una descripción opcional y el grupo al que pertenece.',
       },
       {
-        title: 'Cargar manzanas',
-        description: 'Si el territorio tiene manzanas, cargalas: una letra por cada manzana en orden alfabÃ©tico (ej: A, B, C, D).',
-        tip: 'Esta informaciÃ³n permite medir el avance dentro de una asignaciÃ³n por cada manzana.',
+        title: 'Carga las manzanas',
+        description:
+          'Escribe una letra por cada manzana, en orden alfabético y separada por comas. Para cuatro manzanas: A, B, C, D.',
       },
       {
-        title: 'Filtros disponibles',
-        description: 'Filtra territorios por nÃºmero/zona, por grupo y por estado de asignaciÃ³n (Todos, Asignados, Libres).',
-      },
-      {
-        title: 'Ver bloques',
-        description: 'Usa el botÃ³n "Ver bloques" para revisar las manzanas cargadas en cada territorio.',
+        title: 'Usa los filtros',
+        description:
+          'Busca por número o descripción y filtra por grupo o estado: todos, asignados o libres.',
       },
     ],
+    tip: 'Cargar las manzanas permite medir con precisión el avance del territorio.',
   },
   {
     id: 'mapas',
     title: 'Mapas',
+    description: 'Guarda referencias visuales de la congregación.',
     icon: Map,
-    description: 'VisualizaciÃ³n de mapas generales y por grupo',
     steps: [
       {
-        title: 'Mapa General',
-        description: 'Agrega un mapa general de todos los territorios usando una URL externa (Google Drive, Dropbox, etc.).',
+        title: 'Elige el tipo de mapa',
+        description:
+          'General corresponde al mapa completo de la congregación. Por Grupo muestra las áreas asignadas a cada grupo.',
       },
       {
-        title: 'Mapa por Grupo',
-        description: 'Carga un mapa especÃ­fico mostrando la divisiÃ³n de territorios por grupos.',
-      },
-      {
-        title: 'NavegaciÃ³n entre imÃ¡genes',
-        description: 'Si un mapa tiene varias imÃ¡genes, usa las flechas para navegar entre ellas con efecto flip.',
-        tip: 'Puedes cambiar o reemplazar mapas cuando sea necesario.',
+        title: 'Agrega las imágenes',
+        description:
+          'Pega uno o varios enlaces directos desde Google Drive, Dropbox, Imgur u otro servicio y guarda los cambios.',
       },
     ],
   },
   {
     id: 'asignaciones',
     title: 'Asignaciones',
-    icon: TrendingUp,
-    description: 'Trabajo por conductor o asignaciÃ³n personal',
+    description: 'Entrega territorios y registra su avance.',
+    icon: Route,
     steps: [
       {
-        title: 'Nueva AsignaciÃ³n (Conductor)',
-        description: 'Se utiliza para trabajo por conductor, normalmente grupal o congregacional.',
+        title: 'Elige el tipo de asignación',
+        description:
+          'Nueva Asignación es para trabajo grupal o congregacional con un conductor. Asignación Personal es para un integrante que trabajará individualmente.',
       },
       {
-        title: 'Nueva AsignaciÃ³n Personal',
-        description: 'Se utiliza para asignar un territorio a una persona en forma individual con campo adicional de notas.',
+        title: 'Consulta y registra el avance',
+        description:
+          'Usa Ver para consultar el estado. En asignaciones a conductores, Registrar permite marcar las manzanas trabajadas.',
       },
       {
-        title: 'Filtros',
-        description: 'Filtra asignaciones por bÃºsqueda (territorio/conductor), por grupo y por tipo (Conductor/Personal).',
-      },
-      {
-        title: 'Ver progreso',
-        description: 'Usa el botÃ³n "Ver" para abrir el detalle y seguir el progreso por manzanas de cada asignaciÃ³n activa.',
+        title: 'Devuelve el territorio',
+        description:
+          'Cuando finalice el trabajo, pulsa Devolver. La asignación se cerrará y pasará al historial.',
       },
     ],
-  },
-  {
-    id: 'seguimiento',
-    title: 'Seguimiento del Avance',
-    icon: CheckCircle2,
-    description: 'Control de progreso por manzanas',
-    steps: [
-      {
-        title: 'Abrir detalle',
-        description: 'Desde Asignaciones, usa "Ver" para abrir el detalle de la asignaciÃ³n activa.',
-      },
-      {
-        title: 'Marcar manzanas',
-        description: 'El sistema muestra cuÃ¡ntas manzanas hay y cuÃ¡ntas fueron completadas. Marca cada manzana como Pendiente o Completada.',
-        tip: 'Esto permite saber con claridad cuÃ¡nto del territorio ya fue trabajado.',
-      },
-      {
-        title: 'Devolver territorio',
-        description: 'Usa "Devolver" para cerrar la asignaciÃ³n y pasar el territorio a completado, indicando la fecha de devoluciÃ³n.',
-      },
-    ],
+    tip: 'Puedes filtrar las asignaciones por territorio o persona, grupo y tipo.',
   },
   {
     id: 'historial',
     title: 'Historial',
+    description: 'Consulta y exporta el trabajo completado.',
     icon: History,
-    description: 'Consulta y correcciÃ³n de registros',
     steps: [
       {
-        title: 'Ver asignaciones finalizadas',
-        description: 'Historial concentra todas las asignaciones devueltas mostrando territorio, persona, tipo, grupo, fechas y duraciÃ³n.',
+        title: 'Encuentra un registro',
+        description:
+          'Filtra por territorio o persona, tipo de asignación, año y mes.',
       },
       {
-        title: 'Filtros avanzados',
-        description: 'Filtra por nombre/nÃºmero, por tipo de asignaciÃ³n y acota por aÃ±o o mes especÃ­fico.',
+        title: 'Corrige una devolución',
+        description:
+          'Edita una asignación devuelta si necesitas ajustar el conductor o las fechas.',
       },
       {
-        title: 'Editar registros',
-        description: 'Si una asignaciÃ³n ya devuelta necesita correcciÃ³n, edÃ­tala desde el historial para ajustar fechas o conductor.',
-      },
-      {
-        title: 'Exportar a PDF',
-        description: 'Usa "Exportar a PDF" para generar los formularios oficiales S-13-S con filtros de perÃ­odo y rangos de territorios.',
-        tip: 'La exportaciÃ³n estÃ¡ pensada para registro formal y seguimiento mensual.',
+        title: 'Exporta el formulario oficial',
+        description:
+          'Genera el PDF S-13-S por período o rango de meses. También puedes incluir asignaciones activas.',
       },
     ],
   },
   {
     id: 'configuracion',
-    title: 'ConfiguraciÃ³n',
+    title: 'Configuración',
+    description: 'Protege la cuenta y configura la integración con IA.',
     icon: Settings,
-    description: 'Cambio de contraseÃ±a e integraciÃ³n con IA',
     steps: [
       {
-        title: 'Cambiar contraseÃ±a',
-        description: 'Ingresa la contraseÃ±a actual, la nueva y su confirmaciÃ³n. RecibirÃ¡s un email de confirmaciÃ³n.',
+        title: 'Cambia la contraseña',
+        description:
+          'Ingresa la contraseña actual, la nueva contraseña y su confirmación.',
       },
       {
-        title: 'API Key personal',
-        description: 'La secciÃ³n de integraciÃ³n con IA muestra tu API key personal que identifica tu usuario automÃ¡ticamente.',
-        tip: 'No necesitas enviar el tenantId en las llamadas, la API key lo identifica.',
-      },
-      {
-        title: 'Prompts listos',
-        description: 'Copia los prompts pre-configurados para conectar asistentes de IA con tu sistema.',
-      },
-      {
-        title: 'IntegraciÃ³n con ZAPIA',
-        description: 'Se recomienda ZAPIA para crear agentes sin programaciÃ³n. El sistema ofrece un prompt especÃ­fico optimizado.',
+        title: 'Integra inteligencia artificial',
+        description:
+          'Copia la clave API, el endpoint y los prompts preparados por el sistema. Recomendamos ZAPIA para realizar la integración.',
       },
     ],
+    tip: 'Mantén la clave API en privado y úsala únicamente en servicios de confianza.',
   },
 ]
 
-export default function TutorialPage() {
-  const [selectedSection, setSelectedSection] = useState<string | null>(null)
+const recommendedOrder = [
+  'Crear grupos e integrantes',
+  'Cargar conductores y territorios',
+  'Comenzar con las asignaciones activas y su seguimiento',
+  'Usar historial y exportación para control administrativo',
+]
 
-  const selected = tutorialSections.find((s) => s.id === selectedSection)
+export default function TutorialPage() {
+  const [selectedSection, setSelectedSection] = useState('dashboard')
+  const [showVideo, setShowVideo] = useState(false)
+
+  const selected =
+    tutorialSections.find((section) => section.id === selectedSection) ??
+    tutorialSections[0]
+  const SelectedIcon = selected.icon
 
   return (
     <AppLayout title="Tutorial">
-      <div className="p-6 max-w-7xl mx-auto space-y-6">
-        {/* Header */}
-        <div className="bg-[#0F1729] rounded-xl border border-slate-800 p-6">
-          <div className="flex items-center gap-3 mb-2">
-            <div className="w-12 h-12 bg-blue-500/10 rounded-xl flex items-center justify-center">
-              <BookOpen className="h-6 w-6 text-blue-500" />
-            </div>
-            <div>
-              <h1 className="text-2xl font-bold text-white">Tutorial del Sistema</h1>
-              <p className="text-sm text-slate-400">
-                Aprende a usar todas las funcionalidades paso a paso
-              </p>
-            </div>
-          </div>
-        </div>
+      <div className="mx-auto max-w-7xl space-y-5 p-4 sm:p-6 lg:p-8">
+        <header className="relative overflow-hidden rounded-3xl border border-blue-400/20 bg-[#0F1729] px-6 py-7 shadow-2xl shadow-black/20 sm:px-8">
+          <div className="absolute -right-16 -top-24 h-64 w-64 rounded-full bg-blue-500/20 blur-3xl" />
+          <div className="absolute -bottom-28 left-1/3 h-56 w-56 rounded-full bg-cyan-400/10 blur-3xl" />
 
-        {/* Contenido principal */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Lista de secciones */}
-          <div className="lg:col-span-1 space-y-2">
+          <div className="relative max-w-3xl">
+            <span className="mb-4 inline-flex items-center gap-2 rounded-full border border-cyan-300/20 bg-cyan-300/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-cyan-200">
+              <BookOpen className="h-4 w-4" />
+              Guía rápida
+            </span>
+            <h1 className="text-3xl font-bold tracking-tight text-white sm:text-4xl">
+              Aprende a usar Territorios App
+            </h1>
+            <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-300 sm:text-base">
+              Selecciona una sección y consulta los pasos esenciales. Para una
+              explicación completa, encontrarás el video tutorial al final.
+            </p>
+          </div>
+        </header>
+
+        <details className="group overflow-hidden rounded-2xl border border-blue-400/20 bg-gradient-to-r from-blue-500/10 to-cyan-400/5 shadow-lg shadow-black/10">
+          <summary className="flex cursor-pointer list-none items-center justify-between gap-4 px-5 py-4 sm:px-6">
+            <div className="flex items-center gap-3">
+              <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-blue-500/15 text-blue-300">
+                <Check className="h-5 w-5" />
+              </span>
+              <div>
+                <h2 className="font-semibold text-white">
+                  Orden recomendado de configuración
+                </h2>
+                <p className="mt-0.5 text-xs text-slate-400">
+                  Despliega esta guía antes de comenzar
+                </p>
+              </div>
+            </div>
+            <ChevronDown className="h-5 w-5 shrink-0 text-slate-400 transition-transform group-open:rotate-180" />
+          </summary>
+
+          <div className="border-t border-blue-400/10 px-5 py-5 sm:px-6">
+            <ol className="grid gap-3 sm:grid-cols-2">
+              {recommendedOrder.map((item, index) => (
+                <li
+                  key={item}
+                  className="flex items-center gap-3 rounded-xl border border-white/5 bg-[#0A0F1C]/50 p-3 text-sm text-slate-200"
+                >
+                  <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-blue-500/15 text-xs font-bold text-blue-300">
+                    {index + 1}
+                  </span>
+                  {item}
+                </li>
+              ))}
+            </ol>
+            <p className="mt-4 text-sm text-slate-400">
+              Si tienes dudas adicionales, contacta al administrador del
+              sistema.
+            </p>
+          </div>
+        </details>
+
+        <div className="grid items-start gap-5 lg:grid-cols-[300px_minmax(0,1fr)]">
+          <nav
+            aria-label="Secciones del tutorial"
+            className="grid grid-cols-2 gap-2 rounded-2xl border border-slate-800 bg-[#0F1729] p-3 shadow-lg shadow-black/10 sm:grid-cols-4 lg:grid-cols-1"
+          >
             {tutorialSections.map((section) => {
               const Icon = section.icon
-              const isSelected = selectedSection === section.id
+              const isActive = section.id === selected.id
 
               return (
                 <button
                   key={section.id}
+                  type="button"
                   onClick={() => setSelectedSection(section.id)}
-                  className={`w-full text-left p-4 rounded-lg border transition-all ${
-                    isSelected
-                      ? 'bg-gradient-to-r from-blue-500/20 to-cyan-500/20 border-blue-500/50'
-                      : 'bg-[#0F1729] border-slate-800 hover:border-slate-700'
+                  aria-pressed={isActive}
+                  className={`flex min-h-20 items-center gap-3 rounded-xl px-3 py-3 text-left transition lg:min-h-0 ${
+                    isActive
+                      ? 'bg-gradient-to-r from-blue-600 to-blue-500 text-white shadow-lg shadow-blue-950/30'
+                      : 'text-slate-300 hover:bg-slate-800/70 hover:text-white'
                   }`}
                 >
-                  <div className="flex items-center gap-3">
-                    <div
-                      className={`w-10 h-10 rounded-lg flex items-center justify-center ${
-                        isSelected ? 'bg-blue-500/20' : 'bg-slate-800/50'
-                      }`}
-                    >
-                      <Icon
-                        className={`h-5 w-5 ${
-                          isSelected ? 'text-blue-400' : 'text-slate-400'
-                        }`}
-                      />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <h3
-                        className={`font-semibold text-sm ${
-                          isSelected ? 'text-white' : 'text-slate-300'
-                        }`}
-                      >
-                        {section.title}
-                      </h3>
-                      <p className="text-xs text-slate-500 truncate">
-                        {section.description}
-                      </p>
-                    </div>
-                    {isSelected && (
-                      <PlayCircle className="h-5 w-5 text-blue-400 flex-shrink-0" />
-                    )}
-                  </div>
+                  <span
+                    className={`grid h-9 w-9 shrink-0 place-items-center rounded-lg ${
+                      isActive
+                        ? 'bg-white/15'
+                        : 'bg-slate-800 text-slate-400'
+                    }`}
+                  >
+                    <Icon className="h-5 w-5" />
+                  </span>
+                  <span className="text-sm font-semibold">{section.title}</span>
                 </button>
               )
             })}
-          </div>
+          </nav>
 
-          {/* Contenido de la secciÃ³n seleccionada */}
-          <div className="lg:col-span-2">
-            {!selected ? (
-              <div className="bg-[#0F1729] rounded-xl border border-slate-800 p-12 text-center">
-                <BookOpen className="h-16 w-16 text-slate-600 mx-auto mb-4" />
-                <h3 className="text-lg font-semibold text-white mb-2">
-                  Selecciona una secciÃ³n
-                </h3>
-                <p className="text-sm text-slate-400">
-                  Elige un tema de la izquierda para ver el tutorial detallado
-                </p>
+          <article className="overflow-hidden rounded-2xl border border-slate-800 bg-[#0F1729] shadow-xl shadow-black/15">
+            <div className="border-b border-slate-800 bg-gradient-to-r from-blue-500/10 to-transparent px-5 py-5 sm:px-7">
+              <div className="flex items-center gap-4">
+                <span className="grid h-12 w-12 shrink-0 place-items-center rounded-xl bg-blue-500/15 text-blue-300">
+                  <SelectedIcon className="h-6 w-6" />
+                </span>
+                <div>
+                  <h2 className="text-xl font-bold text-white sm:text-2xl">
+                    {selected.title}
+                  </h2>
+                  <p className="mt-1 text-sm text-slate-400">
+                    {selected.description}
+                  </p>
+                </div>
               </div>
-            ) : (
-              <div className="bg-[#0F1729] rounded-xl border border-slate-800 p-6 space-y-6">
-                {/* TÃ­tulo de secciÃ³n */}
-                <div className="flex items-center gap-3 pb-4 border-b border-slate-800">
-                  <div className="w-12 h-12 bg-blue-500/10 rounded-xl flex items-center justify-center">
-                    <selected.icon className="h-6 w-6 text-blue-400" />
-                  </div>
+            </div>
+
+            <div className="space-y-4 p-5 sm:p-7">
+              {selected.steps.map((step, index) => (
+                <div
+                  key={step.title}
+                  className="flex gap-4 rounded-xl border border-slate-800 bg-[#0A0F1C]/55 p-4"
+                >
+                  <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-blue-500/15 text-sm font-bold text-blue-300">
+                    {index + 1}
+                  </span>
                   <div>
-                    <h2 className="text-xl font-bold text-white">
-                      {selected.title}
-                    </h2>
-                    <p className="text-sm text-slate-400">
-                      {selected.description}
+                    <h3 className="font-semibold text-white">{step.title}</h3>
+                    <p className="mt-1 text-sm leading-6 text-slate-300">
+                      {step.description}
                     </p>
                   </div>
                 </div>
+              ))}
 
-                {/* Pasos */}
-                <div className="space-y-4">
-                  {selected.steps.map((step, index) => (
-                    <div
-                      key={index}
-                      className="bg-slate-800/30 rounded-lg border border-slate-700/50 p-4"
-                    >
-                      <div className="flex items-start gap-3">
-                        <div className="w-8 h-8 bg-blue-500/10 rounded-lg flex items-center justify-center flex-shrink-0">
-                          <span className="text-sm font-bold text-blue-400">
-                            {index + 1}
-                          </span>
-                        </div>
-                        <div className="flex-1">
-                          <h4 className="font-semibold text-white mb-1 flex items-center gap-2">
-                            {step.title}
-                            <CheckCircle2 className="h-4 w-4 text-green-500" />
-                          </h4>
-                          <p className="text-sm text-slate-300 mb-2">
-                            {step.description}
-                          </p>
-                          {step.tip && (
-                            <div className="bg-blue-500/10 rounded-lg p-3 border border-blue-500/20">
-                              <p className="text-xs text-blue-300">
-                                ðŸ’¡ <strong>Tip:</strong> {step.tip}
-                              </p>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
+              {selected.tip && (
+                <aside className="flex gap-3 rounded-xl border border-amber-400/20 bg-amber-400/10 p-4 text-amber-100">
+                  <Lightbulb className="mt-0.5 h-5 w-5 shrink-0 text-amber-300" />
+                  <p className="text-sm leading-6">
+                    <strong>Importante:</strong> {selected.tip}
+                  </p>
+                </aside>
+              )}
+            </div>
+          </article>
+        </div>
+
+        <section className="overflow-hidden rounded-3xl border border-cyan-300/20 bg-[#0F1729] shadow-xl shadow-black/15">
+          <div className="flex flex-col gap-5 p-6 sm:flex-row sm:items-center sm:justify-between sm:p-8">
+            <div className="flex items-start gap-4">
+              <span className="grid h-12 w-12 shrink-0 place-items-center rounded-xl bg-cyan-300/10 text-cyan-300">
+                <CirclePlay className="h-6 w-6" />
+              </span>
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-cyan-300">
+                  Recorrido completo
+                </p>
+                <h2 className="mt-1 text-xl font-bold text-white">
+                  Video tutorial
+                </h2>
+                <p className="mt-1 max-w-2xl text-sm leading-6 text-slate-400">
+                  Mira el paso a paso con capturas, voz en español y ejemplos
+                  de cada función del sistema.
+                </p>
               </div>
-            )}
-          </div>
-        </div>
+            </div>
 
-        {/* Footer informativo */}
-        <div className="bg-gradient-to-r from-blue-500/10 to-cyan-500/10 rounded-xl border border-blue-500/20 p-5">
-          <div className="flex items-start gap-3">
-            <div className="w-10 h-10 bg-blue-500/20 rounded-lg flex items-center justify-center flex-shrink-0">
-              <BookOpen className="h-5 w-5 text-blue-400" />
-            </div>
-            <div>
-              <h3 className="font-semibold text-white mb-2">
-                Orden recomendado de configuraciÃ³n
-              </h3>
-              <ol className="text-sm text-slate-300 space-y-1 list-decimal list-inside">
-                <li>Crear grupos e integrantes</li>
-                <li>Cargar conductores y territorios</li>
-                <li>Comenzar con las asignaciones activas y su seguimiento</li>
-                <li>Usar historial y exportaciÃ³n para control administrativo</li>
-              </ol>
-              <p className="text-sm text-slate-400 mt-3">
-                Si tienes dudas adicionales, contacta al administrador del sistema.
-              </p>
-            </div>
+            <button
+              type="button"
+              onClick={() => setShowVideo((current) => !current)}
+              aria-expanded={showVideo}
+              className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl bg-cyan-300 px-5 py-3 text-sm font-bold text-slate-950 transition hover:bg-cyan-200"
+            >
+              <CirclePlay className="h-5 w-5" />
+              {showVideo ? 'Ocultar video' : 'Ver video'}
+            </button>
           </div>
-        </div>
+
+          {showVideo && (
+            <div className="border-t border-slate-800 bg-black p-3 sm:p-5">
+              <video
+                controls
+                preload="metadata"
+                className="aspect-video w-full rounded-xl bg-black"
+              >
+                <source src={VIDEO_URL} type="video/mp4" />
+                Tu navegador no puede reproducir este video.
+              </video>
+            </div>
+          )}
+        </section>
       </div>
     </AppLayout>
   )
