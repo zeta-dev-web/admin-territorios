@@ -1,28 +1,16 @@
 import pg from 'pg'
-import { config } from 'dotenv'
-
-// Cargar variables de entorno
-config()
 
 const { Client } = pg
 
 async function addTermsField() {
-  const connectionString = process.env.DATABASE_URL
-  
-  if (!connectionString) {
-    console.error('❌ DATABASE_URL not found in environment variables')
-    process.exit(1)
-  }
-
-  console.log('🔗 Using connection string from .env')
-  
+  // Cambia esta URL por la de tu VPS
   const client = new Client({
-    connectionString
+    connectionString: 'postgresql://postgres:TU_PASSWORD@82.29.62.125:5432/territorios_db?schema=public'
   })
 
   try {
     await client.connect()
-    console.log('📦 Connected to database...')
+    console.log('📦 Connected to VPS database...')
     
     console.log('➕ Adding termsAcceptedAt field to User table...')
     
