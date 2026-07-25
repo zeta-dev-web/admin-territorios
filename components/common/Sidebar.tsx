@@ -15,6 +15,7 @@ import {
   Map,
   Shield,
   Settings,
+  BookOpen,
 } from 'lucide-react'
 import { logout, getCurrentUserRole } from '@/server/auth'
 import { cn } from '@/lib/utils'
@@ -33,6 +34,7 @@ const menuItems = [
   { label: 'Asignaciones', icon: TrendingUp, href: '/admin/assignments' },
   { label: 'Historial', icon: History, href: '/admin/history' },
   { label: 'Usuarios', icon: Shield, href: '/admin/users', adminOnly: true },
+  { label: 'Tutorial', icon: BookOpen, href: '/dashboard/tutorial' },
   { label: 'Configuración', icon: Settings, href: '/dashboard/settings' },
 ]
 

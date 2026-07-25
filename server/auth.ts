@@ -458,3 +458,46 @@ export async function deleteUser(userId: string) {
     }
   }
 }
+
+
+// ── Accept Terms ──
+
+export async function acceptTerms() {
+  const session = await getSession()
+  if (!session?.userId) {
+    return { success: false, message: 'No autenticado' }
+  }
+
+  try {
+    await prisma.user.update({
+      where: { id: session.userId },
+      data: { termsAcceptedAt: new Date() },
+    })
+
+    return { success: true }
+  } catch (error) {
+    console.error('Error accepting terms:', error)
+    return { success: false, message: 'Error al aceptar términos' }
+  }
+}
+
+// ── Check if user has accepted terms ──
+
+export async function hasAcceptedTerms(): Promise<boolean> {
+  const session = await getSession()
+  if (!session?.userId) {
+    return false
+  }
+
+  try {
+    const user = await prisma.user.findUnique({
+      where: { id: session.userId },
+      select: { termsAcceptedAt: true },
+    })
+
+    return !!user?.termsAcceptedAt
+  } catch (error) {
+    console.error('Error checking terms:', error)
+    return false
+  }
+}

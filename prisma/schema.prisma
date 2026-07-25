@@ -30,14 +30,15 @@ model Tenant {
 }
 
 model User {
-  id        String   @id @default(cuid())
-  email     String   @unique
-  password  String
-  name      String?
-  role      String   @default("USER") // ADMIN | USER
-  tenantId  String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id               String    @id @default(cuid())
+  email            String    @unique
+  password         String
+  name             String?
+  role             String    @default("USER") // ADMIN | USER
+  tenantId         String
+  termsAcceptedAt  DateTime? // Fecha en que aceptó los términos
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
 
   tenant    Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   apiKeys   ApiKey[]

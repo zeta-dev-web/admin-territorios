@@ -8,11 +8,9 @@ import {
   Lock,
   CheckCircle,
   Loader2,
-  Fingerprint,
   Copy,
   Check,
   Bot,
-  Terminal,
   ExternalLink,
   KeyRound,
   ChevronDown,
@@ -438,41 +436,6 @@ export default function SettingsPage() {
                       por lo que <strong className="text-slate-300">no necesitás enviar el tenantId</strong> en las llamadas.
                       Si la regenerás, la anterior deja de funcionar al instante.
                     </p>
-                  </div>
-                </div>
-
-                {/* Info en grid */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                  <div className="flex items-start gap-3 p-4 bg-slate-800/50 rounded-lg border border-slate-700">
-                    <Terminal className="h-5 w-5 text-slate-400 mt-0.5 shrink-0" />
-                    <div className="min-w-0">
-                      <p className="text-sm font-medium text-white mb-1">Endpoint</p>
-                      <code className="text-xs font-mono text-red-400 block break-all select-all">
-                        {getBaseUrl()}/api/agent
-                      </code>
-                      <p className="text-xs text-slate-500 mt-1">POST con JSON</p>
-                    </div>
-                  </div>
-
-                  <div className="flex items-start gap-3 p-4 bg-slate-800/50 rounded-lg border border-slate-700">
-                    <Fingerprint className="h-5 w-5 text-slate-400 mt-0.5 shrink-0" />
-                    <div className="min-w-0">
-                      <p className="text-sm font-medium text-white mb-1">Autenticación</p>
-                      <code className="text-xs font-mono text-red-400 block truncate select-all">
-                        Authorization: Bearer &lt;tu-api-key&gt;
-                      </code>
-                      <p className="text-xs text-slate-500 mt-1">La API key identifica tu usuario</p>
-                    </div>
-                  </div>
-
-                  <div className="flex items-start gap-3 p-4 bg-slate-800/50 rounded-lg border border-slate-700">
-                    <Terminal className="h-5 w-5 text-slate-400 mt-0.5 shrink-0" />
-                    <div className="min-w-0">
-                      <p className="text-sm font-medium text-white mb-1">Ejemplo curl</p>
-                      <code className="text-xs font-mono text-green-400 block break-all select-all">
-                        {`curl -X POST "${getBaseUrl()}/api/agent" -H "Authorization: Bearer TU_KEY" -H "Content-Type: application/json" -d '{"action":"listActions"}'`}
-                      </code>
-                    </div>
                   </div>
                 </div>
 

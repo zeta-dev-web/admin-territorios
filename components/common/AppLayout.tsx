@@ -3,6 +3,7 @@
 import { useState, ReactNode } from 'react'
 import { Sidebar } from './Sidebar'
 import { MobileHeader } from './MobileHeader'
+import Footer from '@/components/layout/Footer'
 
 interface AppLayoutProps {
   children: ReactNode
@@ -31,10 +32,13 @@ export function AppLayout({ children, title, showBack = false }: AppLayoutProps)
           onMenuClick={() => setIsSidebarOpen(!isSidebarOpen)}
         />
 
-        {/* Contenido */}
-        <main className="flex-1 overflow-y-auto">
-          {children}
-        </main>
+        {/* Contenido con scroll */}
+        <div className="flex-1 overflow-y-auto flex flex-col">
+          <main className="flex-1">
+            {children}
+          </main>
+          <Footer />
+        </div>
       </div>
     </div>
   )
