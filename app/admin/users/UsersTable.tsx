@@ -1,8 +1,8 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { getUsers, deleteUser, resetPassword } from '@/server'
-import { Loader2, Trash2, Shield, User as UserIcon, RefreshCw, X, Edit, Home } from 'lucide-react'
+import { getUsers, deleteUser, resetPassword, impersonateUser } from '@/server'
+import { Loader2, Trash2, Shield, User as UserIcon, RefreshCw, X, Edit, Home, KeyRound } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { Table } from '@/components/common/Table'
 import { ConfirmDialog } from '@/components/common/ConfirmDialog'
@@ -169,6 +169,23 @@ export function UsersTable() {
                   <div className="flex items-center justify-center gap-1">
                     {user.role !== 'ADMIN' && (
                       <>
+                        <button
+                          onClick={async () => {
+                            const loadingToast = toast.loading('Ingresando como ' + user.email + '...')
+                            const res = await impersonateUser(user.id)
+                            toast.dismiss(loadingToast)
+                            if (res.success) {
+                              toast.success(res.message || 'Listo')
+                              router.push('/dashboard')
+                            } else {
+                              toast.error(res.message || 'Error al ingresar')
+                            }
+                          }}
+                          className="p-2 text-emerald-400 hover:bg-emerald-500/10 rounded-lg transition-all hover:scale-110"
+                          title="Ingresar como este usuario"
+                        >
+                          <KeyRound className="h-4 w-4" />
+                        </button>
                         <button
                           onClick={() => setEditingUser(user)}
                           className="p-2 text-blue-400 hover:bg-blue-500/10 rounded-lg transition-colors"

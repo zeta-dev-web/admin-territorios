@@ -75,6 +75,43 @@ export async function deleteSession() {
   cookieStore.delete('session')
 }
 
+// ── Admin Backup (para impersonación) ──
+
+/**
+ * Guarda la sesión del admin actual como backup antes de impersonar.
+ */
+export async function saveAdminBackup(session: SessionData) {
+  const cookieStore = await cookies()
+  const isHttps = process.env.NEXTAUTH_URL?.startsWith('https')
+
+  const backupToken = await encrypt(session)
+  cookieStore.set('admin_backup', backupToken, {
+    httpOnly: true,
+    secure: isHttps || false,
+    sameSite: 'lax',
+    maxAge: 60 * 60 * 24, // 24 horas
+    path: '/',
+  })
+}
+
+/**
+ * Recupera la sesión del admin guardada como backup.
+ */
+export async function getAdminBackup(): Promise<SessionData | null> {
+  const cookieStore = await cookies()
+  const backup = cookieStore.get('admin_backup')?.value
+  if (!backup) return null
+  return await decrypt(backup)
+}
+
+/**
+ * Elimina el backup de la sesión del admin.
+ */
+export async function clearAdminBackup() {
+  const cookieStore = await cookies()
+  cookieStore.delete('admin_backup')
+}
+
 // ── Password ──
 
 export async function hashPassword(password: string): Promise<string> {

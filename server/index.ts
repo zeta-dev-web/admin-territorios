@@ -119,4 +119,7 @@ export {
   getCurrentUserInfo,
   getOrCreateApiKey,
   regenerateApiKey,
+  impersonateUser,
+  stopImpersonating,
+  checkImpersonating,
 } from './auth'

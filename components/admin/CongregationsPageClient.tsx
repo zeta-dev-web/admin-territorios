@@ -46,7 +46,7 @@ export function CongregationsPageClient({ congregations }: CongregationsPageClie
             className="flex items-center gap-2 px-4 py-2.5 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors font-medium shadow-lg shadow-purple-500/20"
           >
             <Plus className="h-5 w-5" />
-            Nueva Congregación
+            <span className="hidden sm:inline">Nueva Congregación</span>
           </button>
         </div>
 

@@ -3,6 +3,7 @@
 import { useState, ReactNode } from 'react'
 import { Sidebar } from './Sidebar'
 import { MobileHeader } from './MobileHeader'
+import { ImpersonationBanner } from './ImpersonationBanner'
 import Footer from '@/components/layout/Footer'
 
 interface AppLayoutProps {
@@ -31,6 +32,9 @@ export function AppLayout({ children, title, showBack = false }: AppLayoutProps)
           showBack={showBack}
           onMenuClick={() => setIsSidebarOpen(!isSidebarOpen)}
         />
+
+        {/* Banner de impersonación */}
+        <ImpersonationBanner />
 
         {/* Contenido con scroll */}
         <div className="flex-1 overflow-y-auto flex flex-col">

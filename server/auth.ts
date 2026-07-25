@@ -7,6 +7,9 @@ import {
   isSystemSetup,
   setupAdmin,
   getSession,
+  saveAdminBackup,
+  getAdminBackup,
+  clearAdminBackup,
 } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { hashPassword } from '@/lib/auth'
@@ -548,6 +551,121 @@ export async function updateUser(userId: string, data: {
   }
 }
 
+
+// ── Impersonación (solo ADMIN) ──
+
+/**
+ * Permite a un ADMIN loguearse como otro usuario para dar soporte.
+ * Guarda la sesión del admin como backup y crea una nueva sesión como el usuario destino.
+ */
+export async function impersonateUser(userId: string) {
+  try {
+    const session = await getSession()
+    if (!session?.isAuthenticated || session.role !== 'ADMIN') {
+      return { success: false, message: 'No autorizado' }
+    }
+
+    const targetUser = await prisma.user.findUnique({ where: { id: userId } })
+    if (!targetUser) {
+      return { success: false, message: 'Usuario no encontrado' }
+    }
+
+    // Guardar la sesión actual del admin como backup
+    await saveAdminBackup(session)
+
+    // Crear nueva sesión como el usuario destino
+    await createSession({
+      id: targetUser.id,
+      email: targetUser.email,
+      tenantId: targetUser.tenantId,
+      role: targetUser.role as 'ADMIN' | 'USER',
+    })
+
+    return {
+      success: true,
+      message: `Ahora estás logueado como ${targetUser.email}`,
+    }
+  } catch (error) {
+    console.error('Error al impersonar usuario:', error)
+    return {
+      success: false,
+      message: error instanceof Error ? error.message : 'Error al impersonar usuario',
+    }
+  }
+}
+
+/**
+ * Restaura la sesión del admin después de impersonar.
+ */
+export async function stopImpersonating() {
+  try {
+    const adminSession = await getAdminBackup()
+    if (!adminSession) {
+      return { success: false, message: 'No hay sesión de administrador para restaurar' }
+    }
+
+    // Restaurar sesión del admin
+    await createSession({
+      id: adminSession.userId,
+      email: adminSession.email,
+      tenantId: adminSession.tenantId,
+      role: adminSession.role,
+    })
+
+    // Limpiar backup
+    await clearAdminBackup()
+
+    return { success: true, message: 'Has vuelto a tu sesión de administrador' }
+  } catch (error) {
+    console.error('Error al restaurar sesión de admin:', error)
+    return {
+      success: false,
+      message: error instanceof Error ? error.message : 'Error al restaurar sesión',
+    }
+  }
+}
+
+/**
+ * Verifica si el usuario actual está impersonando a alguien.
+ */
+export async function checkImpersonating() {
+  const backup = await getAdminBackup()
+  if (!backup) {
+    return {
+      impersonating: false,
+      adminEmail: null,
+      targetName: null,
+      targetEmail: null,
+    }
+  }
+
+  // Obtener datos del usuario destino (el que estamos viendo)
+  const session = await getSession()
+  let targetName = session?.email?.split('@')[0] || 'Usuario'
+  let targetEmail = session?.email || ''
+
+  if (session?.userId) {
+    try {
+      const user = await prisma.user.findUnique({
+        where: { id: session.userId },
+        select: { name: true, email: true },
+      })
+      if (user) {
+        targetName = user.name || user.email.split('@')[0]
+        targetEmail = user.email
+      }
+    } catch {
+      // Si falla, usamos los datos de la sesión
+    }
+  }
+
+  return {
+    impersonating: true,
+    adminEmail: backup.email,
+    targetName,
+    targetEmail,
+  }
+}
 
 // ── Accept Terms ──
 
