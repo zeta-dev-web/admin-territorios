@@ -2,18 +2,23 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { getUsers, deleteUser, resetPassword } from '@/server'
-import { Loader2, Trash2, Shield, User as UserIcon, RefreshCw, X } from 'lucide-react'
+import { Loader2, Trash2, Shield, User as UserIcon, RefreshCw, X, Edit, Home } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { Table } from '@/components/common/Table'
 import { ConfirmDialog } from '@/components/common/ConfirmDialog'
 import { useRouter } from 'next/navigation'
+import { EditUserModal } from './EditUserModal'
 
 interface User {
   id: string
   email: string
   name: string | null
   role: string
+  tenantId: string
   createdAt: Date
+  tenant: {
+    name: string
+  }
 }
 
 export function UsersTable() {
@@ -25,6 +30,7 @@ export function UsersTable() {
   const [resetUserId, setResetUserId] = useState<string | null>(null)
   const [resetUserEmail, setResetUserEmail] = useState('')
   const [confirmDelete, setConfirmDelete] = useState<{ id: string; email: string } | null>(null)
+  const [editingUser, setEditingUser] = useState<User | null>(null)
 
   const loadUsers = useCallback(async () => {
     setLoading(true)
@@ -108,6 +114,9 @@ export function UsersTable() {
                 Email
               </th>
               <th className="px-6 py-4 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">
+                Congregación
+              </th>
+              <th className="px-6 py-4 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">
                 Rol
               </th>
               <th className="px-6 py-4 text-center text-xs font-medium text-slate-400 uppercase tracking-wider">
@@ -137,6 +146,12 @@ export function UsersTable() {
                   {user.email}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
+                  <div className="flex items-center gap-2 text-sm text-slate-300">
+                    <Home className="h-4 w-4 text-purple-400" />
+                    <span>{user.tenant?.name || 'Sin congregación'}</span>
+                  </div>
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap">
                   <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium ${
                     user.role === 'ADMIN'
                       ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
@@ -154,6 +169,13 @@ export function UsersTable() {
                   <div className="flex items-center justify-center gap-1">
                     {user.role !== 'ADMIN' && (
                       <>
+                        <button
+                          onClick={() => setEditingUser(user)}
+                          className="p-2 text-blue-400 hover:bg-blue-500/10 rounded-lg transition-colors"
+                          title="Editar usuario"
+                        >
+                          <Edit className="h-4 w-4" />
+                        </button>
                         <button
                           onClick={() => openResetModal(user.id, user.email)}
                           className="p-2 text-amber-400 hover:bg-amber-500/10 rounded-lg transition-colors"
@@ -252,6 +274,18 @@ export function UsersTable() {
         onConfirm={handleDelete}
         onCancel={() => setConfirmDelete(null)}
       />
+
+      {/* Modal de edición */}
+      {editingUser && (
+        <EditUserModal
+          isOpen={true}
+          user={editingUser}
+          onClose={() => {
+            setEditingUser(null)
+            loadUsers()
+          }}
+        />
+      )}
     </>
   )
 }

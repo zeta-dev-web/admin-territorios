@@ -107,7 +107,13 @@ export async function getUsers() {
         email: true,
         name: true,
         role: true,
+        tenantId: true,
         createdAt: true,
+        tenant: {
+          select: {
+            name: true,
+          },
+        },
       },
       orderBy: { createdAt: 'desc' },
     })
@@ -481,6 +487,63 @@ export async function deleteUser(userId: string) {
     return {
       success: false,
       message: error instanceof Error ? error.message : 'Error al eliminar usuario',
+    }
+  }
+}
+
+export async function updateUser(userId: string, data: {
+  name?: string
+  email?: string
+  tenantId?: string
+}) {
+  try {
+    const session = await getSession()
+    if (!session?.isAuthenticated || session.role !== 'ADMIN') {
+      return { success: false, message: 'No autorizado' }
+    }
+
+    const user = await prisma.user.findUnique({ where: { id: userId } })
+    if (!user) {
+      return { success: false, message: 'Usuario no encontrado' }
+    }
+
+    if (user.role === 'ADMIN') {
+      return { success: false, message: 'No puedes editar un usuario admin' }
+    }
+
+    // Si cambió el email, verificar que no exista
+    if (data.email && data.email !== user.email) {
+      const existing = await prisma.user.findUnique({ where: { email: data.email } })
+      if (existing) {
+        return { success: false, message: 'Ya existe un usuario con ese email' }
+      }
+    }
+
+    // Si cambió el tenantId, verificar que exista
+    if (data.tenantId && data.tenantId !== user.tenantId) {
+      const tenant = await prisma.tenant.findUnique({ where: { id: data.tenantId } })
+      if (!tenant) {
+        return { success: false, message: 'La congregación seleccionada no existe' }
+      }
+    }
+
+    await prisma.user.update({
+      where: { id: userId },
+      data: {
+        ...(data.name !== undefined && { name: data.name }),
+        ...(data.email && { email: data.email }),
+        ...(data.tenantId && { tenantId: data.tenantId }),
+      },
+    })
+
+    revalidatePath('/admin/users')
+
+    return { success: true, message: 'Usuario actualizado correctamente' }
+  } catch (error) {
+    console.error('Error al actualizar usuario:', error)
+    return {
+      success: false,
+      message: error instanceof Error ? error.message : 'Error al actualizar usuario',
     }
   }
 }
