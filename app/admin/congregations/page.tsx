@@ -11,7 +11,7 @@ export default async function CongregationsPage() {
   }
 
   const result = await getAllCongregations()
-  const congregations = result.success ? result.data : []
+  const congregations = result.success && result.data ? result.data : []
 
   return <CongregationsPageClient congregations={congregations} />
 }
