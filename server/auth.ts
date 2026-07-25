@@ -123,6 +123,7 @@ export async function createUser(data: {
   email: string
   password: string
   name?: string
+  tenantId?: string
 }) {
   try {
     const session = await getSession()
@@ -134,17 +135,22 @@ export async function createUser(data: {
       return { success: false, data: null, message: 'Email y contraseña requeridos' }
     }
 
+    if (!data.tenantId) {
+      return { success: false, data: null, message: 'Debe seleccionar una congregación' }
+    }
+
     const existing = await prisma.user.findUnique({ where: { email: data.email } })
     if (existing) {
       return { success: false, data: null, message: 'Ya existe un usuario con ese email' }
     }
 
-    const hashedPw = await hashPassword(data.password)
+    // Verificar que el tenant exista
+    const tenant = await prisma.tenant.findUnique({ where: { id: data.tenantId } })
+    if (!tenant) {
+      return { success: false, data: null, message: 'La congregación seleccionada no existe' }
+    }
 
-    // Cada usuario tiene su PROPIO tenant para aislar sus datos
-    const userTenant = await prisma.tenant.create({
-      data: { name: `Usuario: ${data.email}` },
-    })
+    const hashedPw = await hashPassword(data.password)
 
     const user = await prisma.user.create({
       data: {
@@ -152,7 +158,7 @@ export async function createUser(data: {
         password: hashedPw,
         name: data.name || data.email.split('@')[0],
         role: 'USER',
-        tenantId: userTenant.id,
+        tenantId: data.tenantId,
       },
       select: {
         id: true,
@@ -266,6 +272,26 @@ export async function getCurrentUserInfo() {
     email: session.email,
     tenantId: session.tenantId,
     role: session.role,
+  }
+}
+
+/**
+ * Obtiene el nombre de la congregación del usuario autenticado.
+ */
+export async function getCurrentUserCongregation() {
+  const session = await getSession()
+  if (!session?.isAuthenticated || !session.tenantId) return null
+
+  try {
+    const tenant = await prisma.tenant.findUnique({
+      where: { id: session.tenantId },
+      select: { name: true },
+    })
+
+    return tenant?.name || null
+  } catch (error) {
+    console.error('Error getting congregation:', error)
+    return null
   }
 }
 

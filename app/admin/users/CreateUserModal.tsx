@@ -1,8 +1,9 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { createUser } from '@/server'
-import { Loader2, UserPlus, User as UserIcon, Mail, Lock, X, RefreshCw, Copy, Check } from 'lucide-react'
+import { getCongregationsForSelect } from '@/server/congregations'
+import { Loader2, UserPlus, User as UserIcon, Mail, Lock, X, RefreshCw, Copy, Check, Home } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { useRouter } from 'next/navigation'
 
@@ -27,8 +28,26 @@ export function CreateUserModal({ isOpen, onClose }: CreateUserModalProps) {
   const [newEmail, setNewEmail] = useState('')
   const [newPassword, setNewPassword] = useState('')
   const [newName, setNewName] = useState('')
+  const [selectedCongregation, setSelectedCongregation] = useState('')
+  const [congregations, setCongregations] = useState<Array<{ id: string; name: string }>>([])
   const [creating, setCreating] = useState(false)
   const [passwordCopied, setPasswordCopied] = useState(false)
+  const [loadingCongregations, setLoadingCongregations] = useState(false)
+
+  useEffect(() => {
+    if (isOpen) {
+      loadCongregations()
+    }
+  }, [isOpen])
+
+  async function loadCongregations() {
+    setLoadingCongregations(true)
+    const result = await getCongregationsForSelect()
+    if (result.success) {
+      setCongregations(result.data)
+    }
+    setLoadingCongregations(false)
+  }
 
   function handleGeneratePassword() {
     const pw = generateSecurePassword()
@@ -44,13 +63,14 @@ export function CreateUserModal({ isOpen, onClose }: CreateUserModalProps) {
 
   async function handleCreate(e: React.FormEvent) {
     e.preventDefault()
-    if (!newEmail || !newPassword) return
+    if (!newEmail || !newPassword || !selectedCongregation) return
 
     setCreating(true)
     const result = await createUser({
       email: newEmail,
       password: newPassword,
       name: newName || undefined,
+      tenantId: selectedCongregation,
     })
 
     if (result.success) {
@@ -58,6 +78,7 @@ export function CreateUserModal({ isOpen, onClose }: CreateUserModalProps) {
       setNewEmail('')
       setNewPassword('')
       setNewName('')
+      setSelectedCongregation('')
       router.refresh()
       onClose()
     } else {
@@ -89,6 +110,36 @@ export function CreateUserModal({ isOpen, onClose }: CreateUserModalProps) {
         </div>
 
         <form onSubmit={handleCreate} className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-slate-300 mb-1.5">
+              Congregación <span className="text-red-400">*</span>
+            </label>
+            <div className="relative">
+              <Home className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500" />
+              <select
+                value={selectedCongregation}
+                onChange={(e) => setSelectedCongregation(e.target.value)}
+                required
+                disabled={creating || loadingCongregations}
+                className="w-full pl-10 pr-4 py-2.5 bg-slate-800 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition-colors text-sm appearance-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <option value="">
+                  {loadingCongregations ? 'Cargando...' : congregations.length === 0 ? 'No hay congregaciones disponibles' : 'Seleccionar congregación'}
+                </option>
+                {congregations.map((cong) => (
+                  <option key={cong.id} value={cong.id}>
+                    {cong.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+            {congregations.length === 0 && !loadingCongregations && (
+              <p className="mt-1.5 text-xs text-amber-400">
+                ⚠️ Debes crear una congregación primero desde el menú "Congregaciones"
+              </p>
+            )}
+          </div>
+
           <div>
             <label className="block text-sm font-medium text-slate-300 mb-1.5">
               Nombre
@@ -180,7 +231,7 @@ export function CreateUserModal({ isOpen, onClose }: CreateUserModalProps) {
             </button>
             <button
               type="submit"
-              disabled={creating || !newEmail || !newPassword}
+              disabled={creating || !newEmail || !newPassword || !selectedCongregation || congregations.length === 0}
               className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-gradient-to-r from-amber-500 to-amber-600 text-white rounded-xl font-medium hover:from-amber-600 hover:to-amber-700 transition-all shadow-lg shadow-amber-500/20 text-sm disabled:from-slate-700 disabled:to-slate-800 disabled:shadow-none"
             >
               {creating ? (

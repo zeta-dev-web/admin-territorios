@@ -16,8 +16,9 @@ import {
   Shield,
   Settings,
   BookOpen,
+  Home,
 } from 'lucide-react'
-import { logout, getCurrentUserRole } from '@/server/auth'
+import { logout, getCurrentUserRole, getCurrentUserCongregation } from '@/server/auth'
 import { cn } from '@/lib/utils'
 
 interface SidebarProps {
@@ -34,6 +35,7 @@ const menuItems = [
   { label: 'Asignaciones', icon: TrendingUp, href: '/admin/assignments' },
   { label: 'Historial', icon: History, href: '/admin/history' },
   { label: 'Usuarios', icon: Shield, href: '/admin/users', adminOnly: true },
+  { label: 'Congregaciones', icon: Home, href: '/admin/congregations', adminOnly: true },
   { label: 'Tutorial', icon: BookOpen, href: '/dashboard/tutorial' },
   { label: 'Configuración', icon: Settings, href: '/dashboard/settings' },
 ]
@@ -42,9 +44,11 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
   const pathname = usePathname()
   const [isLoggingOut, setIsLoggingOut] = useState(false)
   const [isAdmin, setIsAdmin] = useState(false)
+  const [congregationName, setCongregationName] = useState<string | null>(null)
 
   useEffect(() => {
     getCurrentUserRole().then((role) => setIsAdmin(role === 'ADMIN'))
+    getCurrentUserCongregation().then((name) => setCongregationName(name))
   }, [])
 
   const visibleItems = menuItems.filter((item: any) => {
@@ -83,7 +87,9 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
               </div>
               <div>
                 <h2 className="font-bold text-white text-sm">Territorios</h2>
-                <p className="text-xs text-slate-400">Sistema Admin</p>
+                <p className="text-xs text-slate-400">
+                  {congregationName ? `Cong. ${congregationName}` : 'Cargando...'}
+                </p>
               </div>
             </div>
             <button
