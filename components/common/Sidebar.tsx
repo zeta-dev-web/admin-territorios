@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
+import type { LucideIcon } from 'lucide-react'
 import {
   LayoutDashboard,
   MapPin,
@@ -20,13 +21,21 @@ import {
 } from 'lucide-react'
 import { logout, getCurrentUserRole, getCurrentUserCongregation } from '@/server/auth'
 import { cn } from '@/lib/utils'
+import { BrandMark } from './BrandMark'
 
 interface SidebarProps {
   isOpen: boolean
   onClose: () => void
 }
 
-const menuItems = [
+interface MenuItem {
+  label: string
+  icon: LucideIcon
+  href: string
+  adminOnly?: boolean
+}
+
+const menuItems: MenuItem[] = [
   { label: 'Dashboard', icon: LayoutDashboard, href: '/dashboard' },
   { label: 'Territorios', icon: MapPin, href: '/admin/territories' },
   { label: 'Mapas', icon: Map, href: '/admin/maps' },
@@ -51,7 +60,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
     getCurrentUserCongregation().then((name) => setCongregationName(name))
   }, [])
 
-  const visibleItems = menuItems.filter((item: any) => {
+  const visibleItems = menuItems.filter((item) => {
     if (item.adminOnly && !isAdmin) return false
     return true
   })
@@ -82,11 +91,18 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
           {/* Header */}
           <div className="flex items-center justify-between p-6 border-b border-slate-800">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-gradient-to-br from-red-500 to-red-600 rounded-lg flex items-center justify-center shadow-lg">
-                <MapPin className="h-5 w-5 text-white" />
+              <div className="relative">
+                <div className="absolute inset-1 rounded-xl bg-cyan-400/30 blur-lg" />
+                <BrandMark
+                  size={44}
+                  className="relative h-11 w-11"
+                  priority
+                />
               </div>
               <div>
-                <h2 className="font-bold text-white text-sm">Territorios</h2>
+                <h2 className="font-bold text-white text-sm">
+                  Territorios <span className="text-cyan-300">App</span>
+                </h2>
                 <p className="text-xs text-slate-400">
                   {congregationName ? `Cong. ${congregationName}` : 'Cargando...'}
                 </p>
@@ -115,8 +131,8 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                       className={cn(
                         'flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-all text-sm',
                         isActive
-                          ? 'bg-gradient-to-r from-red-500 to-red-600 text-white shadow-lg shadow-red-500/20'
-                          : 'text-slate-300 hover:bg-slate-800 hover:text-white'
+                          ? 'bg-gradient-to-r from-blue-600 to-cyan-600 text-white shadow-lg shadow-blue-950/40'
+                          : 'text-slate-300 hover:bg-slate-800/80 hover:text-white'
                       )}
                     >
                       <Icon className="h-5 w-5" />

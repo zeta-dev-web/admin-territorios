@@ -1,7 +1,8 @@
 import { LoginForm } from '@/components/auth/LoginForm'
+import { BrandMark } from '@/components/common/BrandMark'
 import { getSession } from '@/lib/auth'
 import { redirect } from 'next/navigation'
-import { MapPin, Shield } from 'lucide-react'
+import { Shield } from 'lucide-react'
 
 export default async function LoginPage() {
   const session = await getSession()
@@ -11,38 +12,54 @@ export default async function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 gradient-primary">
-      {/* Fondo animado */}
-      <div className="absolute inset-0 overflow-hidden">
-        <div className="absolute w-96 h-96 bg-white/10 rounded-full -top-20 -left-20 blur-3xl animate-pulse"></div>
-        <div className="absolute w-96 h-96 bg-white/10 rounded-full -bottom-20 -right-20 blur-3xl animate-pulse delay-1000"></div>
-      </div>
+    <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-[#07111F] p-4">
+      <div
+        className="absolute inset-0 opacity-40"
+        style={{
+          backgroundImage:
+            'linear-gradient(rgba(93,217,207,.06) 1px, transparent 1px), linear-gradient(90deg, rgba(93,217,207,.06) 1px, transparent 1px)',
+          backgroundSize: '52px 52px',
+        }}
+      />
+      <div className="absolute -left-32 -top-32 h-[30rem] w-[30rem] rounded-full bg-cyan-500/15 blur-[110px]" />
+      <div className="absolute -bottom-44 -right-24 h-[34rem] w-[34rem] rounded-full bg-blue-500/20 blur-[120px]" />
+      <div className="absolute left-[58%] top-[12%] h-40 w-40 rotate-12 rounded-[2.5rem] border border-cyan-200/10 bg-cyan-300/[0.03]" />
 
-      {/* Tarjeta de login */}
       <div className="relative w-full max-w-md">
-        <div className="glass rounded-2xl shadow-2xl p-8 animate-in">
-          {/* Logo/Header */}
-          <div className="text-center mb-8">
-            <div className="inline-flex items-center justify-center w-16 h-16 bg-white rounded-2xl shadow-lg mb-4">
-              <MapPin className="h-8 w-8 text-indigo-600" />
+        <div className="rounded-[2rem] border border-white/10 bg-[#0D1A2D]/90 p-7 shadow-2xl shadow-black/45 backdrop-blur-xl sm:p-9">
+          <div className="mb-8 text-center">
+            <div className="relative mx-auto mb-5 w-fit">
+              <div className="absolute inset-3 rounded-2xl bg-cyan-400/35 blur-2xl" />
+              <BrandMark
+                size={84}
+                className="relative h-[84px] w-[84px]"
+                priority
+                decorative={false}
+              />
             </div>
-            <h1 className="text-3xl font-bold text-white mb-2">
-              Gestión de Territorios
+            <p className="mb-2 text-xs font-bold uppercase tracking-[0.24em] text-cyan-300">
+              Gestión simple y ordenada
+            </p>
+            <h1 className="text-3xl font-bold tracking-tight text-white">
+              Territorios <span className="text-cyan-300">App</span>
             </h1>
-            <p className="text-white/80 text-sm">
-              Sistema de administración y seguimiento de territorios para congregaciones
+            <p className="mx-auto mt-3 max-w-xs text-sm leading-6 text-slate-400">
+              Organiza los territorios, las asignaciones y el avance de tu
+              congregación desde un solo lugar.
             </p>
           </div>
 
-          {/* Formulario */}
           <LoginForm />
 
-          {/* Footer */}
-          <div className="mt-6 flex items-center justify-center gap-2 text-white/60 text-sm">
-            <Shield className="h-4 w-4" />
+          <div className="mt-6 flex items-center justify-center gap-2 border-t border-white/5 pt-5 text-xs text-slate-500">
+            <Shield className="h-4 w-4 text-cyan-400" />
             <span>Acceso seguro y protegido</span>
           </div>
         </div>
+
+        <p className="mt-5 text-center text-xs text-slate-600">
+          Organiza · Asigna · Completa
+        </p>
       </div>
     </div>
   )

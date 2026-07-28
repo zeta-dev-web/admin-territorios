@@ -1,6 +1,7 @@
 'use client';
 
-import { Code2, Zap, Shield, Cpu } from 'lucide-react';
+import { Code2, Shield, Cpu } from 'lucide-react';
+import { BrandMark } from '@/components/common/BrandMark';
 
 export default function Footer() {
   const currentYear = new Date().getFullYear();
@@ -30,15 +31,13 @@ export default function Footer() {
           {/* Sección izquierda - Branding */}
           <div className="flex items-center gap-4">
             <div className="relative group">
-              <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-lg blur-md opacity-50 group-hover:opacity-75 transition-opacity"></div>
-              <div className="relative bg-gradient-to-br from-blue-600 to-cyan-600 p-3 rounded-lg">
-                <Zap className="w-6 h-6 text-white" />
-              </div>
+              <div className="absolute inset-2 bg-cyan-400 rounded-xl blur-xl opacity-30 group-hover:opacity-50 transition-opacity"></div>
+              <BrandMark size={52} className="relative h-[52px] w-[52px]" />
             </div>
             
             <div className="text-left">
               <h3 className="text-lg font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-cyan-400">
-                Gestión de Territorios
+                Territorios App
               </h3>
               <p className="text-xs text-slate-400 flex items-center gap-1.5 mt-0.5">
                 <Shield className="w-3 h-3" />
