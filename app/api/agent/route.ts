@@ -54,7 +54,7 @@ interface AgentResponse {
 
 type ActionHandler = (params: Record<string, unknown>) => Promise<unknown>
 
-const actions: Record<string, ActionHandler> = {
+export const actions: Record<string, ActionHandler> = {
   // ═══════════════════════════════════════════
   //  ASIGNACIONES (Conductor)
   // ═══════════════════════════════════════════
@@ -81,7 +81,15 @@ const actions: Record<string, ActionHandler> = {
   updateAssignment: (p) =>
     server.updateAssignment(
       p.assignmentId as string,
-      p.data as { driverId?: string; startDate?: Date; endDate?: Date },
+      {
+        ...(p.data as Record<string, unknown>),
+        startDate: (p.data as Record<string, unknown>)?.startDate
+          ? new Date((p.data as Record<string, unknown>).startDate as string)
+          : undefined,
+        endDate: (p.data as Record<string, unknown>)?.endDate
+          ? new Date((p.data as Record<string, unknown>).endDate as string)
+          : undefined,
+      } as { driverId?: string; startDate?: Date; endDate?: Date },
     ),
 
   // ═══════════════════════════════════════════
@@ -202,7 +210,15 @@ const actions: Record<string, ActionHandler> = {
   updatePersonalAssignment: (p) =>
     server.updatePersonalAssignment(
       p.assignmentId as string,
-      p.data as { memberId?: string; assignedDate?: Date; returnedDate?: Date },
+      {
+        ...(p.data as Record<string, unknown>),
+        assignedDate: (p.data as Record<string, unknown>)?.assignedDate
+          ? new Date((p.data as Record<string, unknown>).assignedDate as string)
+          : undefined,
+        returnedDate: (p.data as Record<string, unknown>)?.returnedDate
+          ? new Date((p.data as Record<string, unknown>).returnedDate as string)
+          : undefined,
+      } as { memberId?: string; assignedDate?: Date; returnedDate?: Date },
     ),
 
   // ═══════════════════════════════════════════

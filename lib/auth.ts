@@ -125,6 +125,99 @@ export async function comparePassword(
   return bcrypt.compare(password, hash)
 }
 
+export interface AuthenticatedUser {
+  id: string
+  email: string
+  name: string | null
+  tenantId: string
+  role: 'ADMIN' | 'USER'
+}
+
+export type AuthenticationResult =
+  | { success: true; user: AuthenticatedUser }
+  | { success: false; message: string }
+
+/**
+ * Valida credenciales sin depender de cookies.
+ * La usan tanto el login web como el login de la API móvil.
+ */
+export async function authenticateCredentials(
+  email: string,
+  password: string,
+): Promise<AuthenticationResult> {
+  if (!email || !password) {
+    return { success: false, message: 'Email y contraseña requeridos' }
+  }
+
+  if (!(await isSystemSetup())) {
+    const adminEmail = process.env.ADMIN_EMAIL
+    const adminPassword = process.env.ADMIN_PASSWORD
+
+    if (!adminEmail || !adminPassword) {
+      return {
+        success: false,
+        message: 'El sistema no está configurado. Configurá ADMIN_EMAIL y ADMIN_PASSWORD en el .env',
+      }
+    }
+
+    if (email !== adminEmail || password !== adminPassword) {
+      return { success: false, message: 'Credenciales inválidas' }
+    }
+
+    try {
+      const { user } = await setupAdmin()
+      return {
+        success: true,
+        user: {
+          id: user.id,
+          email: user.email,
+          name: 'Administrador',
+          tenantId: user.tenantId,
+          role: user.role,
+        },
+      }
+    } catch (error) {
+      console.error('Error en setup inicial:', error)
+      return {
+        success: false,
+        message: 'Error al configurar el sistema. Revisá las variables de entorno.',
+      }
+    }
+  }
+
+  try {
+    const user = await prisma.user.findUnique({
+      where: { email },
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        password: true,
+        tenantId: true,
+        role: true,
+      },
+    })
+
+    if (!user || !(await comparePassword(password, user.password))) {
+      return { success: false, message: 'Credenciales inválidas' }
+    }
+
+    return {
+      success: true,
+      user: {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        tenantId: user.tenantId,
+        role: user.role as 'ADMIN' | 'USER',
+      },
+    }
+  } catch (error) {
+    console.error('Error al autenticar usuario:', error)
+    return { success: false, message: 'Error al iniciar sesión' }
+  }
+}
+
 // ── Admin setup (automatico en primer login) ──
 
 /**
