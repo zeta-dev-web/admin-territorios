@@ -1,16 +1,20 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { MapPinned, Pencil, Plus, Search, UsersRound } from 'lucide-react-native';
+import { MapPinned, Pencil, Plus, UsersRound } from 'lucide-react-native';
 import { useDeferredValue, useState } from 'react';
-import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 import Animated, { FadeInUp } from 'react-native-reanimated';
 import { AppHeader, SectionTitle } from '@/components/ui/app-header';
-import { FormError, FormField, SelectChips, SubmitButton } from '@/components/ui/form-controls';
+import { ClearableSearch, FormError, FormField, SelectChips, SubmitButton } from '@/components/ui/form-controls';
 import { GlassCard } from '@/components/ui/glass-card';
 import { ModalSheet } from '@/components/ui/modal-sheet';
+import { MobilePagination } from '@/components/ui/mobile-pagination';
 import { ScreenBackground } from '@/components/ui/screen-background';
+import { ScreenLoader } from '@/components/ui/screen-loader';
 import { Colors, Fonts, Radius, Spacing } from '@/constants/theme';
 import { Group, mobileAction, Territory } from '@/lib/api';
 import { useAuth } from '@/providers/auth-provider';
+
+const PAGE_SIZE = 8;
 
 function parseLetters(value: string) { return [...new Set(value.toUpperCase().split(/[\s,;]+/).map((item) => item.trim()).filter(Boolean))]; }
 
@@ -18,6 +22,7 @@ export default function TerritoriesScreen() {
   const { token } = useAuth();
   const queryClient = useQueryClient();
   const [search, setSearch] = useState('');
+  const [page, setPage] = useState(1);
   const [modal, setModal] = useState(false);
   const [editing, setEditing] = useState<Territory | null>(null);
   const [form, setForm] = useState({ number: '', groupId: '', description: '', blocks: '' });
@@ -28,13 +33,16 @@ export default function TerritoriesScreen() {
   const mutation = useMutation({ mutationFn: (params: Record<string, unknown>) => mobileAction(editing ? 'updateTerritory' : 'createTerritory', params, token), onSuccess: async () => { await queryClient.invalidateQueries({ queryKey: ['territories'] }); await queryClient.invalidateQueries({ queryKey: ['dashboard'] }); closeModal(); }, onError: (value: Error) => setError(value.message) });
   const term = deferredSearch.toLowerCase().trim();
   const territories = (query.data || []).filter((territory) => !term || `${territory.number} ${territory.description || ''} ${territory.group.name}`.toLowerCase().includes(term));
+  const pages = Math.max(1, Math.ceil(territories.length / PAGE_SIZE));
+  const currentPage = Math.min(page, pages);
+  const visibleTerritories = territories.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
 
   function openCreate() { setEditing(null); setForm({ number: '', groupId: groupsQuery.data?.[0]?.id || '', description: '', blocks: '' }); setError(''); setModal(true); }
   function openEdit(territory: Territory) { setEditing(territory); setForm({ number: String(territory.number), groupId: territory.group.id, description: territory.description || '', blocks: territory.blocks.map((block) => block.letter).join(', ') }); setError(''); setModal(true); }
   function closeModal() { setModal(false); setEditing(null); setError(''); }
   function save() { const number = Number(form.number); const blockLetters = parseLetters(form.blocks); if (!Number.isInteger(number) || number <= 0 || !form.groupId) { setError('Ingresá un número válido y elegí el grupo.'); return; } const params = editing ? { territoryId: editing.id, data: { number, groupId: form.groupId, description: form.description.trim() || undefined, blockLetters } } : { number, groupId: form.groupId, description: form.description.trim() || undefined, blockLetters }; mutation.mutate(params); }
 
-  return <ScreenBackground><ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false} refreshControl={<RefreshControl refreshing={query.isRefetching} onRefresh={() => query.refetch()} tintColor={Colors.mint} colors={[Colors.mint]} />}><AppHeader /><View style={styles.intro}><Text style={styles.eyebrow}>MAPA DE COBERTURA</Text><Text style={styles.title}>Territorios</Text><Text style={styles.subtitle}>Cargá el territorio, su grupo y las manzanas en orden alfabético.</Text></View><View style={styles.searchShell}><Search size={18} color={Colors.textDim} /><TextInput value={search} onChangeText={setSearch} placeholder="Buscar por número o grupo" placeholderTextColor={Colors.textDim} style={styles.searchInput} /></View><View style={styles.actionRow}><SectionTitle eyebrow="REGISTRO" title={`${territories.length} territorios`} /><Pressable onPress={openCreate} style={styles.addButton}><Plus size={16} color={Colors.ink} /><Text style={styles.addText}>Nuevo</Text></Pressable></View><View style={styles.list}>{territories.map((territory, index) => <Animated.View key={territory.id} entering={FadeInUp.duration(450).delay(Math.min(index, 6) * 45)}><TerritoryCard territory={territory} onEdit={() => openEdit(territory)} /></Animated.View>)}</View>{!territories.length && <GlassCard style={styles.empty}><MapPinned size={26} color={Colors.textDim} /><Text style={styles.emptyTitle}>No encontramos ese territorio</Text><Text style={styles.emptyCopy}>Probá con otro número o grupo.</Text></GlassCard>}</ScrollView><ModalSheet visible={modal} onClose={closeModal} eyebrow={editing ? 'EDITAR REGISTRO' : 'NUEVO REGISTRO'} title={editing ? 'Editar territorio' : 'Crear territorio'}><FormField label="Número" value={form.number} onChangeText={(value) => setForm({ ...form, number: value.replace(/[^0-9]/g, '') })} placeholder="Ej. 4" keyboardType="numeric" /><SelectChips label="Grupo asignado" value={form.groupId} options={(groupsQuery.data || []).map((group) => ({ value: group.id, label: group.name, detail: `${group.members.length} integrantes` }))} onChange={(value) => setForm({ ...form, groupId: value })} /><FormField label="Descripción (opcional)" value={form.description} onChangeText={(value) => setForm({ ...form, description: value })} placeholder="Ej. Zona norte" /><FormField label="Manzanas" value={form.blocks} onChangeText={(value) => setForm({ ...form, blocks: value })} placeholder="Ej. A, B, C, D" autoCapitalize="characters" /><Text style={styles.formHint}>Si el territorio tiene 4 manzanas, cargalas como A, B, C y D. Esto permite registrar el avance una por una.</Text><FormError message={error} /><SubmitButton label={editing ? 'Guardar cambios' : 'Crear territorio'} loading={mutation.isPending} onPress={save} /></ModalSheet></ScreenBackground>;
+  return <ScreenBackground><ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false} refreshControl={<RefreshControl refreshing={query.isRefetching} onRefresh={() => query.refetch()} tintColor={Colors.mint} colors={[Colors.mint]} />}><AppHeader /><View style={styles.intro}><Text style={styles.eyebrow}>MAPA DE COBERTURA</Text><Text style={styles.title}>Territorios</Text><Text style={styles.subtitle}>Cargá el territorio, su grupo y las manzanas en orden alfabético.</Text></View><ClearableSearch value={search} onChangeText={(value) => { setSearch(value); setPage(1); }} placeholder="Buscar por número o grupo" /><View style={styles.actionRow}><SectionTitle eyebrow="REGISTRO" title={`${territories.length} territorios`} /><Pressable onPress={openCreate} style={styles.addButton}><Plus size={16} color={Colors.ink} /><Text style={styles.addText}>Nuevo</Text></Pressable></View>{query.isLoading ? <ScreenLoader label="Cargando territorios..." /> : territories.length ? <><View style={styles.list}>{visibleTerritories.map((territory, index) => <Animated.View key={territory.id} entering={FadeInUp.duration(450).delay(Math.min(index, 6) * 45)}><TerritoryCard territory={territory} onEdit={() => openEdit(territory)} /></Animated.View>)}</View><MobilePagination page={currentPage} pageSize={PAGE_SIZE} totalItems={territories.length} onChange={setPage} /></> : <GlassCard style={styles.empty}><MapPinned size={26} color={Colors.textDim} /><Text style={styles.emptyTitle}>No encontramos ese territorio</Text><Text style={styles.emptyCopy}>Probá con otro número o grupo.</Text></GlassCard>}</ScrollView><ModalSheet visible={modal} onClose={closeModal} eyebrow={editing ? 'EDITAR REGISTRO' : 'NUEVO REGISTRO'} title={editing ? 'Editar territorio' : 'Crear territorio'}><FormField label="Número" value={form.number} onChangeText={(value) => setForm({ ...form, number: value.replace(/[^0-9]/g, '') })} placeholder="Ej. 4" keyboardType="numeric" /><SelectChips label="Grupo asignado" value={form.groupId} options={(groupsQuery.data || []).map((group) => ({ value: group.id, label: group.name, detail: `${group.members.length} integrantes` }))} onChange={(value) => setForm({ ...form, groupId: value })} /><FormField label="Descripción (opcional)" value={form.description} onChangeText={(value) => setForm({ ...form, description: value })} placeholder="Ej. Zona norte" /><FormField label="Manzanas" value={form.blocks} onChangeText={(value) => setForm({ ...form, blocks: value })} placeholder="Ej. A, B, C, D" autoCapitalize="characters" /><Text style={styles.formHint}>Si el territorio tiene 4 manzanas, cargalas como A, B, C y D. Esto permite registrar el avance una por una.</Text><FormError message={error} /><SubmitButton label={editing ? 'Guardar cambios' : 'Crear territorio'} loading={mutation.isPending} onPress={save} /></ModalSheet></ScreenBackground>;
 }
 
 function TerritoryCard({ territory, onEdit }: { territory: Territory; onEdit: () => void }) {

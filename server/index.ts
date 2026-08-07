@@ -15,6 +15,7 @@ export {
   getCompletedAssignmentsHistory,
   deleteAssignment,
   updateAssignment,
+  updateActiveAssignment,
 } from './assignments'
 
 // Registros Diarios
@@ -60,6 +61,7 @@ export {
   getPersonalAssignmentsByMember,
   deletePersonalAssignment,
   updatePersonalAssignment,
+  updateActivePersonalAssignment,
 } from './personalAssignments'
 
 // Asignaciones Unificadas
@@ -69,6 +71,8 @@ export {
   getUnifiedHistory,
   returnUnifiedAssignment,
   deleteHistoryRecord,
+  deleteUnifiedAssignment,
+  updateUnifiedAssignment,
 } from './unifiedAssignments'
 
 // Conductores

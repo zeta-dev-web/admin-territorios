@@ -2,6 +2,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
 import { PropsWithChildren } from 'react';
 import { StyleSheet, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Colors } from '@/constants/theme';
 
 export function ScreenBackground({ children }: PropsWithChildren) {
@@ -12,13 +13,16 @@ export function ScreenBackground({ children }: PropsWithChildren) {
       <View style={[styles.orb, styles.orbTeal]} />
       <BlurView intensity={35} tint="dark" style={StyleSheet.absoluteFill} />
       <View style={styles.grid} />
-      {children}
+      <SafeAreaView edges={['top', 'left', 'right']} style={styles.safeArea}>
+        {children}
+      </SafeAreaView>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.ink },
+  safeArea: { flex: 1 },
   orb: { position: 'absolute', width: 250, height: 250, borderRadius: 150, opacity: 0.16 },
   orbBlue: { backgroundColor: Colors.blue, top: -100, right: -90 },
   orbTeal: { backgroundColor: Colors.teal, bottom: -130, left: -120 },

@@ -24,6 +24,21 @@ export class MobileApiError extends Error {
   }
 }
 
+let sessionExpiredHandler: (() => void) | null = null;
+
+export function setSessionExpiredHandler(handler: (() => void) | null) {
+  sessionExpiredHandler = handler;
+}
+
+function bytesToBase64(bytes: Uint8Array) {
+  let binary = '';
+  const chunkSize = 0x8000;
+  for (let index = 0; index < bytes.length; index += chunkSize) {
+    binary += String.fromCharCode(...bytes.subarray(index, index + chunkSize));
+  }
+  return btoa(binary);
+}
+
 export async function mobileAction<T>(
   action: string,
   params: Record<string, unknown> = {},
@@ -41,10 +56,17 @@ export async function mobileAction<T>(
 
   const contentType = response.headers.get('content-type') || '';
   if (contentType.includes('application/pdf')) {
-    return (await response.blob()) as T;
+    return bytesToBase64(new Uint8Array(await response.arrayBuffer())) as T;
   }
 
-  const payload = (await response.json()) as ApiEnvelope<T>;
+  let payload: ApiEnvelope<T>;
+  try {
+    payload = (await response.json()) as ApiEnvelope<T>;
+  } catch {
+    throw new MobileApiError('El servidor devolvió una respuesta inválida.', response.status);
+  }
+  const isExpiredSession = Boolean(token) && (response.status === 401 || payload.code === 'UNAUTHORIZED' || payload.code === 'TOKEN_EXPIRED' || /token|sesión|session|expir/i.test(payload.message || ''));
+  if (isExpiredSession) sessionExpiredHandler?.();
   if (!response.ok || !payload.success) {
     throw new MobileApiError(
       payload.message || 'No se pudo completar la operación',

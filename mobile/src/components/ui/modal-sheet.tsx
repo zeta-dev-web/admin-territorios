@@ -10,6 +10,7 @@ import {
   View,
 } from 'react-native';
 import { X } from 'lucide-react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Colors, Fonts, Radius, Spacing } from '@/constants/theme';
 
 interface ModalSheetProps extends PropsWithChildren {
@@ -26,6 +27,7 @@ export function ModalSheet({ visible, title, eyebrow, onClose, children }: Modal
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         style={styles.overlay}>
         <Pressable style={styles.backdrop} onPress={onClose} />
+        <SafeAreaView edges={['bottom']} style={styles.safeArea}>
         <View style={styles.sheet}>
           <View style={styles.handle} />
           <View style={styles.header}>
@@ -38,12 +40,14 @@ export function ModalSheet({ visible, title, eyebrow, onClose, children }: Modal
             </Pressable>
           </View>
           <ScrollView
+            style={styles.scroll}
             keyboardShouldPersistTaps="handled"
             contentContainerStyle={styles.body}
             showsVerticalScrollIndicator={false}>
             {children}
           </ScrollView>
         </View>
+        </SafeAreaView>
       </KeyboardAvoidingView>
     </Modal>
   );
@@ -61,11 +65,13 @@ const styles = StyleSheet.create({
     borderColor: Colors.borderStrong,
     paddingTop: 10,
   },
+  safeArea: { backgroundColor: Colors.navy },
   handle: { alignSelf: 'center', width: 40, height: 4, borderRadius: 4, backgroundColor: Colors.textDim },
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: Spacing.four, paddingTop: 18, paddingBottom: 12 },
   headerCopy: { gap: 4 },
   eyebrow: { color: Colors.mint, fontFamily: Fonts.rounded, fontSize: 9, letterSpacing: 1.6 },
   title: { color: Colors.text, fontFamily: Fonts.rounded, fontSize: 23, letterSpacing: -0.4 },
   closeButton: { width: 38, height: 38, alignItems: 'center', justifyContent: 'center', borderRadius: Radius.pill, backgroundColor: 'rgba(168,183,204,0.09)' },
-  body: { gap: Spacing.three, paddingHorizontal: Spacing.four, paddingBottom: 36 },
+  scroll: { flexShrink: 1 },
+  body: { gap: Spacing.three, paddingHorizontal: Spacing.four, paddingBottom: Spacing.two },
 });

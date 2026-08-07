@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import {
   MapPin, UserCircle, Calendar, CheckCircle, User, Loader2,
-  ArrowLeftRight, Grid3x3, X, Eye
+  ArrowLeftRight, Grid3x3, X, Eye, Pencil, Trash2
 } from 'lucide-react'
 import { formatDistanceToNow } from 'date-fns'
 import { es } from 'date-fns/locale'
@@ -15,6 +15,7 @@ import { QuickBlockRegistration } from './QuickBlockRegistration'
 import type { BlockStatus } from '@/types'
 import { Table } from '@/components/common/Table'
 import { ViewBlocksModal } from './ViewBlocksModal'
+import { DeleteActiveAssignmentModal, EditActiveAssignmentModal } from './EditActiveAssignmentModal'
 
 interface Props {
   assignments: UnifiedAssignment[]
@@ -41,6 +42,8 @@ export function UnifiedAssignmentsTable({ assignments, showHistory = false }: Pr
     assigneeName: string
     blocks: BlockStatus[]
   } | null>(null)
+  const [editingAssignment, setEditingAssignment] = useState<UnifiedAssignment | null>(null)
+  const [deletingAssignment, setDeletingAssignment] = useState<UnifiedAssignment | null>(null)
 
   async function handleReturnWithDate() {
     if (!returnModal) return
@@ -261,7 +264,7 @@ export function UnifiedAssignmentsTable({ assignments, showHistory = false }: Pr
 
                   {/* Acciones */}
                   <td className="px-6 py-4">
-                    <div className="flex items-center justify-center gap-2">
+                    <div className="flex min-w-[260px] flex-wrap items-center justify-center gap-2">
                       {!showHistory && (
                         <>
                           {/* Ver manzanas (solo conductores) */}
@@ -286,6 +289,15 @@ export function UnifiedAssignmentsTable({ assignments, showHistory = false }: Pr
                               <span className="hidden sm:inline">Ver</span>
                             </button>
                           )}
+
+                          <button
+                            onClick={() => setEditingAssignment(assignment)}
+                            className="flex items-center gap-1.5 rounded-lg border border-cyan-500/30 bg-cyan-500/10 px-3 py-1.5 text-sm font-medium text-cyan-300 transition-colors hover:bg-cyan-500/20"
+                            title="Editar asignación"
+                          >
+                            <Pencil className="h-4 w-4" />
+                            <span className="hidden sm:inline">Editar</span>
+                          </button>
 
                           {/* Registrar manzanas (solo conductores) */}
                           {assignment.type === 'CONDUCTOR' && (
@@ -330,6 +342,15 @@ export function UnifiedAssignmentsTable({ assignments, showHistory = false }: Pr
                               <ArrowLeftRight className="h-4 w-4" />
                             )}
                             <span className="hidden sm:inline">Devolver</span>
+                          </button>
+
+                          <button
+                            onClick={() => setDeletingAssignment(assignment)}
+                            className="flex items-center gap-1.5 rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-1.5 text-sm font-medium text-red-300 transition-colors hover:bg-red-500/20"
+                            title="Eliminar asignación"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                            <span className="hidden sm:inline">Eliminar</span>
                           </button>
                         </>
                       )}
@@ -433,6 +454,26 @@ export function UnifiedAssignmentsTable({ assignments, showHistory = false }: Pr
           assigneeName={viewingBlocks.assigneeName}
           blocks={viewingBlocks.blocks}
           onClose={() => setViewingBlocks(null)}
+        />
+      )}
+
+      {editingAssignment && (
+        <EditActiveAssignmentModal
+          assignment={editingAssignment}
+          onClose={(changed) => {
+            setEditingAssignment(null)
+            if (changed) router.refresh()
+          }}
+        />
+      )}
+
+      {deletingAssignment && (
+        <DeleteActiveAssignmentModal
+          assignment={deletingAssignment}
+          onClose={(changed) => {
+            setDeletingAssignment(null)
+            if (changed) router.refresh()
+          }}
         />
       )}
     </>

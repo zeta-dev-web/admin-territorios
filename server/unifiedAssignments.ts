@@ -2,6 +2,7 @@
 
 import { prisma } from '@/lib/prisma'
 import { getCurrentTenantId } from '@/lib/tenant'
+import type { UpdateAssignmentInput } from '@/types'
 
 export type UnifiedAssignmentType = 'CONDUCTOR' | 'PERSONAL'
 
@@ -269,6 +270,32 @@ export async function deleteHistoryRecord(
     const { deleteAssignment } = await import('./assignments')
     return deleteAssignment(assignmentId)
   }
+}
+
+export async function deleteUnifiedAssignment(
+  assignmentId: string,
+  type: UnifiedAssignmentType
+) {
+  return deleteHistoryRecord(assignmentId, type)
+}
+
+export async function updateUnifiedAssignment(
+  assignmentId: string,
+  type: UnifiedAssignmentType,
+  data: UpdateAssignmentInput & { memberId?: string; assignedDate?: Date; notes?: string }
+) {
+  if (type === 'PERSONAL') {
+    const { updateActivePersonalAssignment } = await import('./personalAssignments')
+    return updateActivePersonalAssignment(assignmentId, {
+      territoryId: data.territoryId,
+      memberId: data.memberId,
+      assignedDate: data.assignedDate,
+      notes: data.notes,
+    })
+  }
+
+  const { updateActiveAssignment } = await import('./assignments')
+  return updateActiveAssignment(assignmentId, data)
 }
 
 /**

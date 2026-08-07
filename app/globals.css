@@ -94,3 +94,12 @@
   }
 }
 
+/* Estilo para el ícono del calendario en inputs de fecha */
+input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: invert(1);
+  cursor: pointer;
+}
+
+input[type="date"]::-webkit-calendar-picker-indicator:hover {
+  filter: invert(1) brightness(1.2);
+}

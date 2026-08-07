@@ -84,7 +84,7 @@ export default function Footer() {
         <div className="mt-6 pt-4 border-t border-slate-800/50">
           <div className="flex flex-wrap items-center justify-center gap-4 text-xs text-slate-500">
             <span className="hover:text-slate-400 transition-colors cursor-default">
-              Versión 2.0
+              Versión 2.2
             </span>
             <span className="text-slate-700">•</span>
             <a

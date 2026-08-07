@@ -264,6 +264,13 @@ export async function getPersonalAssignmentsByMember(memberId: string) {
  */
 export async function deletePersonalAssignment(assignmentId: string) {
   try {
+    const tenantId = await getCurrentTenantId()
+    const assignment = await prisma.personalAssignment.findFirst({
+      where: { id: assignmentId, tenantId },
+      select: { id: true },
+    })
+    if (!assignment) throw new Error('Asignación no encontrada')
+
     await prisma.personalAssignment.delete({
       where: { id: assignmentId },
     })
@@ -347,6 +354,80 @@ export async function updatePersonalAssignment(
         error instanceof Error
           ? error.message
           : 'Error al actualizar la asignación',
+    }
+  }
+}
+
+export async function updateActivePersonalAssignment(
+  assignmentId: string,
+  data: {
+    territoryId?: string
+    memberId?: string
+    assignedDate?: Date
+    notes?: string
+  }
+) {
+  try {
+    const tenantId = await getCurrentTenantId()
+    const assignment = await prisma.personalAssignment.findFirst({
+      where: { id: assignmentId, tenantId, isActive: true },
+    })
+    if (!assignment) throw new Error('Asignación personal activa no encontrada')
+
+    const territoryId = data.territoryId ?? assignment.territoryId
+    const memberId = data.memberId ?? assignment.memberId
+    const [member, territory, conflictingPersonal, conflictingDriver] = await Promise.all([
+      prisma.member.findFirst({ where: { id: memberId, tenantId } }),
+      prisma.territory.findFirst({ where: { id: territoryId, tenantId } }),
+      prisma.personalAssignment.findFirst({
+        where: {
+          territoryId,
+          tenantId,
+          isActive: true,
+          id: { not: assignmentId },
+        },
+      }),
+      prisma.assignment.findFirst({
+        where: { territoryId, tenantId, isCompleted: false },
+      }),
+    ])
+
+    if (!member) throw new Error('Integrante no encontrado')
+    if (!territory) throw new Error('Territorio no encontrado')
+    if (conflictingPersonal || conflictingDriver) {
+      throw new Error(`El territorio ${territory.number} ya tiene una asignación activa`)
+    }
+
+    const updated = await prisma.personalAssignment.update({
+      where: { id: assignmentId },
+      data: {
+        territoryId,
+        memberId,
+        assignedDate: data.assignedDate,
+        notes: data.notes,
+      },
+      include: {
+        territory: true,
+        member: { include: { group: true } },
+      },
+    })
+
+    revalidatePath('/dashboard')
+    revalidatePath('/admin/assignments')
+    revalidatePath('/admin/history')
+    revalidatePath('/admin/territories')
+
+    return {
+      success: true,
+      data: updated,
+      message: 'Asignación personal actualizada correctamente',
+    }
+  } catch (error) {
+    console.error('Error al actualizar asignación personal activa:', error)
+    return {
+      success: false,
+      data: null,
+      message: error instanceof Error ? error.message : 'Error al actualizar la asignación personal',
     }
   }
 }

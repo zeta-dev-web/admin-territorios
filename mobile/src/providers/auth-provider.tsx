@@ -1,7 +1,7 @@
 import * as SecureStore from 'expo-secure-store';
-import { PropsWithChildren, createContext, useContext, useEffect, useState } from 'react';
-import { Platform } from 'react-native';
-import { mobileAction, LoginData, MobileUser } from '@/lib/api';
+import { PropsWithChildren, createContext, useContext, useEffect, useRef, useState } from 'react';
+import { Alert, Platform } from 'react-native';
+import { mobileAction, LoginData, MobileUser, setSessionExpiredHandler } from '@/lib/api';
 
 const STORAGE_KEY = 'territorios-mobile-session-v1';
 
@@ -31,6 +31,26 @@ async function clearSession() {
   await SecureStore.deleteItemAsync(STORAGE_KEY);
 }
 
+interface StoredSession extends LoginData {
+  expiresAt?: number;
+}
+
+function getTokenExpiry(token: string) {
+  try {
+    const payload = token.split('.')[1];
+    if (!payload) return undefined;
+    const decoded = JSON.parse(atob(payload.replace(/-/g, '+').replace(/_/g, '/'))) as { exp?: number };
+    return decoded.exp ? decoded.exp * 1000 : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+function sessionIsExpired(session: StoredSession) {
+  const expiresAt = session.expiresAt || getTokenExpiry(session.token);
+  return Boolean(expiresAt && expiresAt <= Date.now() + 5000);
+}
+
 interface AuthContextValue {
   hydrated: boolean;
   token: string | null;
@@ -46,6 +66,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
   const [hydrated, setHydrated] = useState(false);
   const [token, setToken] = useState<string | null>(null);
   const [user, setUser] = useState<MobileUser | null>(null);
+  const sessionExpiredRef = useRef(false);
 
   useEffect(() => {
     let mounted = true;
@@ -54,9 +75,13 @@ export function AuthProvider({ children }: PropsWithChildren) {
       if (!mounted) return;
       if (stored) {
         try {
-          const session = JSON.parse(stored) as LoginData;
-          setToken(session.token);
-          setUser(session.user);
+          const session = JSON.parse(stored) as StoredSession;
+          if (sessionIsExpired(session)) {
+            void clearSession();
+          } else {
+            setToken(session.token);
+            setUser(session.user);
+          }
         } catch {
           clearSession();
         }
@@ -69,20 +94,35 @@ export function AuthProvider({ children }: PropsWithChildren) {
     };
   }, []);
 
+  useEffect(() => {
+    setSessionExpiredHandler(() => {
+      if (sessionExpiredRef.current) return;
+      sessionExpiredRef.current = true;
+      void clearSession();
+      setToken(null);
+      setUser(null);
+      Alert.alert('Sesión vencida', 'Por seguridad, iniciá sesión nuevamente para continuar.');
+    });
+    return () => setSessionExpiredHandler(null);
+  }, []);
+
   async function login(email: string, password: string) {
     const data = await mobileAction<LoginData>('login', { email, password });
-    await writeSession(JSON.stringify(data));
+    sessionExpiredRef.current = false;
+    await writeSession(JSON.stringify({ ...data, expiresAt: Date.now() + data.expiresIn * 1000 }));
     setToken(data.token);
     setUser(data.user);
   }
 
   async function logout() {
+    sessionExpiredRef.current = true;
     if (token) {
       await mobileAction('logout', {}, token).catch(() => undefined);
     }
     await clearSession();
     setToken(null);
     setUser(null);
+    sessionExpiredRef.current = false;
   }
 
   async function acceptTerms() {

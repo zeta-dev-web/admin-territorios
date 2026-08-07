@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import type {
+  AssignmentBlockWorkInput,
   CreateAssignmentInput,
   CreateDailyRecordInput,
 } from '@/types'
@@ -53,6 +54,25 @@ interface AgentResponse {
 // Mapea cada accion a la funcion del servidor, normalizando los parametros.
 
 type ActionHandler = (params: Record<string, unknown>) => Promise<unknown>
+
+function parseBlockWork(value: unknown): AssignmentBlockWorkInput[] | undefined {
+  if (value === undefined) return undefined
+  if (!Array.isArray(value)) throw new Error('blockWork debe ser una lista')
+
+  return value.map((item) => {
+    if (!item || typeof item !== 'object') throw new Error('Registro de manzana inválido')
+    const work = item as Record<string, unknown>
+    const letter = typeof work.letter === 'string' ? work.letter.trim() : ''
+    const date = new Date(work.date as string)
+    if (!letter || Number.isNaN(date.getTime())) throw new Error('Registro de manzana inválido')
+
+    return {
+      letter,
+      date,
+      notes: typeof work.notes === 'string' ? work.notes : undefined,
+    }
+  })
+}
 
 export const actions: Record<string, ActionHandler> = {
   // ═══════════════════════════════════════════
@@ -249,6 +269,29 @@ export const actions: Record<string, ActionHandler> = {
 
   deleteHistoryRecord: (p) =>
     server.deleteHistoryRecord(p.assignmentId as string, p.type as 'CONDUCTOR' | 'PERSONAL'),
+
+  deleteUnifiedAssignment: (p) =>
+    server.deleteUnifiedAssignment(
+      p.assignmentId as string,
+      p.type as 'CONDUCTOR' | 'PERSONAL',
+    ),
+
+  updateUnifiedAssignment: (p) => {
+    const data = (p.data as Record<string, unknown>) ?? {}
+    return server.updateUnifiedAssignment(
+      p.assignmentId as string,
+      p.type as 'CONDUCTOR' | 'PERSONAL',
+      {
+        territoryId: data.territoryId as string | undefined,
+        driverId: data.driverId as string | undefined,
+        memberId: data.memberId as string | undefined,
+        startDate: data.startDate ? new Date(data.startDate as string) : undefined,
+        assignedDate: data.assignedDate ? new Date(data.assignedDate as string) : undefined,
+        notes: data.notes as string | undefined,
+        blockWork: parseBlockWork(data.blockWork),
+      },
+    )
+  },
 
   // ═══════════════════════════════════════════
   //  CONDUCTORES

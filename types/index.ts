@@ -48,6 +48,20 @@ export interface CreateAssignmentInput {
   startDate?: Date
 }
 
+export interface AssignmentBlockWorkInput {
+  letter: string
+  date: Date
+  notes?: string
+}
+
+export interface UpdateAssignmentInput {
+  territoryId?: string
+  driverId?: string
+  startDate?: Date
+  endDate?: Date | null
+  blockWork?: AssignmentBlockWorkInput[]
+}
+
 export interface CreateDailyRecordInput {
   assignmentId: string
   driverId: string
