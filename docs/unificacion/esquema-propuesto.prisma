@@ -1,0 +1,238 @@
+// ═══════════════════════════════════════════════════════════════════
+// PROPUESTA DE ESQUEMA PRISMA UNIFICADO — Territorios + VYMC
+// ═══════════════════════════════════════════════════════════════════
+//
+// Este archivo es una PROPUESTA REVISABLE (entregable 3 del plan).
+// NO se aplica todavía. La migración aditiva real se genera después
+// de aprobar este diseño.
+//
+// Decisiones clave (según PLAN_UNIFICACION_TERRITORIOS_VYMC.md):
+//   - Tenant pasa a llamarse Congregation.
+//   - Member y Driver se reemplazan por un único Publisher.
+//   - Publisher usa firstName + lastName (Territorios se adapta).
+//   - Las asignaciones se renombran para no colisionar entre módulos:
+//       Assignment          → TerritoryAssignment
+//       PersonalAssignment  → PersonalTerritoryAssignment
+//       (VYMC) Assignment   → MeetingAssignment
+//   - Acceso por módulo mediante tabla UserModuleAccess (no booleanos).
+//
+// PENDIENTES DE DECIDIR ANTES DE LA MIGRACIÓN FINAL:
+//   1. gender: Territorios no tiene género en Member/Driver. Se propone
+//      Gender? nullable durante la transición y backfill manual posterior.
+//
+// DECISIONES YA APROBADAS:
+//   - División de nombres: ÚLTIMA palabra = lastName, resto = firstName.
+//     Ej.: "JUAN CARLOS BELTRAN" → firstName "JUAN CARLOS", lastName "BELTRAN".
+//     Nombres de una sola palabra → lastName = "" (cadena vacía).
+//   - No existen duplicados contra VYMC: VYMC no está en producción;
+//     los publicadores provienen exclusivamente de Member/Driver.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum ModuleCode {
+  TERRITORIES
+  VYMC
+}
+
+enum Gender {
+  MALE
+  FEMALE
+}
+
+model Congregation {
+  id        String   @id @default(cuid())
+  name      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  users        User[]
+  groups       Group[]
+  publishers   Publisher[]
+  territories  Territory[]
+  // …y todas las relaciones territoriales existentes (blocks,
+  // territoryAssignments, dailyRecords, personalAssignments, maps…),
+  // además de las tablas propias de VYMC cuando se integren.
+
+  @@map("congregations")
+}
+
+model User {
+  id              String    @id @default(cuid())
+  email           String    @unique
+  password        String
+  name            String?
+  role            String    @default("USER") // ADMIN | USER
+  termsAcceptedAt DateTime?
+  congregationId  String
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  congregation Congregation       @relation(fields: [congregationId], references: [id])
+  moduleAccess UserModuleAccess[]
+
+  @@index([congregationId])
+  @@map("users")
+}
+
+/// Permisos de acceso por módulo (crece sin ALTER TABLE por cada módulo nuevo).
+model UserModuleAccess {
+  userId String
+  module ModuleCode
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([userId, module])
+  @@index([module])
+  @@map("user_module_access")
+}
+
+model Group {
+  id             String   @id @default(cuid())
+  name           String
+  congregationId String
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  congregation Congregation @relation(fields: [congregationId], references: [id])
+  publishers   Publisher[]
+  territories  Territory[]
+  // superintendent/auxiliary hoy son texto libre; pasarán a relación con
+  // Publisher en una migración posterior (no bloquea esta etapa).
+
+  @@unique([congregationId, name])
+  @@index([congregationId])
+  @@map("groups")
+}
+
+model Publisher {
+  id                   String    @id @default(cuid())
+  firstName            String
+  lastName             String
+  phone                String?
+  gender               Gender?   // nullable hasta completar el backfill (decisión pendiente 1)
+  isBaptized           Boolean   @default(true)
+  isElder              Boolean   @default(false)
+  isMinisterialServant Boolean   @default(false)
+  isPioneer            Boolean   @default(false)
+  isConductor          Boolean   @default(false) // capacidad territorial (ex Driver)
+  lastAssignedAt       DateTime?
+  congregationId       String
+  groupId              String?
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+
+  congregation Congregation     @relation(fields: [congregationId], references: [id])
+  group        Group?           @relation(fields: [groupId], references: [id])
+
+  personalTerritoryAssignments PersonalTerritoryAssignment[]
+  territoryAssignments         TerritoryAssignment[]
+  dailyRecords                 DailyRecord[]
+
+  @@index([congregationId])
+  @@index([groupId])
+  @@index([congregationId, groupId])
+  @@index([congregationId, isConductor])
+  @@map("publishers")
+}
+
+// ── Dominio TERRITORIOS ─────────────────────────────────────────────
+// (se muestran solo los cambios de nombre/campos respecto al esquema
+// actual; el resto de columnas permanece igual)
+
+model Territory {
+  id             String @id @default(cuid())
+  number         Int
+  description    String?
+  groupId        String
+  congregationId String
+
+  // …relaciones existentes (group, blocks, assignments, personalAssignments)
+
+  @@unique([congregationId, number])
+  @@index([number])
+  @@index([groupId])
+  @@index([congregationId])
+  @@map("territories")
+}
+
+/// Ex "Assignment": asignación de un territorio a un conductor.
+model TerritoryAssignment {
+  id             String    @id @default(cuid())
+  territoryId    String
+  publisherId    String    // ex driverId
+  startDate      DateTime  @default(now())
+  endDate        DateTime?
+  isCompleted    Boolean   @default(false)
+  congregationId String
+
+  publisher Publisher @relation(fields: [publisherId], references: [id])
+
+  @@index([territoryId])
+  @@index([publisherId])
+  @@index([isCompleted])
+  @@index([endDate])
+  @@index([congregationId])
+  @@map("territory_assignments")
+}
+
+/// Ex "PersonalAssignment": asignación personal de un territorio.
+model PersonalTerritoryAssignment {
+  id           String    @id @default(cuid())
+  territoryId  String
+  publisherId  String    // ex memberId
+  assignedDate DateTime  @default(now())
+  returnedDate DateTime?
+  isActive     Boolean   @default(true)
+  notes        String?
+  congregationId String
+
+  publisher Publisher @relation(fields: [publisherId], references: [id])
+
+  @@index([territoryId])
+  @@index([publisherId])
+  @@index([isActive])
+  @@index([assignedDate])
+  @@index([returnedDate])
+  @@index([congregationId])
+  @@map("personal_territory_assignments")
+}
+
+/// Ex "DailyRecord": ahora apunta a Publisher en lugar de Driver.
+model DailyRecord {
+  id           String   @id @default(cuid())
+  assignmentId String
+  publisherId  String   // ex driverId
+  blockId      String
+  date         DateTime @default(now())
+  notes        String?
+  congregationId String
+
+  publisher Publisher @relation(fields: [publisherId], references: [id])
+
+  @@unique([assignmentId, blockId, date])
+  @@index([assignmentId])
+  @@index([publisherId])
+  @@index([blockId])
+  @@index([date])
+  @@index([congregationId])
+  @@map("daily_records")
+}
+
+// ── Dominio VYMC (se integra en la sección 6 del plan) ──────────────
+// El actual modelo Assignment de VYMC pasará a llamarse MeetingAssignment:
+//
+// model MeetingAssignment {
+//   id          String
+//   weekItemId  String
+//   publisherId String
+//   role        AssignmentRole
+//   status      MeetingAssignmentStatus @default("ACTIVE") // ← 5.3 sustituciones
+//   …
+// }

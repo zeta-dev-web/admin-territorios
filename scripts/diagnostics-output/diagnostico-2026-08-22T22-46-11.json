@@ -1,0 +1,287 @@
+{
+  "generatedAt": "2026-08-22T22:46:11.412Z",
+  "database": "postgresql://postgres:***@localhost:5432/territorios_db",
+  "readOnly": true,
+  "inventory": {
+    "perTenant": [
+      {
+        "key": "__null__",
+        "tenantName": "(SIN TENANT)",
+        "blocks": 4
+      },
+      {
+        "key": "cmqn5mwei0000p0lo3iqi9gow",
+        "tenantName": "Sur Tafi Viejo",
+        "users": 2,
+        "groups": 4,
+        "members": 9,
+        "drivers": 11,
+        "territories": 7,
+        "blocks": 24,
+        "assignments": 8,
+        "dailyRecords": 3,
+        "personalAssignments": 3,
+        "territoryMaps": 2,
+        "apiKeys": 1
+      },
+      {
+        "key": "cmqn81hia0000vslo61kinrqb",
+        "tenantName": "Usuario: zetadev007@gmail.com",
+        "groups": 1,
+        "members": 2,
+        "drivers": 2,
+        "territories": 1,
+        "assignments": 1
+      }
+    ],
+    "globalTotals": {
+      "users": 2,
+      "groups": 5,
+      "members": 11,
+      "drivers": 13,
+      "territories": 8,
+      "blocks": 28,
+      "assignments": 9,
+      "dailyRecords": 3,
+      "personalAssignments": 3,
+      "territoryMaps": 2,
+      "apiKeys": 1
+    },
+    "nullTenantRows": {
+      "users": 0,
+      "groups": 0,
+      "members": 0,
+      "drivers": 0,
+      "territories": 0,
+      "blocks": 4,
+      "assignments": 0,
+      "dailyRecords": 0,
+      "personalAssignments": 0,
+      "territoryMaps": 0,
+      "apiKeys": 0
+    }
+  },
+  "brokenReferences": {
+    "members sin grupo existente": 0,
+    "drivers sin grupo existente": 0,
+    "territorios sin grupo existente": 0,
+    "asignaciones sin conductor existente": 0,
+    "asignaciones sin territorio existente": 0,
+    "registros diarios sin asignación existente": 0,
+    "registros diarios sin bloque existente": 0,
+    "registros diarios sin conductor existente": 0,
+    "asignaciones personales sin miembro existente": 0,
+    "asignaciones personales sin territorio existente": 0,
+    "bloques sin territorio existente": 0
+  },
+  "duplicateNames": {
+    "members": [],
+    "drivers": [],
+    "emptyNames": {
+      "members": 0,
+      "drivers": 0
+    }
+  },
+  "nameStructure": {
+    "members": {
+      "1": 2,
+      "2": 8,
+      "3": 1,
+      "4+": 0
+    },
+    "drivers": {
+      "1": 2,
+      "2": 9,
+      "3": 2,
+      "4+": 0
+    },
+    "examples": {
+      "members": {
+        "1": [
+          "asdas",
+          "asdasd"
+        ],
+        "2": [
+          "LUIS LESCANO",
+          "MARCELO FIUME",
+          "LEONARDO ZAMORANO",
+          "MIGUEL PUMARA",
+          "MARIANO BRITO",
+          "RAMON LIENDRO",
+          "DANIEL ZELARAYAN",
+          "JUAN PEREZ"
+        ],
+        "3": [
+          "JUAN CARLOS BELTRAN"
+        ],
+        "4+": []
+      },
+      "drivers": {
+        "1": [
+          "asdas",
+          "asdasd"
+        ],
+        "2": [
+          "MARCELO FIUME",
+          "MIGUEL PUMARA",
+          "MARIANO BRITO",
+          "RAMON LIENDRO",
+          "LUIS LESCANO",
+          "DANIEL ZELARAYAN",
+          "JUAN PEREZ",
+          "LEONARDO ZAMORANO",
+          "ADRIAN ABREGU"
+        ],
+        "3": [
+          "JUAN CARLOS BELTRAN",
+          "UALER SAN FELIPE"
+        ],
+        "4+": []
+      }
+    }
+  },
+  "driverMemberMatches": {
+    "uniqueMatches": [
+      {
+        "driver_id": "cmpxfd75z000gyclo3iu64pv4",
+        "driver_name": "MARCELO FIUME",
+        "groupId": "cmpxfd75t000fyclo75f1pbyz",
+        "tenantId": "cmqn5mwei0000p0lo3iqi9gow",
+        "coincidencias": 1,
+        "member_ids": [
+          "cmqfzjl8p0009k8lo6u79rqhg"
+        ]
+      },
+      {
+        "driver_id": "cmqfzar7z0002k8lolv6iy3dz",
+        "driver_name": "JUAN CARLOS BELTRAN",
+        "groupId": "cmqfyrp7p0001k8lo0e53fwsz",
+        "tenantId": "cmqn5mwei0000p0lo3iqi9gow",
+        "coincidencias": 1,
+        "member_ids": [
+          "cmqfzjmcc000bk8lop45tjhwc"
+        ]
+      },
+      {
+        "driver_id": "cmqfzar870003k8londy4l4wb",
+        "driver_name": "MIGUEL PUMARA",
+        "groupId": "cmqfyrp7p0001k8lo0e53fwsz",
+        "tenantId": "cmqn5mwei0000p0lo3iqi9gow",
+        "coincidencias": 1,
+        "member_ids": [
+          "cmqfzjmcc000ck8loj2nop339"
+        ]
+      },
+      {
+        "driver_id": "cmqfzb5mk0005k8lo5jy317wi",
+        "driver_name": "MARIANO BRITO",
+        "groupId": "cmqfzb5lk0004k8lonz6whf8r",
+        "tenantId": "cmqn5mwei0000p0lo3iqi9gow",
+        "coincidencias": 1,
+        "member_ids": [
+          "cmqfzjniz000dk8lo7lnd6wni"
+        ]
+      },
+      {
+        "driver_id": "cmqfzb5mk0006k8lo14mvhvqx",
+        "driver_name": "RAMON LIENDRO",
+        "groupId": "cmqfzb5lk0004k8lonz6whf8r",
+        "tenantId": "cmqn5mwei0000p0lo3iqi9gow",
+        "coincidencias": 1,
+        "member_ids": [
+          "cmqfzjniz000ek8lopa0xohfq"
+        ]
+      },
+      {
+        "driver_id": "cmpxefll70003ycloeuplo11f",
+        "driver_name": "LUIS LESCANO",
+        "groupId": "cmpxeflk00002yclol6fng7jv",
+        "tenantId": "cmqn5mwei0000p0lo3iqi9gow",
+        "coincidencias": 1,
+        "member_ids": [
+          "cmqfzjjb00007k8lohrn7xqo8"
+        ]
+      },
+      {
+        "driver_id": "cmqfzo0qv000gk8loolokf9ep",
+        "driver_name": "DANIEL ZELARAYAN",
+        "groupId": "cmpxeflk00002yclol6fng7jv",
+        "tenantId": "cmqn5mwei0000p0lo3iqi9gow",
+        "coincidencias": 1,
+        "member_ids": [
+          "cmqfzjjb00008k8losn4u89cj"
+        ]
+      },
+      {
+        "driver_id": "cmqfztbre000kk8loscy61867",
+        "driver_name": "LEONARDO ZAMORANO",
+        "groupId": "cmpxfd75t000fyclo75f1pbyz",
+        "tenantId": "cmqn5mwei0000p0lo3iqi9gow",
+        "coincidencias": 1,
+        "member_ids": [
+          "cmqfzjl8p000ak8lo61ljof04"
+        ]
+      },
+      {
+        "driver_id": "cmqn88dnu0001e4lobdcmp5yg",
+        "driver_name": "asdas",
+        "groupId": "cmqn88dna0000e4lobvpl6clj",
+        "tenantId": "cmqn81hia0000vslo61kinrqb",
+        "coincidencias": 1,
+        "member_ids": [
+          "cmqn88dnv0003e4lo928mjdom"
+        ]
+      },
+      {
+        "driver_id": "cmqn88dnu0002e4lo26zjr3yr",
+        "driver_name": "asdasd",
+        "groupId": "cmqn88dna0000e4lobvpl6clj",
+        "tenantId": "cmqn81hia0000vslo61kinrqb",
+        "coincidencias": 1,
+        "member_ids": [
+          "cmqn88dnv0004e4lobgdq2s8x"
+        ]
+      }
+    ],
+    "ambiguousDrivers": [],
+    "unmatchedDrivers": [
+      {
+        "driver_id": "cmqfzof0j000ik8lo7qp4vp2t",
+        "driver_name": "JUAN PEREZ",
+        "groupId": "cmpxeflk00002yclol6fng7jv",
+        "tenantId": "cmqn5mwei0000p0lo3iqi9gow",
+        "coincidencias": 0,
+        "member_ids": []
+      },
+      {
+        "driver_id": "cmqg0f9jj000lk8loy8h7xxoo",
+        "driver_name": "ADRIAN ABREGU",
+        "groupId": "cmqfyrp7p0001k8lo0e53fwsz",
+        "tenantId": "cmqn5mwei0000p0lo3iqi9gow",
+        "coincidencias": 0,
+        "member_ids": []
+      },
+      {
+        "driver_id": "cmqg0fiu3000mk8loswhrtjxr",
+        "driver_name": "UALER SAN FELIPE",
+        "groupId": "cmpxfd75t000fyclo75f1pbyz",
+        "tenantId": "cmqn5mwei0000p0lo3iqi9gow",
+        "coincidencias": 0,
+        "member_ids": []
+      }
+    ],
+    "summary": {
+      "totalDrivers": 13,
+      "uniqueMatches": 10,
+      "ambiguousDrivers": 0,
+      "unmatchedDrivers": 3
+    }
+  },
+  "groups": {
+    "total": 5,
+    "withoutTenant": 0,
+    "superintendentPopulated": 5,
+    "auxiliaryPopulated": 5
+  },
+  "errors": []
+}
