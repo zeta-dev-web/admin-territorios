@@ -30,9 +30,10 @@ export async function getDashboardMetrics(): Promise<DashboardMetrics> {
             blocks: true,
           },
         },
-        driver: {
+        publisher: {
           select: {
-            name: true,
+            firstName: true,
+            lastName: true,
           },
         },
         blocks: true,
@@ -80,7 +81,9 @@ export async function getDashboardMetrics(): Promise<DashboardMetrics> {
           territoryId: assignment.territory.id,
           territoryNumber: assignment.territory.number,
           assignmentId: assignment.id,
-          driverName: assignment.driver?.name ?? '—',
+          driverName: assignment.publisher
+            ? `${assignment.publisher.firstName} ${assignment.publisher.lastName}`.trim()
+            : '—',
           startDate: assignment.startDate,
           totalBlocks,
           completedBlocks,
@@ -244,7 +247,7 @@ export async function getTerritoryProgress(territoryId: string) {
       },
       include: {
         territory: true,
-        driver: {
+        publisher: {
           include: {
             group: true,
           },
@@ -253,7 +256,7 @@ export async function getTerritoryProgress(territoryId: string) {
           include: {
             dailyRecords: {
               include: {
-                driver: true,
+                publisher: true,
               },
               orderBy: {
                 date: 'desc',
@@ -264,7 +267,7 @@ export async function getTerritoryProgress(territoryId: string) {
         dailyRecords: {
           include: {
             block: true,
-            driver: true,
+            publisher: true,
           },
           orderBy: {
             date: 'desc',
@@ -333,7 +336,7 @@ export async function getAssignmentBlocks(assignmentId: string) {
       where: { id: assignmentId, tenantId },
       include: {
         territory: true,
-        driver: {
+        publisher: {
           include: {
             group: true,
           },
@@ -411,7 +414,7 @@ export async function getGeneralStats() {
       completedAssignments,
     ] = await Promise.all([
       prisma.territory.count({ where: { tenantId } }),
-      prisma.driver.count({ where: { tenantId } }),
+      prisma.publisher.count({ where: { tenantId, isConductor: true } }),
       prisma.group.count({ where: { tenantId } }),
       prisma.assignment.count({ where: { isCompleted: false, tenantId } }),
       prisma.assignment.count({ where: { isCompleted: true, tenantId } }),

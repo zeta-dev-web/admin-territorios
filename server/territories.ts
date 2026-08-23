@@ -86,13 +86,13 @@ export async function getAllTerritories(page = 1, pageSize = 10) {
           group: true,
           assignments: {
             where: { isCompleted: false },
-            include: { driver: { include: { group: true } } },
+            include: { publisher: { include: { group: true } } },
             orderBy: { startDate: 'desc' },
             take: 1,
           },
           personalAssignments: {
             where: { isActive: true },
-            include: { member: { include: { group: true } } },
+            include: { publisher: { include: { group: true } } },
           },
           _count: { select: { assignments: true, personalAssignments: true } },
         },
@@ -101,8 +101,20 @@ export async function getAllTerritories(page = 1, pageSize = 10) {
       prisma.territory.count({ where: tenantFilter(tenantId) }),
     ])
 
+    const personName = (p: { firstName: string; lastName: string } | null) =>
+      p ? `${p.firstName} ${p.lastName}`.trim() : ''
+
     const enrichedTerritories = territories.map((t) => ({
-      ...t, lastAssignmentDate: lastDateMap.get(t.id) || null,
+      ...t,
+      lastAssignmentDate: lastDateMap.get(t.id) || null,
+      assignments: t.assignments.map((a) => {
+        const { publisher, ...rest } = a
+        return { ...rest, driver: publisher ? { ...publisher, name: personName(publisher) } : null }
+      }),
+      personalAssignments: t.personalAssignments.map((pa) => {
+        const { publisher, ...rest } = pa
+        return { ...rest, member: publisher ? { ...publisher, name: personName(publisher) } : null }
+      }),
     }))
 
     return {
@@ -124,7 +136,7 @@ export async function getTerritoryById(territoryId: string) {
         blocks: { include: { dailyRecords: { orderBy: { date: 'desc' }, take: 1 } } },
         group: true,
         assignments: {
-          include: { driver: { include: { group: true } }, blocks: true, dailyRecords: true },
+          include: { publisher: { include: { group: true } }, blocks: true, dailyRecords: true },
           orderBy: { startDate: 'desc' },
         },
       },
@@ -210,7 +222,7 @@ export async function getTerritoryByNumber(number: number) {
       include: {
         blocks: true,
         assignments: {
-          include: { driver: { include: { group: true } } },
+          include: { publisher: { include: { group: true } } },
           orderBy: { startDate: 'desc' },
         },
       },
@@ -340,12 +352,12 @@ export async function getAllTerritoriesForAdmin() {
           blocks: true, group: true,
           assignments: {
             where: { isCompleted: false },
-            include: { driver: { include: { group: true } } },
+            include: { publisher: { include: { group: true } } },
             orderBy: { startDate: 'desc' }, take: 1,
           },
           personalAssignments: {
             where: { isActive: true },
-            include: { member: { include: { group: true } } },
+            include: { publisher: { include: { group: true } } },
           },
           _count: { select: { assignments: true, personalAssignments: true } },
         },
@@ -360,8 +372,20 @@ export async function getAllTerritoriesForAdmin() {
       }),
     ])
 
+    const personName = (p: { firstName: string; lastName: string } | null) =>
+      p ? `${p.firstName} ${p.lastName}`.trim() : ''
+
     const enrichedTerritories = territories.map((t) => ({
-      ...t, lastAssignmentDate: lastDateMap.get(t.id) || null,
+      ...t,
+      lastAssignmentDate: lastDateMap.get(t.id) || null,
+      assignments: t.assignments.map((a) => {
+        const { publisher, ...rest } = a
+        return { ...rest, driver: publisher ? { ...publisher, name: personName(publisher) } : null }
+      }),
+      personalAssignments: t.personalAssignments.map((pa) => {
+        const { publisher, ...rest } = pa
+        return { ...rest, member: publisher ? { ...publisher, name: personName(publisher) } : null }
+      }),
     }))
 
     return {

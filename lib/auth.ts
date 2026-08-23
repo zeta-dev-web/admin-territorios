@@ -266,8 +266,6 @@ export async function setupAdmin(): Promise<{
   // Backfillear datos existentes (sin tenantId) a este tenant
   await Promise.all([
     prisma.group.updateMany({ where: { tenantId: null }, data: { tenantId: tenant.id } }),
-    prisma.driver.updateMany({ where: { tenantId: null }, data: { tenantId: tenant.id } }),
-    prisma.member.updateMany({ where: { tenantId: null }, data: { tenantId: tenant.id } }),
     prisma.territory.updateMany({ where: { tenantId: null }, data: { tenantId: tenant.id } }),
     prisma.block.updateMany({ where: { tenantId: null }, data: { tenantId: tenant.id } }),
     prisma.assignment.updateMany({ where: { tenantId: null }, data: { tenantId: tenant.id } }),

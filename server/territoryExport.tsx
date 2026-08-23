@@ -148,7 +148,7 @@ export async function exportTerritoryHistoryPdf(
                 endDate: { gte: fromDate, lte: toDate },
               },
           include: {
-            driver: { select: { name: true } },
+            publisher: { select: { firstName: true, lastName: true } },
           },
           orderBy: [
             { startDate: 'asc' },
@@ -167,7 +167,7 @@ export async function exportTerritoryHistoryPdf(
                 returnedDate: { gte: fromDate, lte: toDate },
               },
           include: {
-            member: { select: { name: true } },
+            publisher: { select: { firstName: true, lastName: true } },
           },
           orderBy: [
             { assignedDate: 'asc' },
@@ -193,7 +193,7 @@ export async function exportTerritoryHistoryPdf(
       // Asignaciones de conductor
       t.assignments.forEach(a => {
         assignments.push({
-          name: (a.driver?.name ?? '—'),
+          name: a.publisher ? `${a.publisher.firstName} ${a.publisher.lastName}`.trim() : '—',
           assigned: formatDate(a.startDate),
           returned: formatDate(a.endDate),
         })
@@ -202,7 +202,7 @@ export async function exportTerritoryHistoryPdf(
       // Asignaciones personales
       t.personalAssignments.forEach(pa => {
         assignments.push({
-          name: (pa.member?.name ?? '—'),
+          name: pa.publisher ? `${pa.publisher.firstName} ${pa.publisher.lastName}`.trim() : '—',
           assigned: formatDate(pa.assignedDate),
           returned: formatDate(pa.returnedDate),
         })

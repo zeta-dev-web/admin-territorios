@@ -1,3 +1,6 @@
+// ⛔ DEPRECADO tras el paso 5 (retiro de Member/Driver).
+// Este script consulta tablas que ya no existen. Se conserva como registro histórico.
+// Ver docs/unificacion/migracion-retiro-legacy-v1.sql
 // ═══════════════════════════════════════════════════════════════════
 // BACKFILL MEMBER/DRIVER → PUBLISHER — Fases 2 y 3 del plan
 // ═══════════════════════════════════════════════════════════════════

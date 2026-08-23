@@ -18,12 +18,10 @@ model Tenant {
 
   users               User[]
   groups              Group[]
-  drivers             Driver[]
   territories         Territory[]
   blocks              Block[]
   assignments         Assignment[]
   dailyRecords        DailyRecord[]
-  members             Member[]
   personalAssignments PersonalAssignment[]
   maps                TerritoryMap[]
   apiKeys             ApiKey[]
@@ -62,8 +60,6 @@ model Group {
   updatedAt      DateTime @updatedAt
 
   tenant      Tenant?     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  drivers     Driver[]
-  members     Member[]
   territories Territory[]
   publishers  Publisher[]
 
@@ -73,53 +69,16 @@ model Group {
 
 // ═══════════════════════════════════════════
 //  INTEGRANTES
-// ═══════════════════════════════════════════
-
-model Member {
-  id        String   @id @default(cuid())
-  name      String
-  groupId   String
-  tenantId  String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  tenant              Tenant?              @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  group               Group                @relation(fields: [groupId], references: [id], onDelete: Cascade)
-  personalAssignments PersonalAssignment[]
-
-  @@index([groupId])
-  @@index([name])
-  @@index([tenantId])
-}
 
 // ═══════════════════════════════════════════
 //  CONDUCTORES
-// ═══════════════════════════════════════════
-
-model Driver {
-  id        String   @id @default(cuid())
-  name      String
-  groupId   String
-  tenantId  String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  tenant       Tenant?       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  assignments  Assignment[]
-  dailyRecords DailyRecord[]
-  group        Group         @relation(fields: [groupId], references: [id], onDelete: Cascade)
-
-  @@index([groupId])
-  @@index([name])
-  @@index([tenantId])
-}
 
 enum Gender {
   MALE
   FEMALE
 }
 
-// Fuente unica de personas para Territorios y VYMC. Member y Driver se
+// Fuente unica de personas para Territorios y VYMC. Los modelos legacy Member/Driver
 // conservan temporalmente mientras la aplicacion cambia sus lecturas.
 model Publisher {
   id                   String    @id @default(cuid())
@@ -206,7 +165,6 @@ model Block {
 model Assignment {
   id          String    @id @default(cuid())
   territoryId String
-  driverId    String?
   startDate   DateTime  @default(now())
   endDate     DateTime?
   isCompleted Boolean   @default(false)
@@ -216,14 +174,12 @@ model Assignment {
   updatedAt   DateTime  @updatedAt
 
   tenant       Tenant?       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  driver       Driver?       @relation(fields: [driverId], references: [id], onDelete: Cascade)
   territory    Territory     @relation(fields: [territoryId], references: [id], onDelete: Cascade)
   publisher    Publisher?    @relation(fields: [publisherId], references: [id], onDelete: Restrict)
   blocks       Block[]
   dailyRecords DailyRecord[]
 
   @@index([territoryId])
-  @@index([driverId])
   @@index([isCompleted])
   @@index([endDate])
   @@index([tenantId])
@@ -237,7 +193,6 @@ model Assignment {
 model DailyRecord {
   id           String   @id @default(cuid())
   assignmentId String
-  driverId     String?
   blockId      String
   date         DateTime @default(now())
   notes        String?
@@ -249,12 +204,10 @@ model DailyRecord {
   tenant     Tenant?    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   assignment Assignment @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
   block      Block      @relation(fields: [blockId], references: [id], onDelete: Cascade)
-  driver     Driver?    @relation(fields: [driverId], references: [id], onDelete: Cascade)
   publisher  Publisher? @relation(fields: [publisherId], references: [id], onDelete: Restrict)
 
   @@unique([assignmentId, blockId, date])
   @@index([assignmentId])
-  @@index([driverId])
   @@index([blockId])
   @@index([date])
   @@index([tenantId])
@@ -268,7 +221,6 @@ model DailyRecord {
 model PersonalAssignment {
   id           String    @id @default(cuid())
   territoryId  String
-  memberId     String?
   assignedDate DateTime  @default(now())
   returnedDate DateTime?
   isActive     Boolean   @default(true)
@@ -280,11 +232,9 @@ model PersonalAssignment {
 
   tenant    Tenant?    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   territory Territory  @relation(fields: [territoryId], references: [id], onDelete: Cascade)
-  member    Member?    @relation(fields: [memberId], references: [id], onDelete: Cascade)
   publisher Publisher? @relation(fields: [publisherId], references: [id], onDelete: Restrict)
 
   @@index([territoryId])
-  @@index([memberId])
   @@index([isActive])
   @@index([assignedDate])
   @@index([returnedDate])
