@@ -24,6 +24,7 @@ model Tenant {
   dailyRecords        DailyRecord[]
   personalAssignments PersonalAssignment[]
   maps                TerritoryMap[]
+  weeks               Week[]
   apiKeys             ApiKey[]
   publishers          Publisher[]
 }
@@ -39,8 +40,9 @@ model User {
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
 
-  tenant  Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  apiKeys ApiKey[]
+  tenant       Tenant             @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  apiKeys      ApiKey[]
+  moduleAccess UserModuleAccess[]
 
   @@index([email])
   @@index([tenantId])
@@ -97,11 +99,14 @@ model Publisher {
   createdAt            DateTime  @default(now())
   updatedAt            DateTime  @updatedAt
 
-  tenant              Tenant?              @relation(fields: [tenantId], references: [id], onDelete: Restrict)
-  group               Group?               @relation(fields: [groupId], references: [id], onDelete: SetNull)
-  assignments         Assignment[]
-  dailyRecords        DailyRecord[]
-  personalAssignments PersonalAssignment[]
+  tenant               Tenant?              @relation(fields: [tenantId], references: [id], onDelete: Restrict)
+  group                Group?               @relation(fields: [groupId], references: [id], onDelete: SetNull)
+  assignments          Assignment[]
+  dailyRecords         DailyRecord[]
+  personalAssignments  PersonalAssignment[]
+  meetingAssignments   MeetingAssignment[]
+  weeksAsPresident     Week[]               @relation("WeekPresident")
+  weeksAsOpeningPrayer Week[]               @relation("WeekOpeningPrayer")
 
   @@index([tenantId])
   @@index([groupId])
@@ -295,4 +300,123 @@ model ApiKey {
   @@index([key])
   @@index([userId])
   @@index([tenantId])
+}
+
+// ═══════════════════════════════════════════
+//  MÓDULO VYMC (Reunión Vida y Ministerio)
+//  Tablas portadas del sistema VYMC con nombres
+//  unificados. Fuente: PLAN_UNIFICACION §6.
+// ═══════════════════════════════════════════
+
+enum ModuleCode {
+  TERRITORIES
+  VYMC
+}
+
+model UserModuleAccess {
+  userId String
+  module ModuleCode
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([userId, module])
+  @@index([module])
+}
+
+enum SectionType {
+  PRESIDENT
+  OPENING_PRAYER
+  TREASURES
+  BE_BETTER_TEACHERS
+  CHRISTIAN_LIFE
+  CLOSING_PRAYER
+}
+
+enum ItemType {
+  SPEECH
+  READING
+  DISCUSSION
+  CONDUCTOR_READER
+  PRAYER
+}
+
+enum AssignmentRole {
+  ASSIGNEE
+  STUDENT
+  HELPER
+  CONDUCTOR
+  READER
+}
+
+model Week {
+  id              String    @id @default(cuid())
+  weekNumber      Int
+  year            Int
+  startDate       DateTime
+  endDate         DateTime
+  tenantId        String
+  presidentId     String?
+  openingPrayerId String?
+  biblicalReading String?
+  scrapedAt       DateTime?
+  isConfirmed     Boolean   @default(false)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  tenant        Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  president     Publisher?    @relation("WeekPresident", fields: [presidentId], references: [id], onDelete: SetNull)
+  openingPrayer Publisher?    @relation("WeekOpeningPrayer", fields: [openingPrayerId], references: [id], onDelete: SetNull)
+  sections      WeekSection[]
+
+  @@unique([tenantId, weekNumber, year])
+  @@index([tenantId])
+  @@index([presidentId])
+  @@index([openingPrayerId])
+}
+
+model WeekSection {
+  id          String      @id @default(cuid())
+  weekId      String
+  sectionType SectionType
+  order       Int
+  createdAt   DateTime    @default(now())
+
+  week  Week       @relation(fields: [weekId], references: [id], onDelete: Cascade)
+  items WeekItem[]
+
+  @@index([weekId])
+}
+
+model WeekItem {
+  id                    String   @id @default(cuid())
+  weekSectionId         String
+  title                 String
+  itemType              ItemType
+  order                 Int
+  requiresStudentHelper Boolean  @default(false)
+  timeMinutes           Int?
+  songNumber            Int?
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  weekSection WeekSection         @relation(fields: [weekSectionId], references: [id], onDelete: Cascade)
+  assignments MeetingAssignment[]
+
+  @@index([weekSectionId])
+}
+
+/// Ex "Assignment" de VYMC: asignación de una parte de la reunión.
+model MeetingAssignment {
+  id          String         @id @default(cuid())
+  weekItemId  String
+  publisherId String
+  role        AssignmentRole
+  createdAt   DateTime       @default(now())
+
+  weekItem  WeekItem  @relation(fields: [weekItemId], references: [id], onDelete: Cascade)
+  publisher Publisher @relation(fields: [publisherId], references: [id], onDelete: Cascade)
+
+  @@unique([weekItemId, role])
+  @@index([weekItemId])
+  @@index([publisherId])
 }
