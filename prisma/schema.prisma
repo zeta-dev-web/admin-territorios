@@ -27,6 +27,7 @@ model Tenant {
   personalAssignments PersonalAssignment[]
   maps                TerritoryMap[]
   apiKeys             ApiKey[]
+  publishers          Publisher[]
 }
 
 model User {
@@ -64,6 +65,7 @@ model Group {
   drivers     Driver[]
   members     Member[]
   territories Territory[]
+  publishers  Publisher[]
 
   @@index([name])
   @@index([tenantId])
@@ -110,6 +112,42 @@ model Driver {
   @@index([groupId])
   @@index([name])
   @@index([tenantId])
+}
+
+enum Gender {
+  MALE
+  FEMALE
+}
+
+// Fuente unica de personas para Territorios y VYMC. Member y Driver se
+// conservan temporalmente mientras la aplicacion cambia sus lecturas.
+model Publisher {
+  id                   String    @id @default(cuid())
+  firstName            String
+  lastName             String
+  phone                String?
+  gender               Gender?
+  isBaptized           Boolean?
+  isElder              Boolean   @default(false)
+  isMinisterialServant Boolean   @default(false)
+  isPioneer            Boolean   @default(false)
+  isConductor          Boolean   @default(false)
+  lastAssignedAt       DateTime?
+  groupId              String?
+  tenantId             String
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+
+  tenant              Tenant               @relation(fields: [tenantId], references: [id], onDelete: Restrict)
+  group               Group?               @relation(fields: [groupId], references: [id], onDelete: SetNull)
+  assignments         Assignment[]
+  dailyRecords        DailyRecord[]
+  personalAssignments PersonalAssignment[]
+
+  @@index([tenantId])
+  @@index([groupId])
+  @@index([tenantId, groupId])
+  @@index([tenantId, isConductor])
 }
 
 // ═══════════════════════════════════════════
@@ -173,12 +211,14 @@ model Assignment {
   endDate      DateTime?
   isCompleted  Boolean       @default(false)
   tenantId     String?
+  publisherId  String?
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
 
   tenant       Tenant?       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   driver       Driver        @relation(fields: [driverId], references: [id], onDelete: Cascade)
   territory    Territory     @relation(fields: [territoryId], references: [id], onDelete: Cascade)
+  publisher    Publisher?    @relation(fields: [publisherId], references: [id], onDelete: Restrict)
   blocks       Block[]
   dailyRecords DailyRecord[]
 
@@ -187,6 +227,7 @@ model Assignment {
   @@index([isCompleted])
   @@index([endDate])
   @@index([tenantId])
+  @@index([publisherId])
 }
 
 // ═══════════════════════════════════════════
@@ -201,6 +242,7 @@ model DailyRecord {
   date         DateTime   @default(now())
   notes        String?
   tenantId     String?
+  publisherId  String?
   createdAt    DateTime   @default(now())
   updatedAt    DateTime   @updatedAt
 
@@ -208,6 +250,7 @@ model DailyRecord {
   assignment   Assignment @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
   block        Block      @relation(fields: [blockId], references: [id], onDelete: Cascade)
   driver       Driver     @relation(fields: [driverId], references: [id], onDelete: Cascade)
+  publisher    Publisher? @relation(fields: [publisherId], references: [id], onDelete: Restrict)
 
   @@unique([assignmentId, blockId, date])
   @@index([assignmentId])
@@ -215,6 +258,7 @@ model DailyRecord {
   @@index([blockId])
   @@index([date])
   @@index([tenantId])
+  @@index([publisherId])
 }
 
 // ═══════════════════════════════════════════
@@ -230,12 +274,14 @@ model PersonalAssignment {
   isActive     Boolean   @default(true)
   notes        String?
   tenantId     String?
+  publisherId  String?
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
 
   tenant       Tenant?   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   territory    Territory @relation(fields: [territoryId], references: [id], onDelete: Cascade)
   member       Member    @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  publisher    Publisher? @relation(fields: [publisherId], references: [id], onDelete: Restrict)
 
   @@index([territoryId])
   @@index([memberId])
@@ -243,6 +289,7 @@ model PersonalAssignment {
   @@index([assignedDate])
   @@index([returnedDate])
   @@index([tenantId])
+  @@index([publisherId])
 }
 
 // ═══════════════════════════════════════════

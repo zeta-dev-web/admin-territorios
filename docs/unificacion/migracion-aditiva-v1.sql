@@ -26,20 +26,35 @@ BEGIN;
 SET LOCAL lock_timeout = '5s';
 SET LOCAL statement_timeout = '60s';
 
+-- Tipo compartido con VYMC. Los publicadores migrados quedan con genero
+-- desconocido hasta completar ese dato manualmente.
+DO $$
+BEGIN
+    CREATE TYPE "Gender" AS ENUM ('MALE', 'FEMALE');
+EXCEPTION
+    WHEN duplicate_object THEN NULL;
+END $$;
+
 -- ── 1. Publisher ────────────────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS "Publisher" (
-    "id"          TEXT        NOT NULL PRIMARY KEY,   -- cuid generado por la app/script
-    "firstName"   TEXT        NOT NULL,
-    "lastName"    TEXT        NOT NULL,
-    "isConductor" BOOLEAN     NOT NULL DEFAULT false,
-    -- Género pendiente de decisión: Territorios no tiene ese dato hoy.
-    -- Se agregará como columna nullable en una migración siguiente.
-    "groupId"     TEXT        NOT NULL REFERENCES "Group"("id") ON DELETE CASCADE,
-    "tenantId"    TEXT        REFERENCES "Tenant"("id") ON DELETE CASCADE,
+    "id"                   TEXT         NOT NULL PRIMARY KEY,
+    "firstName"            TEXT         NOT NULL,
+    "lastName"             TEXT         NOT NULL,
+    "phone"                TEXT,
+    "gender"               "Gender",
+    "isBaptized"           BOOLEAN,
+    "isElder"              BOOLEAN      NOT NULL DEFAULT false,
+    "isMinisterialServant" BOOLEAN      NOT NULL DEFAULT false,
+    "isPioneer"            BOOLEAN      NOT NULL DEFAULT false,
+    "isConductor"          BOOLEAN      NOT NULL DEFAULT false,
+    "lastAssignedAt"       TIMESTAMP(3),
+    -- Eliminar un grupo nunca debe eliminar a la persona ni su historial.
+    "groupId"              TEXT REFERENCES "Group"("id") ON DELETE SET NULL,
+    "tenantId"             TEXT         NOT NULL REFERENCES "Tenant"("id") ON DELETE RESTRICT,
     -- Nota: al unificar con VYMC, tenantId se renombrará a congregationId
     -- en una migración posterior (Despliegue D), conservando los IDs.
-    "createdAt"   TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updatedAt"   TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
+    "createdAt"            TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt"            TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE INDEX IF NOT EXISTS "Publisher_tenantId_idx"              ON "Publisher"("tenantId");
