@@ -267,7 +267,6 @@ export async function setupAdmin(): Promise<{
   await Promise.all([
     prisma.group.updateMany({ where: { tenantId: null }, data: { tenantId: tenant.id } }),
     prisma.driver.updateMany({ where: { tenantId: null }, data: { tenantId: tenant.id } }),
-    prisma.publisher.updateMany({ where: { tenantId: null }, data: { tenantId: tenant.id } }),
     prisma.member.updateMany({ where: { tenantId: null }, data: { tenantId: tenant.id } }),
     prisma.territory.updateMany({ where: { tenantId: null }, data: { tenantId: tenant.id } }),
     prisma.block.updateMany({ where: { tenantId: null }, data: { tenantId: tenant.id } }),
