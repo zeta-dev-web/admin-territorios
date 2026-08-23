@@ -2,6 +2,7 @@
 
 import { Menu, ArrowLeft } from 'lucide-react'
 import { useRouter } from 'next/navigation'
+import { ThemeToggle } from '@/components/theme/ThemeToggle'
 
 interface MobileHeaderProps {
   title: string
@@ -45,8 +46,7 @@ export function MobileHeader({
           {title}
         </h1>
 
-        {/* Espaciador derecho */}
-        <div className="w-10" />
+        <ThemeToggle className="h-10 w-10 justify-center px-0 [&_.theme-toggle-label]:hidden" />
       </div>
     </header>
   )

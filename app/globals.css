@@ -1,21 +1,22 @@
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Sora:wght@500;600;700&display=swap');
 @import "tailwindcss";
 
 @layer base {
-  @font-face {
-    font-family: 'Inter';
-    font-style: normal;
-    font-weight: 300 800;
-    font-display: swap;
-    src: url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
-  }
-  
   * {
     @apply border-slate-800;
   }
   
   body {
-    @apply bg-[#0A0F1C] text-slate-200 antialiased;
-    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    @apply antialiased;
+    background: var(--app-bg);
+    color: var(--app-text);
+    font-family: 'DM Sans', ui-sans-serif, system-ui, sans-serif;
+    transition: background-color 220ms ease, color 220ms ease;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Sora', 'DM Sans', ui-sans-serif, system-ui, sans-serif;
+    letter-spacing: -0.025em;
   }
 }
 
@@ -102,4 +103,322 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 
 input[type="date"]::-webkit-calendar-picker-indicator:hover {
   filter: invert(1) brightness(1.2);
+}
+
+/* ═══════════════════════════════════════════════════════════
+   TOKENS DEL MÓDULO VYMC (tema claro, scoped a .vymc-theme)
+   ═══════════════════════════════════════════════════════════ */
+:root {
+  --vymc-background: #F8F9FA;
+  --vymc-foreground: #1E3A5F;
+  --vymc-card: #ffffff;
+  --vymc-card-foreground: #1E3A5F;
+  --vymc-popover: #ffffff;
+  --vymc-popover-foreground: #1E3A5F;
+  --vymc-primary: #2D5F8D;
+  --vymc-primary-foreground: #ffffff;
+  --vymc-secondary: #64748B;
+  --vymc-secondary-foreground: #ffffff;
+  --vymc-accent: #10B981;
+  --vymc-accent-foreground: #ffffff;
+  --vymc-muted: #F8F9FA;
+  --vymc-muted-foreground: #64748B;
+  --vymc-destructive: #EF4444;
+  --vymc-border: #E2E8F0;
+  --vymc-input: #E2E8F0;
+  --vymc-ring: #2D5F8D;
+}
+
+@theme inline {
+  --color-background: var(--vymc-background);
+  --color-foreground: var(--vymc-foreground);
+  --color-card: var(--vymc-card);
+  --color-card-foreground: var(--vymc-card-foreground);
+  --color-popover: var(--vymc-popover);
+  --color-popover-foreground: var(--vymc-popover-foreground);
+  --color-primary: var(--vymc-primary);
+  --color-primary-foreground: var(--vymc-primary-foreground);
+  --color-secondary: var(--vymc-secondary);
+  --color-secondary-foreground: var(--vymc-secondary-foreground);
+  --color-accent: var(--vymc-accent);
+  --color-accent-foreground: var(--vymc-accent-foreground);
+  --color-muted: var(--vymc-muted);
+  --color-muted-foreground: var(--vymc-muted-foreground);
+  --color-destructive: var(--vymc-destructive);
+  --color-border: var(--vymc-border);
+  --color-input: var(--vymc-input);
+  --color-ring: var(--vymc-ring);
+}
+
+.vymc-theme {
+  background: var(--vymc-background);
+  color: var(--vymc-foreground);
+  min-height: 100vh;
+}
+
+.vymc-theme *,
+.vymc-theme *::before,
+.vymc-theme *::after {
+  border-color: var(--vymc-border);
+}
+
+/* ═══════════════════════════════════════════════════════════
+   SISTEMA VISUAL UNIVERSAL
+   El tema claro toma la paleta editorial de VYMC; el oscuro
+   conserva el azul nocturno de Territorios.
+   ═══════════════════════════════════════════════════════════ */
+:root {
+  --app-bg: #f5f8fb;
+  --app-surface: #ffffff;
+  --app-surface-raised: #eef4f8;
+  --app-text: #17324d;
+  --app-muted: #647b91;
+  --app-border: #d9e4ec;
+  --app-accent: #2d5f8d;
+  --app-accent-soft: #e5f0f7;
+  --app-shadow: 0 18px 45px rgba(31, 70, 103, 0.12);
+}
+
+html[data-theme='dark'] {
+  --app-bg: #0a0f1c;
+  --app-surface: #0f1729;
+  --app-surface-raised: #15233b;
+  --app-text: #edf5ff;
+  --app-muted: #94a8bf;
+  --app-border: rgba(148, 188, 230, 0.18);
+  --app-accent: #54a1ff;
+  --app-accent-soft: rgba(84, 161, 255, 0.14);
+  --app-shadow: 0 18px 45px rgba(0, 0, 0, 0.28);
+}
+
+html,
+body {
+  min-height: 100%;
+  background: var(--app-bg);
+}
+
+html[data-theme='light'] ::selection {
+  background: #cfe5f5;
+  color: #17324d;
+}
+
+html[data-theme='dark'] ::selection {
+  background: rgba(84, 161, 255, 0.35);
+  color: #ffffff;
+}
+
+/* Shared control: compact, readable and usable on touch screens. */
+.theme-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  min-height: 2.5rem;
+  padding: 0.45rem 0.65rem;
+  border: 1px solid var(--app-border);
+  border-radius: 0.8rem;
+  color: var(--app-text);
+  background: color-mix(in srgb, var(--app-surface) 88%, transparent);
+  box-shadow: 0 8px 20px color-mix(in srgb, var(--app-text) 8%, transparent);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  transition: border-color 180ms ease, background-color 180ms ease, transform 180ms ease;
+}
+
+.theme-toggle:hover {
+  border-color: var(--app-accent);
+  background: var(--app-accent-soft);
+  transform: translateY(-1px);
+}
+
+.theme-toggle:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--app-accent) 30%, transparent);
+  outline-offset: 2px;
+}
+
+.theme-toggle__icon {
+  display: grid;
+  place-items: center;
+  color: var(--app-accent);
+}
+
+.theme-toggle__switch {
+  display: inline-flex;
+  align-items: center;
+  width: 2rem;
+  height: 1.15rem;
+  padding: 0.15rem;
+  margin-left: auto;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--app-muted) 35%, transparent);
+}
+
+.theme-toggle__switch span {
+  width: 0.85rem;
+  height: 0.85rem;
+  border-radius: 999px;
+  background: var(--app-surface);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.22);
+  transform: translateX(0.85rem);
+  transition: transform 180ms ease;
+}
+
+html[data-theme='dark'] .theme-toggle__switch {
+  background: var(--app-accent);
+}
+
+html[data-theme='dark'] .theme-toggle__switch span {
+  transform: translateX(0);
+}
+
+.theme-floating-control {
+  position: fixed;
+  top: 1rem;
+  right: 1rem;
+  z-index: 40;
+}
+
+/* Convert the existing Territorios dark utility surfaces in light mode. */
+html[data-theme='light'] [class~='bg-[#0A0F1C]'] {
+  background-color: var(--app-bg) !important;
+}
+
+html[data-theme='light'] [class~='bg-[#0F1729]'],
+html[data-theme='light'] [class~='bg-slate-900'] {
+  background-color: var(--app-surface) !important;
+}
+
+html[data-theme='light'] [class~='bg-slate-800'],
+html[data-theme='light'] [class~='bg-slate-800/50'],
+html[data-theme='light'] [class~='bg-slate-700/50'] {
+  background-color: var(--app-surface-raised) !important;
+}
+
+html[data-theme='light'] [class~='border-slate-800'],
+html[data-theme='light'] [class~='border-slate-700'] {
+  border-color: var(--app-border) !important;
+}
+
+html[data-theme='light'] [class~='text-slate-200'],
+html[data-theme='light'] [class~='text-slate-300'],
+html[data-theme='light'] [class~='text-white'] {
+  color: var(--app-text) !important;
+}
+
+html[data-theme='light'] [class~='text-slate-400'],
+html[data-theme='light'] [class~='text-slate-500'],
+html[data-theme='light'] [class~='text-slate-600'] {
+  color: var(--app-muted) !important;
+}
+
+html[data-theme='light'] [class~='bg-blue-600'][class~='text-white'],
+html[data-theme='light'] [class~='bg-cyan-600'][class~='text-white'],
+html[data-theme='light'] [class~='bg-red-500'][class~='text-white'],
+html[data-theme='light'] [class~='bg-red-600'][class~='text-white'],
+html[data-theme='light'] [class~='bg-emerald-600'][class~='text-white'],
+html[data-theme='light'] .vymc-theme [class~='text-white'] {
+  color: #ffffff !important;
+}
+
+html[data-theme='light'] [class~='bg-black/60'] {
+  background-color: rgba(18, 36, 54, 0.42) !important;
+}
+
+/* VYMC keeps its light palette by default and gets a calm navy dark mode. */
+html[data-theme='dark'] .vymc-theme {
+  --vymc-background: #0b1526;
+  --vymc-foreground: #edf5ff;
+  --vymc-card: #10243c;
+  --vymc-card-foreground: #edf5ff;
+  --vymc-popover: #10243c;
+  --vymc-popover-foreground: #edf5ff;
+  --vymc-primary: #63a9e8;
+  --vymc-primary-foreground: #071426;
+  --vymc-secondary: #8aa0b5;
+  --vymc-secondary-foreground: #071426;
+  --vymc-accent: #32c7a5;
+  --vymc-accent-foreground: #061225;
+  --vymc-muted: #162b44;
+  --vymc-muted-foreground: #a8b7cc;
+  --vymc-destructive: #f48d91;
+  --vymc-border: rgba(148, 188, 230, 0.2);
+  --vymc-input: rgba(148, 188, 230, 0.25);
+  --vymc-ring: #63a9e8;
+}
+
+html[data-theme='dark'] .vymc-theme [class~='bg-white'],
+html[data-theme='dark'] .vymc-theme [class~='bg-[#F8FAFC]'],
+html[data-theme='dark'] .vymc-theme [class~='bg-[#F7FAFC]'],
+html[data-theme='dark'] .vymc-theme [class~='bg-[#EDF2F7]'] {
+  background-color: var(--vymc-card) !important;
+}
+
+html[data-theme='dark'] .vymc-theme [class~='text-[#1A365D]'],
+html[data-theme='dark'] .vymc-theme [class~='text-[#2D3748]'],
+html[data-theme='dark'] .vymc-theme [class~='text-gray-800'] {
+  color: var(--vymc-foreground) !important;
+}
+
+html[data-theme='dark'] .vymc-theme [class~='text-[#4A5568]'],
+html[data-theme='dark'] .vymc-theme [class~='text-[#718096]'],
+html[data-theme='dark'] .vymc-theme [class~='text-gray-600'] {
+  color: var(--vymc-muted-foreground) !important;
+}
+
+html[data-theme='dark'] .vymc-theme [class~='text-[#A0AEC0]'],
+html[data-theme='dark'] .vymc-theme [class~='text-[#CBD5E0]'] {
+  color: #7890a8 !important;
+}
+
+html[data-theme='dark'] .vymc-theme [class~='border-[#E2E8F0]'],
+html[data-theme='dark'] .vymc-theme [class~='border-gray-300'],
+html[data-theme='dark'] .vymc-theme [class~='border-blue-200'] {
+  border-color: var(--vymc-border) !important;
+}
+
+html[data-theme='dark'] .vymc-theme input,
+html[data-theme='dark'] .vymc-theme textarea,
+html[data-theme='dark'] .vymc-theme select {
+  color: var(--vymc-foreground);
+  background-color: var(--vymc-card);
+  border-color: var(--vymc-input);
+}
+
+html[data-theme='dark'] .vymc-theme [class~='bg-red-50'],
+html[data-theme='dark'] .vymc-theme [class~='bg-amber-50'],
+html[data-theme='dark'] .vymc-theme [class~='bg-blue-50'] {
+  background-color: color-mix(in srgb, var(--vymc-primary) 14%, var(--vymc-background)) !important;
+}
+
+html[data-theme='dark'] .vymc-theme [class~='text-red-800'],
+html[data-theme='dark'] .vymc-theme [class~='text-amber-800'],
+html[data-theme='dark'] .vymc-theme [class~='text-blue-800'] {
+  color: var(--vymc-foreground) !important;
+}
+
+@media (max-width: 640px) {
+  .theme-floating-control {
+    top: 0.75rem;
+    right: 0.75rem;
+  }
+
+  .theme-toggle__label {
+    display: none;
+  }
+
+  .theme-toggle {
+    min-width: 2.5rem;
+    justify-content: center;
+    padding-inline: 0.55rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+  }
 }
