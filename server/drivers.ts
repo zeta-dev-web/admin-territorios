@@ -3,10 +3,36 @@
 import { prisma } from '@/lib/prisma'
 import { revalidatePath } from 'next/cache'
 import { getCurrentTenantId } from '@/lib/tenant'
+import { splitFullName } from '@/server/members'
+
+// ════════════════════════════════════════════════════════════════
+// CONDUCTORES → ahora es una capacidad (`isConductor`) del Publisher,
+// no una entidad aparte. Una persona se crea una sola vez (Fase 4.5).
+// Las firmas y formas de respuesta se conservan para compatibilidad
+// con web y API mobile.
+// ════════════════════════════════════════════════════════════════
+
+function fullName(publisher: { firstName: string; lastName: string }): string {
+  return `${publisher.firstName} ${publisher.lastName}`.trim()
+}
+
+function withName<T extends { firstName: string; lastName: string }>(publisher: T) {
+  return { ...publisher, name: fullName(publisher) }
+}
+
+function normalizeName(value: string): string {
+  return String(value ?? '')
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim()
+}
 
 /**
- * Crea un nuevo conductor
- * También lo agrega automáticamente como integrante del grupo si no existía.
+ * Crea un nuevo conductor.
+ * Si ya existe una persona con ese nombre en el grupo, simplemente se
+ * marca como conductora en lugar de duplicarla.
  */
 export async function createDriver(data: {
   name: string
@@ -24,33 +50,34 @@ export async function createDriver(data: {
       throw new Error('Grupo no encontrado')
     }
 
-    const driver = await prisma.driver.create({
-      data: {
-        name: data.name,
-        groupId: data.groupId,
-        tenantId,
-      },
-      include: {
-        group: true,
-      },
-    })
+    const { firstName, lastName } = splitFullName(data.name)
+    const normalizedNew = normalizeName(data.name)
 
-    // También crear como integrante del grupo si no existe ya
-    const existingMember = await prisma.member.findFirst({
-      where: {
-        name: { equals: data.name, mode: 'insensitive' },
-        groupId: data.groupId,
-        tenantId,
-      },
+    // Buscar persona existente en el mismo grupo (comparación normalizada)
+    const groupPublishers = await prisma.publisher.findMany({
+      where: { groupId: data.groupId, tenantId },
     })
+    const existing = groupPublishers.find(
+      (p) => normalizeName(fullName(p)) === normalizedNew
+    )
 
-    if (!existingMember) {
-      await prisma.member.create({
+    let publisher
+    if (existing) {
+      publisher = await prisma.publisher.update({
+        where: { id: existing.id },
+        data: { isConductor: true },
+        include: { group: true },
+      })
+    } else {
+      publisher = await prisma.publisher.create({
         data: {
-          name: data.name,
+          firstName,
+          lastName,
+          isConductor: true,
           groupId: data.groupId,
           tenantId,
         },
+        include: { group: true },
       })
     }
 
@@ -60,8 +87,8 @@ export async function createDriver(data: {
 
     return {
       success: true,
-      data: driver,
-      message: `Conductor "${data.name}" creado correctamente en ${group.name}`,
+      data: withName(publisher),
+      message: `Conductor "${fullName(publisher)}" guardado correctamente en ${group.name}`,
     }
   } catch (error) {
     console.error('Error al crear conductor:', error)
@@ -82,11 +109,11 @@ export async function getAllDrivers(page = 1, pageSize = 10) {
     const tenantId = await getCurrentTenantId()
     const skip = (page - 1) * pageSize
 
-    const [drivers, total, activeCount] = await Promise.all([
-      prisma.driver.findMany({
+    const [publishers, total, activeCount] = await Promise.all([
+      prisma.publisher.findMany({
         skip,
         take: pageSize,
-        where: { tenantId },
+        where: { tenantId, isConductor: true },
         include: {
           group: true,
           assignments: {
@@ -107,14 +134,13 @@ export async function getAllDrivers(page = 1, pageSize = 10) {
             },
           },
         },
-        orderBy: {
-          name: 'asc',
-        },
+        orderBy: [{ firstName: 'asc' }, { lastName: 'asc' }],
       }),
-      prisma.driver.count({ where: { tenantId } }),
-      prisma.driver.count({
+      prisma.publisher.count({ where: { tenantId, isConductor: true } }),
+      prisma.publisher.count({
         where: {
           tenantId,
+          isConductor: true,
           assignments: {
             some: {
               isCompleted: false,
@@ -126,7 +152,7 @@ export async function getAllDrivers(page = 1, pageSize = 10) {
 
     return {
       success: true,
-      data: drivers,
+      data: publishers.map(withName),
       total,
       page,
       pageSize,
@@ -154,10 +180,11 @@ export async function getAllDrivers(page = 1, pageSize = 10) {
 export async function getDriversByGroup(groupId: string) {
   try {
     const tenantId = await getCurrentTenantId()
-    const drivers = await prisma.driver.findMany({
+    const publishers = await prisma.publisher.findMany({
       where: {
         groupId,
         tenantId,
+        isConductor: true,
       },
       include: {
         group: true,
@@ -168,14 +195,12 @@ export async function getDriversByGroup(groupId: string) {
           },
         },
       },
-      orderBy: {
-        name: 'asc',
-      },
+      orderBy: [{ firstName: 'asc' }, { lastName: 'asc' }],
     })
 
     return {
       success: true,
-      data: drivers,
+      data: publishers.map(withName),
     }
   } catch (error) {
     console.error('Error al obtener conductores del grupo:', error)
@@ -193,8 +218,8 @@ export async function getDriversByGroup(groupId: string) {
 export async function getDriverById(driverId: string) {
   try {
     const tenantId = await getCurrentTenantId()
-    const driver = await prisma.driver.findFirst({
-      where: { id: driverId, tenantId },
+    const publisher = await prisma.publisher.findFirst({
+      where: { id: driverId, tenantId, isConductor: true },
       include: {
         group: true,
         assignments: {
@@ -224,13 +249,13 @@ export async function getDriverById(driverId: string) {
       },
     })
 
-    if (!driver) {
+    if (!publisher) {
       throw new Error('Conductor no encontrado')
     }
 
     return {
       success: true,
-      data: driver,
+      data: withName(publisher),
     }
   } catch (error) {
     console.error('Error al obtener conductor:', error)
@@ -247,7 +272,6 @@ export async function getDriverById(driverId: string) {
  * Actualiza un conductor
  * Si el conductor es el superintendente o auxiliar del grupo,
  * también actualiza el nombre correspondiente en el grupo.
- * También refleja los cambios en el integrante del grupo asociado.
  */
 export async function updateDriver(
   driverId: string,
@@ -258,25 +282,27 @@ export async function updateDriver(
     const tenantId = await getCurrentTenantId()
 
     // Obtener datos actuales del conductor y su grupo
-    const currentDriver = await prisma.driver.findFirst({
-      where: { id: driverId, tenantId },
+    const currentPublisher = await prisma.publisher.findFirst({
+      where: { id: driverId, tenantId, isConductor: true },
       include: {
         group: true,
       },
     })
 
-    if (!currentDriver) {
+    if (!currentPublisher) {
       throw new Error('Conductor no encontrado')
     }
 
-    const oldName = currentDriver.name
-    const group = currentDriver.group
+    const oldName = fullName(currentPublisher)
+    const group = currentPublisher.group
+    const { firstName, lastName } = splitFullName(name)
 
-    // Actualizar el conductor
-    const driver = await prisma.driver.update({
+    // Actualizar al publicador
+    const publisher = await prisma.publisher.update({
       where: { id: driverId },
       data: {
-        name,
+        firstName,
+        lastName,
         groupId,
       },
       include: {
@@ -284,30 +310,14 @@ export async function updateDriver(
       },
     })
 
-    // También actualizar el nombre del integrante correspondiente
+    // Sincronizar superintendente/auxiliar si coincidía el nombre anterior
     if (oldName !== name) {
-      const member = await prisma.member.findFirst({
-        where: {
-          name: { equals: oldName, mode: 'insensitive' },
-          groupId,
-          tenantId,
-        },
-      })
-
-      if (member) {
-        await prisma.member.update({
-          where: { id: member.id },
-          data: { name },
-        })
-      }
-
-      // Verificar si este conductor era superintendente o auxiliar
       const updates: { superintendent?: string | null; auxiliary?: string | null } = {}
 
-      if (group.superintendent?.toLowerCase() === oldName.toLowerCase()) {
+      if (group?.superintendent?.toLowerCase() === oldName.toLowerCase()) {
         updates.superintendent = name
       }
-      if (group.auxiliary?.toLowerCase() === oldName.toLowerCase()) {
+      if (group?.auxiliary?.toLowerCase() === oldName.toLowerCase()) {
         updates.auxiliary = name
       }
 
@@ -325,7 +335,7 @@ export async function updateDriver(
 
     return {
       success: true,
-      data: driver,
+      data: withName(publisher),
       message: 'Conductor actualizado correctamente',
     }
   } catch (error) {
@@ -340,32 +350,32 @@ export async function updateDriver(
 }
 
 /**
- * Elimina un conductor (solo si no tiene asignaciones)
- * NOTA: No elimina al integrante del grupo, solo el rol de conductor.
- *       Si querés eliminar al integrante, hacelo desde Grupos.
+ * Quita el rol de conductor (la persona NO se elimina del directorio).
+ * Solo es posible si no tiene asignaciones activas o históricas.
  */
 export async function deleteDriver(driverId: string) {
   try {
     const tenantId = await getCurrentTenantId()
-    const driver = await prisma.driver.findFirst({
-      where: { id: driverId, tenantId },
+    const publisher = await prisma.publisher.findFirst({
+      where: { id: driverId, tenantId, isConductor: true },
       include: {
         assignments: true,
       },
     })
 
-    if (!driver) {
+    if (!publisher) {
       throw new Error('Conductor no encontrado')
     }
 
-    if (driver.assignments.length > 0) {
+    if (publisher.assignments.length > 0) {
       throw new Error(
         'No se puede eliminar un conductor que tiene asignaciones'
       )
     }
 
-    await prisma.driver.delete({
+    await prisma.publisher.update({
       where: { id: driverId },
+      data: { isConductor: false },
     })
 
     revalidatePath('/dashboard')
@@ -386,29 +396,31 @@ export async function deleteDriver(driverId: string) {
   }
 }
 
-
 export async function getAllDriversForSelect() {
   try {
     const tenantId = await getCurrentTenantId()
-    const drivers = await prisma.driver.findMany({
-      where: { tenantId },
+    const publishers = await prisma.publisher.findMany({
+      where: { tenantId, isConductor: true },
       select: {
         id: true,
-        name: true,
+        firstName: true,
+        lastName: true,
         group: {
           select: {
             name: true,
           },
         },
       },
-      orderBy: {
-        name: 'asc',
-      },
+      orderBy: [{ firstName: 'asc' }, { lastName: 'asc' }],
     })
 
     return {
       success: true,
-      data: drivers,
+      data: publishers.map((p) => ({
+        id: p.id,
+        name: fullName(p),
+        group: p.group,
+      })),
     }
   } catch (error) {
     console.error('Error al obtener conductores:', error)

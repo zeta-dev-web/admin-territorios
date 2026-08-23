@@ -4,15 +4,49 @@ import { prisma } from '@/lib/prisma'
 import { revalidatePath } from 'next/cache'
 import { getCurrentTenantId } from '@/lib/tenant'
 
+// ════════════════════════════════════════════════════════════════
+// INTEGRANTES → ahora opera sobre la entidad unificada Publisher.
+// Las firmas y formas de respuesta se conservan para no romper
+// la web ni la API mobile (Fase 4 del plan de unificación).
+// ════════════════════════════════════════════════════════════════
+
+/** Nombre completo visible a partir de firstName + lastName. */
+function fullName(publisher: { firstName: string; lastName: string }): string {
+  return `${publisher.firstName} ${publisher.lastName}`.trim()
+}
+
+/** Regla aprobada: ÚLTIMA palabra = apellido; una sola palabra → lastName "". */
+export function splitFullName(fullNameInput: string): {
+  firstName: string
+  lastName: string
+} {
+  const trimmed = String(fullNameInput ?? '').trim().replace(/\s+/g, ' ')
+  if (!trimmed) return { firstName: '', lastName: '' }
+  const words = trimmed.split(' ')
+  if (words.length === 1) return { firstName: words[0], lastName: '' }
+  return {
+    firstName: words.slice(0, -1).join(' '),
+    lastName: words[words.length - 1],
+  }
+}
+
+/** Agrega el campo `name` calculado a un publicador para compatibilidad. */
+function withName<T extends { firstName: string; lastName: string }>(publisher: T) {
+  return { ...publisher, name: fullName(publisher) }
+}
+
 /**
  * Crea un nuevo integrante en un grupo
  */
 export async function createMember(name: string, groupId: string) {
   try {
     const tenantId = await getCurrentTenantId()
-    const member = await prisma.member.create({
+    const { firstName, lastName } = splitFullName(name)
+
+    const publisher = await prisma.publisher.create({
       data: {
-        name,
+        firstName,
+        lastName,
         groupId,
         tenantId,
       },
@@ -23,8 +57,8 @@ export async function createMember(name: string, groupId: string) {
 
     return {
       success: true,
-      data: member,
-      message: `Integrante "${name}" agregado correctamente`,
+      data: withName(publisher),
+      message: `Integrante "${fullName(publisher)}" agregado correctamente`,
     }
   } catch (error) {
     console.error('Error al crear integrante:', error)
@@ -43,19 +77,17 @@ export async function createMember(name: string, groupId: string) {
 export async function getMembersByGroup(groupId: string) {
   try {
     const tenantId = await getCurrentTenantId()
-    const members = await prisma.member.findMany({
+    const publishers = await prisma.publisher.findMany({
       where: {
         groupId,
         tenantId,
       },
-      orderBy: {
-        name: 'asc',
-      },
+      orderBy: [{ firstName: 'asc' }, { lastName: 'asc' }],
     })
 
     return {
       success: true,
-      data: members,
+      data: publishers.map(withName),
     }
   } catch (error) {
     console.error('Error al obtener integrantes:', error)
@@ -70,16 +102,23 @@ export async function getMembersByGroup(groupId: string) {
 /**
  * Actualiza un integrante
  */
-export async function updateMember(memberId: string, name: string, groupId?: string) {
+export async function updateMember(
+  memberId: string,
+  name: string,
+  groupId?: string
+) {
   try {
-    const tenantId = await getCurrentTenantId()
-    const data: { name: string; groupId?: string } = { name }
-    
+    const { firstName, lastName } = splitFullName(name)
+    const data: { firstName: string; lastName: string; groupId?: string } = {
+      firstName,
+      lastName,
+    }
+
     if (groupId) {
       data.groupId = groupId
     }
 
-    const member = await prisma.member.update({
+    const publisher = await prisma.publisher.update({
       where: { id: memberId },
       data,
     })
@@ -89,7 +128,7 @@ export async function updateMember(memberId: string, name: string, groupId?: str
 
     return {
       success: true,
-      data: member,
+      data: withName(publisher),
       message: 'Integrante actualizado correctamente',
     }
   } catch (error) {
@@ -105,47 +144,48 @@ export async function updateMember(memberId: string, name: string, groupId?: str
 
 /**
  * Activa o desactiva un integrante como conductor del grupo.
- * Si ya es conductor, lo elimina. Si no, lo crea.
+ * Ahora alterna el flag `isConductor` sobre el mismo Publisher:
+ * una persona se crea una sola vez (plan de unificación, Fase 4.5).
  */
-export async function toggleMemberDriver(memberId: string, groupId: string, memberName: string) {
+export async function toggleMemberDriver(
+  memberId: string,
+  groupId: string,
+  memberName: string
+) {
   try {
-    const tenantId = await getCurrentTenantId()
+    void groupId // el grupo ya está implícito en el Publisher
 
-    // Buscar si ya existe un conductor con ese nombre en el grupo
-    const existingDriver = await prisma.driver.findFirst({
-      where: {
-        groupId,
-        tenantId,
-        name: {
-          equals: memberName,
-          mode: 'insensitive',
-        },
-      },
+    const publisher = await prisma.publisher.findUnique({
+      where: { id: memberId },
     })
 
-    if (existingDriver) {
-      // Verificar que no tenga asignaciones activas
-      const driverWithAssignments = await prisma.driver.findUnique({
-        where: { id: existingDriver.id },
-        include: {
-          assignments: {
-            where: { isCompleted: false },
-            include: { territory: { select: { number: true } } },
-          },
+    if (!publisher) {
+      throw new Error('Integrante no encontrado')
+    }
+
+    if (publisher.isConductor) {
+      // Verificar que no tenga asignaciones territoriales activas
+      const activeAssignments = await prisma.assignment.findMany({
+        where: {
+          publisherId: publisher.id,
+          isCompleted: false,
         },
+        include: { territory: { select: { number: true } } },
       })
 
-      if (driverWithAssignments && driverWithAssignments.assignments.length > 0) {
-        const territoryNumbers = driverWithAssignments.assignments
-          .map(a => a.territory.number)
+      if (activeAssignments.length > 0) {
+        const territoryNumbers = activeAssignments
+          .map((a) => a.territory.number)
           .join(', ')
         throw new Error(
-          `No se puede quitar a "${memberName}" como conductor porque tiene ${driverWithAssignments.assignments.length} asignación(es) activa(s): Territorio(s) ${territoryNumbers}`
+          `No se puede quitar a "${memberName}" como conductor porque tiene ${activeAssignments.length} asignación(es) activa(s): Territorio(s) ${territoryNumbers}`
         )
       }
 
-      // Ya es conductor y no tiene asignaciones activas → lo eliminamos
-      await prisma.driver.delete({ where: { id: existingDriver.id } })
+      await prisma.publisher.update({
+        where: { id: publisher.id },
+        data: { isConductor: false },
+      })
       revalidatePath('/admin/groups')
       revalidatePath('/admin/drivers')
       revalidatePath('/dashboard')
@@ -155,13 +195,9 @@ export async function toggleMemberDriver(memberId: string, groupId: string, memb
         message: `${memberName} ya no es conductor`,
       }
     } else {
-      // No es conductor → lo creamos
-      await prisma.driver.create({
-        data: {
-          name: memberName,
-          groupId,
-          tenantId,
-        },
+      await prisma.publisher.update({
+        where: { id: publisher.id },
+        data: { isConductor: true },
       })
       revalidatePath('/admin/groups')
       revalidatePath('/admin/drivers')
@@ -190,7 +226,7 @@ export async function toggleMemberDriver(memberId: string, groupId: string, memb
  */
 export async function deleteMember(memberId: string) {
   try {
-    await prisma.member.delete({
+    await prisma.publisher.delete({
       where: { id: memberId },
     })
 
@@ -211,29 +247,31 @@ export async function deleteMember(memberId: string) {
   }
 }
 
-
 export async function getAllMembersForSelect() {
   try {
     const tenantId = await getCurrentTenantId()
-    const members = await prisma.member.findMany({
+    const publishers = await prisma.publisher.findMany({
       where: { tenantId },
       select: {
         id: true,
-        name: true,
+        firstName: true,
+        lastName: true,
         group: {
           select: {
             name: true,
           },
         },
       },
-      orderBy: {
-        name: 'asc',
-      },
+      orderBy: [{ firstName: 'asc' }, { lastName: 'asc' }],
     })
 
     return {
       success: true,
-      data: members,
+      data: publishers.map((p) => ({
+        id: p.id,
+        name: fullName(p),
+        group: p.group,
+      })),
     }
   } catch (error) {
     console.error('Error al obtener miembros:', error)
