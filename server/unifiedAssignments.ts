@@ -24,6 +24,10 @@ export interface UnifiedAssignment {
   blocksCompleted?: number
 }
 
+function fullName(p: { firstName: string; lastName: string } | null | undefined): string {
+  return p ? `${p.firstName} ${p.lastName}`.trim() : '—'
+}
+
 /**
  * Obtiene todas las asignaciones activas (conductores + personales) en un formato unificado con paginación
  */
@@ -36,7 +40,7 @@ export async function getUnifiedAssignments(page = 1, pageSize = 10) {
         where: { isCompleted: false, tenantId },
         include: {
           territory: true,
-          driver: {
+          publisher: {
             include: { group: true },
           },
           _count: { select: { blocks: true } },
@@ -47,7 +51,7 @@ export async function getUnifiedAssignments(page = 1, pageSize = 10) {
         where: { isActive: true, tenantId },
         include: {
           territory: true,
-          member: {
+          publisher: {
             include: { group: true },
           },
         },
@@ -71,9 +75,9 @@ export async function getUnifiedAssignments(page = 1, pageSize = 10) {
           territoryId: assignment.territoryId,
           territoryNumber: assignment.territory.number,
           territoryDescription: assignment.territory.description,
-          assigneeId: assignment.driverId,
-          assigneeName: assignment.driver.name,
-          groupName: assignment.driver.group.name,
+          assigneeId: assignment.publisherId ?? '',
+          assigneeName: fullName(assignment.publisher),
+          groupName: assignment.publisher?.group?.name ?? '—',
           assignedDate: assignment.startDate,
           endDate: assignment.endDate,
           isActive: !assignment.isCompleted,
@@ -90,9 +94,9 @@ export async function getUnifiedAssignments(page = 1, pageSize = 10) {
       territoryId: pa.territoryId,
       territoryNumber: pa.territory.number,
       territoryDescription: pa.territory.description,
-      assigneeId: pa.memberId,
-      assigneeName: pa.member.name,
-      groupName: pa.member.group.name,
+      assigneeId: pa.publisherId ?? '',
+      assigneeName: fullName(pa.publisher),
+      groupName: pa.publisher?.group?.name ?? '—',
       assignedDate: pa.assignedDate,
       endDate: pa.returnedDate,
       isActive: pa.isActive,
@@ -158,7 +162,7 @@ export async function getUnifiedHistory(page = 1, pageSize = 10) {
         where: { isCompleted: true, tenantId },
         include: {
           territory: true,
-          driver: {
+          publisher: {
             include: { group: true },
           },
         },
@@ -168,7 +172,7 @@ export async function getUnifiedHistory(page = 1, pageSize = 10) {
         where: { isActive: false, tenantId },
         include: {
           territory: true,
-          member: {
+          publisher: {
             include: { group: true },
           },
         },
@@ -184,9 +188,9 @@ export async function getUnifiedHistory(page = 1, pageSize = 10) {
       territoryId: a.territoryId,
       territoryNumber: a.territory.number,
       territoryDescription: a.territory.description,
-      assigneeId: a.driverId,
-      assigneeName: a.driver.name,
-      groupName: a.driver.group.name,
+      assigneeId: a.publisherId ?? '',
+      assigneeName: fullName(a.publisher),
+      groupName: a.publisher?.group?.name ?? '—',
       assignedDate: a.startDate,
       endDate: a.endDate,
       isActive: false,
@@ -199,9 +203,9 @@ export async function getUnifiedHistory(page = 1, pageSize = 10) {
       territoryId: pa.territoryId,
       territoryNumber: pa.territory.number,
       territoryDescription: pa.territory.description,
-      assigneeId: pa.memberId,
-      assigneeName: pa.member.name,
-      groupName: pa.member.group.name,
+      assigneeId: pa.publisherId ?? '',
+      assigneeName: fullName(pa.publisher),
+      groupName: pa.publisher?.group?.name ?? '—',
       assignedDate: pa.assignedDate,
       endDate: pa.returnedDate,
       isActive: false,
@@ -334,7 +338,7 @@ export async function getAllUnifiedAssignmentsForAdmin() {
               blocks: true,
             },
           },
-          driver: {
+          publisher: {
             include: { group: true },
           },
           blocks: true,
@@ -349,7 +353,7 @@ export async function getAllUnifiedAssignmentsForAdmin() {
               blocks: true,
             },
           },
-          member: {
+          publisher: {
             include: { group: true },
           },
         },
@@ -376,9 +380,9 @@ export async function getAllUnifiedAssignmentsForAdmin() {
           territoryId: assignment.territoryId,
           territoryNumber: assignment.territory.number,
           territoryDescription: assignment.territory.description,
-          assigneeId: assignment.driverId,
-          assigneeName: assignment.driver.name,
-          groupName: assignment.driver.group.name,
+          assigneeId: assignment.publisherId ?? '',
+          assigneeName: fullName(assignment.publisher),
+          groupName: assignment.publisher?.group?.name ?? '—',
           startDate: assignment.startDate,
           assignedDate: assignment.startDate,
           endDate: assignment.endDate,
@@ -401,9 +405,9 @@ export async function getAllUnifiedAssignmentsForAdmin() {
       territoryId: pa.territoryId,
       territoryNumber: pa.territory.number,
       territoryDescription: pa.territory.description,
-      assigneeId: pa.memberId,
-      assigneeName: pa.member.name,
-      groupName: pa.member.group.name,
+      assigneeId: pa.publisherId ?? '',
+      assigneeName: fullName(pa.publisher),
+      groupName: pa.publisher?.group?.name ?? '—',
       startDate: pa.assignedDate,
       assignedDate: pa.assignedDate,
       endDate: pa.returnedDate,

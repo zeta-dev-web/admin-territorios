@@ -9,8 +9,8 @@ import { useRouter } from 'next/navigation'
 interface DriverData {
   id: string
   name: string
-  groupId: string
-  group: { name: string }
+  groupId?: string | null
+  group?: { name: string } | null
 }
 
 interface CreateDriverModalProps {

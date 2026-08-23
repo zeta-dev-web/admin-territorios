@@ -18,19 +18,15 @@ interface Territory {
     startDate: Date
     isCompleted: boolean
     driver: {
-      name: string
-      group: {
-        name: string
-      }
-    }
+      name?: string | null
+      group?: { name: string } | null
+    } | null
   }>
   personalAssignments: Array<{
     member: {
-      name: string
-      group: {
-        name: string
-      }
-    }
+      name?: string | null
+      group?: { name: string } | null
+    } | null
   }>
   _count: {
     assignments: number
@@ -173,16 +169,16 @@ export function TerritoriesTable({ territories, onEdit }: TerritoriesTableProps)
                   {personalAssignment ? (
                     <div className="text-sm">
                       <p className="font-medium text-white">
-                        {personalAssignment.member.name}
+                        {personalAssignment.member?.name ?? '—'}
                       </p>
                       <p className="text-slate-400 text-xs">
-                        {personalAssignment.member.group.name}
+                        {personalAssignment.member?.group?.name ?? '—'}
                       </p>
                     </div>
                   ) : activeAssignment ? (
                     <div className="text-sm">
                       <p className="font-medium text-white">
-                        {activeAssignment.driver.name}
+                        {activeAssignment.driver?.name ?? '—'}
                       </p>
                       <p className="text-slate-400 text-xs">
                         Desde {new Date(activeAssignment.startDate).toLocaleDateString('es-ES')}

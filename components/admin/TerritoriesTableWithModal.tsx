@@ -14,19 +14,15 @@ interface Territory {
     startDate: Date
     isCompleted: boolean
     driver: {
-      name: string
-      group: {
-        name: string
-      }
-    }
+      name?: string | null
+      group?: { name: string } | null
+    } | null
   }>
   personalAssignments: Array<{
     member: {
-      name: string
-      group: {
-        name: string
-      }
-    }
+      name?: string | null
+      group?: { name: string } | null
+    } | null
   }>
   _count: {
     assignments: number

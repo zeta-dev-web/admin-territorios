@@ -15,10 +15,10 @@ interface Territory {
   assignments: Array<{
     startDate: Date
     isCompleted: boolean
-    driver: { name: string; group: { name: string } }
+    driver: { name: string; group: { name: string } } | null
   }>
   personalAssignments: Array<{
-    member: { name: string; group: { name: string } }
+    member: { name: string; group: { name: string } } | null
   }>
   _count: { assignments: number; personalAssignments: number }
   lastAssignmentDate?: Date | null

@@ -12,10 +12,8 @@ import { Table } from '@/components/common/Table'
 interface Driver {
   id: string
   name: string
-  groupId: string
-  group: {
-    name: string
-  }
+  groupId?: string | null
+  group: { name: string } | null
   assignments: Array<{
     id: string
     isCompleted: boolean
@@ -120,7 +118,7 @@ export function DriversTable({ drivers }: DriversTableProps) {
                   <td className="p-4">
                     <div className="flex items-center gap-2">
                       <Users className="h-4 w-4 text-slate-500" />
-                      <span className="text-sm text-slate-300">{driver.group.name}</span>
+                      <span className="text-sm text-slate-300">{driver.group?.name ?? ''}</span>
                     </div>
                   </td>
 

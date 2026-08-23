@@ -8,9 +8,7 @@ import { useRouter } from 'next/navigation'
 interface Member {
   id: string
   name: string
-  group: {
-    name: string
-  }
+  group: { name: string } | null
 }
 
 interface Territory {
@@ -63,7 +61,7 @@ export function CreatePersonalAssignmentModal() {
   const filteredMembers = useMemo(() => {
     return members.filter(m =>
       m.name.toLowerCase().includes(memberSearch.toLowerCase()) ||
-      m.group.name.toLowerCase().includes(memberSearch.toLowerCase())
+      (m.group?.name ?? '').toLowerCase().includes(memberSearch.toLowerCase())
     )
   }, [members, memberSearch])
 
@@ -235,7 +233,7 @@ export function CreatePersonalAssignmentModal() {
                     <div className="mt-2 flex items-center gap-2 p-2 bg-green-500/10 border border-green-500/30 rounded-lg">
                       <Check className="h-4 w-4 text-green-500" />
                       <span className="text-sm text-green-400">
-                        {selectedMember.name} - {selectedMember.group.name}
+                        {selectedMember.name}{selectedMember.group ? ` - ${selectedMember.group.name}` : ''}
                       </span>
                       <button
                         type="button"
@@ -264,7 +262,7 @@ export function CreatePersonalAssignmentModal() {
                           className="w-full px-4 py-2 text-left hover:bg-slate-700 transition-colors text-sm text-slate-200"
                         >
                           <span className="font-medium">{member.name}</span>
-                          <span className="text-slate-400"> - {member.group.name}</span>
+                          <span className="text-slate-400"> - {member.group?.name ?? ''}</span>
                         </button>
                       ))}
                     </div>

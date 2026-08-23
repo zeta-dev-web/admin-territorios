@@ -4,8 +4,31 @@ import { prisma } from '@/lib/prisma'
 import { revalidatePath } from 'next/cache'
 import { getCurrentTenantId } from '@/lib/tenant'
 
+// ════════════════════════════════════════════════════════════════
+// ASIGNACIONES PERSONALES → la persona es un Publisher.
+// Escribe únicamente publisherId; las respuestas exponen el alias
+// `member` con name computado para compatibilidad con web/mobile.
+// ════════════════════════════════════════════════════════════════
+
+function fullName(publisher: { firstName: string; lastName: string }): string {
+  return `${publisher.firstName} ${publisher.lastName}`.trim()
+}
+
+/** Alias de compatibilidad: publisher → member conservando el resto de props. */
+function withMemberAlias<T extends { publisher: { firstName: string; lastName: string } | null }>(
+  assignment: T
+): Omit<T, 'publisher'> & {
+  member: { name: string } | null
+} {
+  const { publisher, ...rest } = assignment
+  return {
+    ...rest,
+    member: publisher ? { ...publisher, name: `${publisher.firstName} ${publisher.lastName}`.trim() } : null,
+  }
+}
+
 /**
- * Crea una asignación personal de territorio a un miembro
+ * Crea una asignación personal de territorio a un publicador
  */
 export async function createPersonalAssignment(
   territoryId: string,
@@ -25,14 +48,14 @@ export async function createPersonalAssignment(
       throw new Error('Territorio no encontrado')
     }
 
-    // Verificar que el miembro existe
-    const member = await prisma.member.findFirst({
+    // Verificar que el publicador existe
+    const publisher = await prisma.publisher.findFirst({
       where: { id: memberId, tenantId },
       include: { group: true },
     })
 
-    if (!member) {
-      throw new Error('Miembro no encontrado')
+    if (!publisher) {
+      throw new Error('Integrante no encontrado')
     }
 
     // Verificar si el territorio ya está asignado a alguien
@@ -43,27 +66,27 @@ export async function createPersonalAssignment(
         tenantId,
       },
       include: {
-        member: true,
+        publisher: true,
       },
     })
 
-    if (existingAssignment) {
+    if (existingAssignment?.publisher) {
       throw new Error(
-        `El territorio ya está asignado a ${existingAssignment.member.name}`
+        `El territorio ya está asignado a ${fullName(existingAssignment.publisher)}`
       )
     }
 
     const personalAssignment = await prisma.personalAssignment.create({
       data: {
         territoryId,
-        memberId,
+        publisherId: memberId,
         notes,
         assignedDate: assignedDate || new Date(),
         tenantId,
       },
       include: {
         territory: true,
-        member: {
+        publisher: {
           include: {
             group: true,
           },
@@ -77,8 +100,8 @@ export async function createPersonalAssignment(
 
     return {
       success: true,
-      data: personalAssignment,
-      message: `Territorio ${territory.number} asignado a ${member.name}`,
+      data: withMemberAlias(personalAssignment),
+      message: `Territorio ${territory.number} asignado a ${fullName(publisher)}`,
     }
   } catch (error) {
     console.error('Error al crear asignación personal:', error)
@@ -104,7 +127,7 @@ export async function returnPersonalAssignment(assignmentId: string, returnDate?
       where: { id: assignmentId, tenantId },
       include: {
         territory: true,
-        member: true,
+        publisher: true,
       },
     })
 
@@ -124,19 +147,17 @@ export async function returnPersonalAssignment(assignmentId: string, returnDate?
       },
       include: {
         territory: true,
-        member: true,
+        publisher: true,
       },
     })
-
     revalidatePath('/admin/territories')
     revalidatePath('/admin/assignments')
     revalidatePath('/admin/history')
     revalidatePath('/dashboard')
-
     return {
       success: true,
-      data: updatedAssignment,
-      message: `Territorio ${assignment.territory.number} devuelto por ${assignment.member.name}`,
+      data: withMemberAlias(updatedAssignment),
+      message: `Territorio ${assignment.territory.number} devuelto por ${assignment.publisher ? fullName(assignment.publisher) : '—'}`,
     }
   } catch (error) {
     console.error('Error al devolver asignación personal:', error)
@@ -164,7 +185,7 @@ export async function getActivePersonalAssignments() {
       },
       include: {
         territory: true,
-        member: {
+        publisher: {
           include: {
             group: true,
           },
@@ -174,10 +195,9 @@ export async function getActivePersonalAssignments() {
         assignedDate: 'desc',
       },
     })
-
     return {
       success: true,
-      data: assignments,
+      data: assignments.map(withMemberAlias),
     }
   } catch (error) {
     console.error('Error al obtener asignaciones personales:', error)
@@ -201,7 +221,7 @@ export async function getPersonalAssignmentsByTerritory(territoryId: string) {
         tenantId,
       },
       include: {
-        member: {
+        publisher: {
           include: {
             group: true,
           },
@@ -211,10 +231,9 @@ export async function getPersonalAssignmentsByTerritory(territoryId: string) {
         assignedDate: 'desc',
       },
     })
-
     return {
       success: true,
-      data: assignments,
+      data: assignments.map(withMemberAlias),
     }
   } catch (error) {
     console.error('Error al obtener asignaciones del territorio:', error)
@@ -227,14 +246,14 @@ export async function getPersonalAssignmentsByTerritory(territoryId: string) {
 }
 
 /**
- * Obtiene el historial de asignaciones personales de un miembro
+ * Obtiene el historial de asignaciones personales de una persona
  */
 export async function getPersonalAssignmentsByMember(memberId: string) {
   try {
     const tenantId = await getCurrentTenantId()
     const assignments = await prisma.personalAssignment.findMany({
       where: {
-        memberId,
+        publisherId: memberId,
         tenantId,
       },
       include: {
@@ -244,7 +263,6 @@ export async function getPersonalAssignmentsByMember(memberId: string) {
         assignedDate: 'desc',
       },
     })
-
     return {
       success: true,
       data: assignments,
@@ -270,15 +288,12 @@ export async function deletePersonalAssignment(assignmentId: string) {
       select: { id: true },
     })
     if (!assignment) throw new Error('Asignación no encontrada')
-
     await prisma.personalAssignment.delete({
       where: { id: assignmentId },
     })
-
     revalidatePath('/admin/territories')
     revalidatePath('/admin/assignments')
     revalidatePath('/dashboard')
-
     return {
       success: true,
       message: 'Asignación eliminada correctamente',
@@ -305,44 +320,39 @@ export async function updatePersonalAssignment(
     const tenantId = await getCurrentTenantId()
     const assignment = await prisma.personalAssignment.findFirst({
       where: { id: assignmentId, tenantId },
-      include: { territory: true, member: true },
+      include: { territory: true, publisher: true },
     })
-
     if (!assignment) {
       throw new Error('Asignación no encontrada')
     }
-
     if (data.memberId) {
-      const member = await prisma.member.findFirst({
+      const publisher = await prisma.publisher.findFirst({
         where: { id: data.memberId, tenantId },
       })
-      if (!member) {
-        throw new Error('Miembro no encontrado')
+      if (!publisher) {
+        throw new Error('Integrante no encontrado')
       }
     }
-
     const updated = await prisma.personalAssignment.update({
       where: { id: assignmentId },
       data: {
-        memberId: data.memberId,
+        publisherId: data.memberId,
         assignedDate: data.assignedDate,
         returnedDate: data.returnedDate,
       },
       include: {
         territory: true,
-        member: {
+        publisher: {
           include: { group: true },
         },
       },
     })
-
     revalidatePath('/admin/history')
     revalidatePath('/admin/assignments')
     revalidatePath('/admin/territories')
-
     return {
       success: true,
-      data: updated,
+      data: withMemberAlias(updated),
       message: 'Asignación actualizada correctamente',
     }
   } catch (error) {
@@ -373,11 +383,10 @@ export async function updateActivePersonalAssignment(
       where: { id: assignmentId, tenantId, isActive: true },
     })
     if (!assignment) throw new Error('Asignación personal activa no encontrada')
-
     const territoryId = data.territoryId ?? assignment.territoryId
-    const memberId = data.memberId ?? assignment.memberId
-    const [member, territory, conflictingPersonal, conflictingDriver] = await Promise.all([
-      prisma.member.findFirst({ where: { id: memberId, tenantId } }),
+    const memberId = data.memberId ?? assignment.publisherId
+    const [publisher, territory, conflictingPersonal, conflictingDriver] = await Promise.all([
+      prisma.publisher.findFirst({ where: { id: memberId ?? '', tenantId } }),
       prisma.territory.findFirst({ where: { id: territoryId, tenantId } }),
       prisma.personalAssignment.findFirst({
         where: {
@@ -391,35 +400,31 @@ export async function updateActivePersonalAssignment(
         where: { territoryId, tenantId, isCompleted: false },
       }),
     ])
-
-    if (!member) throw new Error('Integrante no encontrado')
+    if (!publisher) throw new Error('Integrante no encontrado')
     if (!territory) throw new Error('Territorio no encontrado')
     if (conflictingPersonal || conflictingDriver) {
       throw new Error(`El territorio ${territory.number} ya tiene una asignación activa`)
     }
-
     const updated = await prisma.personalAssignment.update({
       where: { id: assignmentId },
       data: {
         territoryId,
-        memberId,
+        publisherId: memberId,
         assignedDate: data.assignedDate,
         notes: data.notes,
       },
       include: {
         territory: true,
-        member: { include: { group: true } },
+        publisher: { include: { group: true } },
       },
     })
-
     revalidatePath('/dashboard')
     revalidatePath('/admin/assignments')
     revalidatePath('/admin/history')
     revalidatePath('/admin/territories')
-
     return {
       success: true,
-      data: updated,
+      data: withMemberAlias(updated),
       message: 'Asignación personal actualizada correctamente',
     }
   } catch (error) {

@@ -80,7 +80,7 @@ export async function getDashboardMetrics(): Promise<DashboardMetrics> {
           territoryId: assignment.territory.id,
           territoryNumber: assignment.territory.number,
           assignmentId: assignment.id,
-          driverName: assignment.driver.name,
+          driverName: assignment.driver?.name ?? '—',
           startDate: assignment.startDate,
           totalBlocks,
           completedBlocks,

@@ -6,6 +6,29 @@ import { revalidatePath } from 'next/cache'
 import { getCurrentTenantId } from '@/lib/tenant'
 import { tenantFilter } from '@/lib/scoped-prisma'
 
+// ════════════════════════════════════════════════════════════════
+// ASIGNACIONES TERRITORIALES → conductor = Publisher (isConductor).
+// Escribe únicamente publisherId; las respuestas exponen el alias
+// `driver` con `name` computado para compatibilidad con web/mobile.
+// ════════════════════════════════════════════════════════════════
+
+function fullName(publisher: { firstName: string; lastName: string }): string {
+  return `${publisher.firstName} ${publisher.lastName}`.trim()
+}
+
+/** Alias de compatibilidad: publisher → driver conservando el resto de props. */
+function withDriverAlias<T extends { publisher: { firstName: string; lastName: string } | null }>(
+  assignment: T
+): Omit<T, 'publisher'> & {
+  driver: { name: string } | null
+} {
+  const { publisher, ...rest } = assignment
+  return {
+    ...rest,
+    driver: publisher ? { ...publisher, name: `${publisher.firstName} ${publisher.lastName}`.trim() } : null,
+  }
+}
+
 function revalidateAssignmentPaths(territoryIds: string[] = []) {
   revalidatePath('/dashboard')
   territoryIds.forEach((territoryId) => revalidatePath(`/dashboard/${territoryId}`))
@@ -24,11 +47,12 @@ export async function createAssignment(input: CreateAssignmentInput) {
     })
     if (!territory) throw new Error(`Territorio con ID ${input.territoryId} no encontrado`)
 
-    const driver = await prisma.driver.findFirst({
-      where: { id: input.driverId, tenantId },
+    // El ID que llega es un publicador con capacidad de conductor
+    const publisher = await prisma.publisher.findFirst({
+      where: { id: input.driverId, tenantId, isConductor: true },
       include: { group: true },
     })
-    if (!driver) throw new Error(`Conductor con ID ${input.driverId} no encontrado`)
+    if (!publisher) throw new Error(`Conductor con ID ${input.driverId} no encontrado`)
 
     const existingActiveAssignment = await prisma.assignment.findFirst({
       where: { territoryId: input.territoryId, isCompleted: false, tenantId },
@@ -52,7 +76,7 @@ export async function createAssignment(input: CreateAssignmentInput) {
     const assignment = await prisma.assignment.create({
       data: {
         territoryId: input.territoryId,
-        driverId: input.driverId,
+        publisherId: input.driverId,
         tenantId,
         isCompleted: false,
         startDate: input.startDate || new Date(),
@@ -63,7 +87,7 @@ export async function createAssignment(input: CreateAssignmentInput) {
       },
       include: {
         territory: true,
-        driver: { include: { group: true } },
+        publisher: { include: { group: true } },
         blocks: true,
       },
     })
@@ -72,8 +96,8 @@ export async function createAssignment(input: CreateAssignmentInput) {
 
     return {
       success: true,
-      data: assignment,
-      message: `Asignación creada: Territorio ${territory.number} asignado a ${driver.name}`,
+      data: withDriverAlias(assignment),
+      message: `Asignación creada: Territorio ${territory.number} asignado a ${fullName(publisher)}`,
     }
   } catch (error) {
     console.error('Error al crear asignación:', error)
@@ -85,14 +109,18 @@ export async function createAssignment(input: CreateAssignmentInput) {
   }
 }
 
+const ASSIGNMENT_INCLUDE = {
+  territory: true,
+  publisher: { include: { group: true } },
+} as const
+
 export async function getActiveAssignments() {
   try {
     const tenantId = await getCurrentTenantId()
     const assignments = await prisma.assignment.findMany({
       where: tenantFilter(tenantId, { isCompleted: false }),
       include: {
-        territory: true,
-        driver: { include: { group: true } },
+        ...ASSIGNMENT_INCLUDE,
         _count: { select: { blocks: true } },
       },
       orderBy: { startDate: 'desc' },
@@ -110,7 +138,7 @@ export async function getActiveAssignments() {
       })
     )
 
-    return { success: true, data: assignmentsWithProgress }
+    return { success: true, data: assignmentsWithProgress.map(withDriverAlias) }
   } catch (error) {
     console.error('Error al obtener asignaciones activas:', error)
     return { success: false, data: [], message: 'Error al obtener las asignaciones activas' }
@@ -124,18 +152,18 @@ export async function getAssignmentById(assignmentId: string) {
       where: { id: assignmentId, tenantId },
       include: {
         territory: true,
-        driver: { include: { group: true } },
+        publisher: { include: { group: true } },
         blocks: {
           include: { dailyRecords: { orderBy: { date: 'desc' }, take: 1 } },
         },
         dailyRecords: {
-          include: { driver: true, block: true },
+          include: { publisher: true, block: true },
           orderBy: { date: 'desc' },
         },
       },
     })
     if (!assignment) throw new Error(`Asignación con ID ${assignmentId} no encontrada`)
-    return { success: true, data: assignment }
+    return { success: true, data: withDriverAlias(assignment) }
   } catch (error) {
     console.error('Error al obtener asignación:', error)
     return {
@@ -151,17 +179,14 @@ export async function completeAssignment(assignmentId: string) {
     const tenantId = await getCurrentTenantId()
     const assignment = await prisma.assignment.findFirst({
       where: { id: assignmentId, tenantId },
-      include: { territory: true, driver: true, _count: { select: { blocks: true } } },
+      include: { territory: true, publisher: true, _count: { select: { blocks: true } } },
     })
     if (!assignment) throw new Error('Asignación no encontrada')
     if (assignment.isCompleted) throw new Error('Esta asignación ya está completada')
 
     const totalBlocks = assignment._count.blocks
     const workedBlocks = await prisma.block.count({
-      where: {
-        assignmentId: assignment.id,
-        dailyRecords: { some: { assignmentId: assignment.id } },
-      },
+      where: { assignmentId: assignment.id, dailyRecords: { some: { assignmentId: assignment.id } } },
     })
     if (workedBlocks < totalBlocks) {
       throw new Error(
@@ -172,18 +197,17 @@ export async function completeAssignment(assignmentId: string) {
     const updatedAssignment = await prisma.assignment.update({
       where: { id: assignmentId },
       data: { isCompleted: true, endDate: new Date() },
-      include: { territory: true, driver: true },
+      include: { territory: true, publisher: true },
     })
 
     revalidatePath('/dashboard')
     revalidatePath('/admin/assignments')
     revalidatePath('/admin/history')
     revalidatePath('/admin/territories')
-
     return {
       success: true,
-      data: updatedAssignment,
-      message: `Asignación completada: Territorio ${assignment.territory.number} por ${assignment.driver.name}`,
+      data: withDriverAlias(updatedAssignment),
+      message: `Asignación completada: Territorio ${assignment.territory.number} por ${assignment.publisher ? fullName(assignment.publisher) : '—'}`,
     }
   } catch (error) {
     console.error('Error al completar asignación:', error)
@@ -200,7 +224,7 @@ export async function returnAssignment(assignmentId: string, returnDate?: Date) 
     const tenantId = await getCurrentTenantId()
     const assignment = await prisma.assignment.findFirst({
       where: { id: assignmentId, tenantId },
-      include: { territory: true, driver: true },
+      include: { territory: true, publisher: true },
     })
     if (!assignment) throw new Error('Asignación no encontrada')
     if (assignment.isCompleted) throw new Error('Esta asignación ya fue completada o devuelta')
@@ -208,18 +232,17 @@ export async function returnAssignment(assignmentId: string, returnDate?: Date) 
     const updatedAssignment = await prisma.assignment.update({
       where: { id: assignmentId },
       data: { isCompleted: true, endDate: returnDate || new Date() },
-      include: { territory: true, driver: true },
+      include: { territory: true, publisher: true },
     })
 
     revalidatePath('/dashboard')
     revalidatePath('/admin/assignments')
     revalidatePath('/admin/history')
     revalidatePath('/admin/territories')
-
     return {
       success: true,
-      data: updatedAssignment,
-      message: `Territorio ${assignment.territory.number} devuelto por ${assignment.driver.name}`,
+      data: withDriverAlias(updatedAssignment),
+      message: `Territorio ${assignment.territory.number} devuelto por ${assignment.publisher ? fullName(assignment.publisher) : '—'}`,
     }
   } catch (error) {
     console.error('Error al devolver asignación:', error)
@@ -241,15 +264,11 @@ export async function deleteAssignment(assignmentId: string) {
     if (!assignment) throw new Error('Asignación no encontrada')
 
     await prisma.$transaction(async (tx) => {
-      await tx.block.updateMany({
-        where: { assignmentId, tenantId },
-        data: { assignmentId: null },
-      })
+      await tx.block.updateMany({ where: { assignmentId, tenantId }, data: { assignmentId: null } })
       await tx.assignment.delete({ where: { id: assignmentId } })
     })
 
     revalidateAssignmentPaths([assignment.territoryId])
-
     return { success: true, message: 'Asignación eliminada correctamente' }
   } catch (error) {
     console.error('Error al eliminar asignación:', error)
@@ -265,13 +284,10 @@ export async function getCompletedAssignmentsHistory() {
     const tenantId = await getCurrentTenantId()
     const completedAssignments = await prisma.assignment.findMany({
       where: tenantFilter(tenantId, { isCompleted: true }),
-      include: {
-        territory: true,
-        driver: { include: { group: true } },
-      },
+      include: { territory: true, publisher: { include: { group: true } } },
       orderBy: { endDate: 'desc' },
     })
-    return { success: true, data: completedAssignments }
+    return { success: true, data: completedAssignments.map(withDriverAlias) }
   } catch (error) {
     console.error('Error al obtener historial:', error)
     return { success: false, data: [], message: 'Error al obtener el historial de asignaciones' }
@@ -286,26 +302,30 @@ export async function updateAssignment(
     const tenantId = await getCurrentTenantId()
     const assignment = await prisma.assignment.findFirst({
       where: { id: assignmentId, tenantId },
-      include: { territory: true, driver: true },
+      include: ASSIGNMENT_INCLUDE,
     })
     if (!assignment) throw new Error('Asignación no encontrada')
 
     if (data.driverId) {
-      const driver = await prisma.driver.findFirst({ where: { id: data.driverId, tenantId } })
-      if (!driver) throw new Error('Conductor no encontrado')
+      const publisher = await prisma.publisher.findFirst({
+        where: { id: data.driverId, tenantId, isConductor: true },
+      })
+      if (!publisher) throw new Error('Conductor no encontrado')
     }
 
     const updated = await prisma.assignment.update({
       where: { id: assignmentId },
-      data: { driverId: data.driverId, startDate: data.startDate, endDate: data.endDate },
-      include: { territory: true, driver: { include: { group: true } } },
+      data: {
+        publisherId: data.driverId,
+        startDate: data.startDate,
+        endDate: data.endDate,
+      },
+      include: { ...ASSIGNMENT_INCLUDE },
     })
-
     revalidatePath('/admin/history')
     revalidatePath('/admin/assignments')
     revalidatePath('/admin/territories')
-
-    return { success: true, data: updated, message: 'Asignación actualizada correctamente' }
+    return { success: true, data: withDriverAlias(updated), message: 'Asignación actualizada correctamente' }
   } catch (error) {
     console.error('Error al actualizar asignación:', error)
     return {
@@ -330,19 +350,16 @@ export async function updateActiveAssignment(
       },
     })
     if (!assignment) throw new Error('Asignación activa no encontrada')
-
     const territoryId = data.territoryId ?? assignment.territoryId
-    const driverId = data.driverId ?? assignment.driverId
+    const driverId = data.driverId ?? assignment.publisherId
     const startDate = data.startDate ?? assignment.startDate
     const territoryChanged = territoryId !== assignment.territoryId
-
     if (territoryChanged && data.blockWork === undefined) {
       throw new Error('Indicá el estado de las manzanas al cambiar de territorio')
     }
-
     const [driver, territory, conflictingDriverAssignment, conflictingPersonalAssignment] =
       await Promise.all([
-        prisma.driver.findFirst({ where: { id: driverId, tenantId } }),
+        prisma.publisher.findFirst({ where: { id: driverId ?? '', tenantId } }),
         prisma.territory.findFirst({
           where: { id: territoryId, tenantId },
           include: { blocks: { orderBy: { letter: 'asc' } } },
@@ -400,10 +417,10 @@ export async function updateActiveAssignment(
     const updated = await prisma.$transaction(async (tx) => {
       if (territoryChanged || shouldReconcileBlocks) {
         await tx.dailyRecord.deleteMany({ where: { assignmentId, tenantId } })
-      } else if (driverId !== assignment.driverId) {
+      } else if (driverId !== assignment.publisherId) {
         await tx.dailyRecord.updateMany({
           where: { assignmentId, tenantId },
-          data: { driverId },
+          data: { publisherId: driverId },
         })
       }
 
@@ -418,14 +435,14 @@ export async function updateActiveAssignment(
         where: { id: assignmentId },
         data: {
           territoryId,
-          driverId,
+          publisherId: driverId,
           startDate,
           endDate: shouldReconcileBlocks
             ? (completesAssignment ? lastWorkDate : null)
             : undefined,
           isCompleted: shouldReconcileBlocks ? completesAssignment : undefined,
         },
-        include: { territory: true, driver: { include: { group: true } } },
+        include: { territory: true, publisher: { include: { group: true } } },
       })
 
       if (territoryChanged) {
@@ -439,7 +456,7 @@ export async function updateActiveAssignment(
         await tx.dailyRecord.createMany({
           data: blockWork.map((work) => ({
             assignmentId,
-            driverId,
+            publisherId: driverId!,
             blockId: targetBlocksByLetter.get(work.letter)!.id,
             date: work.date,
             notes: work.notes?.trim() || null,
@@ -455,7 +472,7 @@ export async function updateActiveAssignment(
 
     return {
       success: true,
-      data: updated,
+      data: withDriverAlias(updated),
       message: completesAssignment
         ? 'Asignación actualizada y completada correctamente'
         : 'Asignación actualizada correctamente',

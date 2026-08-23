@@ -3,7 +3,7 @@
 import { prisma } from '@/lib/prisma'
 import { revalidatePath } from 'next/cache'
 import { getCurrentTenantId } from '@/lib/tenant'
-import { splitFullName } from '@/server/members'
+import { splitFullName } from '@/lib/name-utils'
 
 // ════════════════════════════════════════════════════════════════
 // CONDUCTORES → ahora es una capacidad (`isConductor`) del Publisher,

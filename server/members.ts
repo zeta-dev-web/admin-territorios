@@ -3,6 +3,7 @@
 import { prisma } from '@/lib/prisma'
 import { revalidatePath } from 'next/cache'
 import { getCurrentTenantId } from '@/lib/tenant'
+import { splitFullName } from '@/lib/name-utils'
 
 // ════════════════════════════════════════════════════════════════
 // INTEGRANTES → ahora opera sobre la entidad unificada Publisher.
@@ -13,21 +14,6 @@ import { getCurrentTenantId } from '@/lib/tenant'
 /** Nombre completo visible a partir de firstName + lastName. */
 function fullName(publisher: { firstName: string; lastName: string }): string {
   return `${publisher.firstName} ${publisher.lastName}`.trim()
-}
-
-/** Regla aprobada: ÚLTIMA palabra = apellido; una sola palabra → lastName "". */
-export function splitFullName(fullNameInput: string): {
-  firstName: string
-  lastName: string
-} {
-  const trimmed = String(fullNameInput ?? '').trim().replace(/\s+/g, ' ')
-  if (!trimmed) return { firstName: '', lastName: '' }
-  const words = trimmed.split(' ')
-  if (words.length === 1) return { firstName: words[0], lastName: '' }
-  return {
-    firstName: words.slice(0, -1).join(' '),
-    lastName: words[words.length - 1],
-  }
 }
 
 /** Agrega el campo `name` calculado a un publicador para compatibilidad. */

@@ -8,9 +8,7 @@ import { useRouter } from 'next/navigation'
 interface Driver {
   id: string
   name: string
-  group: {
-    name: string
-  }
+  group: { name: string } | null
 }
 
 interface Territory {
@@ -63,7 +61,7 @@ export function CreateAssignmentModal() {
   const filteredDrivers = useMemo(() => {
     return drivers.filter(d =>
       d.name.toLowerCase().includes(driverSearch.toLowerCase()) ||
-      d.group.name.toLowerCase().includes(driverSearch.toLowerCase())
+      (d.group?.name ?? '').toLowerCase().includes(driverSearch.toLowerCase())
     )
   }, [drivers, driverSearch])
 
@@ -248,7 +246,7 @@ export function CreateAssignmentModal() {
                     <div className="mt-2 flex items-center gap-2 p-2 bg-blue-500/10 border border-blue-500/30 rounded-lg">
                       <Check className="h-4 w-4 text-blue-500" />
                       <span className="text-sm text-blue-400">
-                        {selectedDriver.name} - {selectedDriver.group.name}
+                        {selectedDriver.name}{selectedDriver.group ? ` - ${selectedDriver.group.name}` : ''}
                       </span>
                       <button
                         type="button"
@@ -277,7 +275,7 @@ export function CreateAssignmentModal() {
                           className="w-full px-4 py-2 text-left hover:bg-slate-700 transition-colors text-sm text-slate-200"
                         >
                           <span className="font-medium">{driver.name}</span>
-                          <span className="text-slate-400"> - {driver.group.name}</span>
+                          <span className="text-slate-400"> - {driver.group?.name ?? ''}</span>
                         </button>
                       ))}
                     </div>

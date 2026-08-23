@@ -35,7 +35,7 @@ interface TerritoryOption {
 interface AssigneeOption {
   id: string
   name: string
-  group: { name: string }
+  group: { name: string } | null
 }
 
 interface BlockWorkState {
@@ -90,14 +90,18 @@ export function EditActiveAssignmentModal({ assignment, onClose }: EditProps) {
       setAssignees(assigneeResult.data)
 
       if (congregational && detailResult?.success && detailResult.data) {
+        const detail = detailResult.data as unknown as {
+          dailyRecords: Array<{ block: { letter: string }; date: Date; notes: string | null }>
+          blocks: Array<{ letter: string }>
+        }
         const latestByLetter = new Map<string, { date: Date; notes: string | null }>()
-        detailResult.data.dailyRecords.forEach((record) => {
+        detail.dailyRecords.forEach((record) => {
           if (!latestByLetter.has(record.block.letter)) {
             latestByLetter.set(record.block.letter, { date: record.date, notes: record.notes })
           }
         })
         setBlockWork(
-          [...detailResult.data.blocks]
+          [...detail.blocks]
             .sort((a, b) => a.letter.localeCompare(b.letter))
             .map((block) => {
               const work = latestByLetter.get(block.letter)
@@ -138,7 +142,7 @@ export function EditActiveAssignmentModal({ assignment, onClose }: EditProps) {
     if (!query) return []
     return assignees
       .filter((item) =>
-        item.name.toLowerCase().includes(query) || item.group.name.toLowerCase().includes(query),
+        item.name.toLowerCase().includes(query) || (item.group?.name ?? '').toLowerCase().includes(query),
       )
       .slice(0, 8)
   }, [assignees, assigneeSearch])
@@ -249,8 +253,8 @@ export function EditActiveAssignmentModal({ assignment, onClose }: EditProps) {
                   </SearchField>
 
                   <SearchField label={congregational ? 'Conductor' : 'Integrante'} icon={UserRound} value={assigneeSearch} onChange={setAssigneeSearch} placeholder={`Buscar ${congregational ? 'conductor' : 'integrante'}`}>
-                    {selectedAssignee && <SelectedOption label={selectedAssignee.name} detail={selectedAssignee.group.name} />}
-                    <SearchResults items={assigneeResults} empty={Boolean(assigneeSearch.trim())} renderLabel={(item) => item.name} renderDetail={(item) => item.group.name} onSelect={(item) => { setAssigneeId(item.id); setAssigneeSearch('') }} />
+                    {selectedAssignee && <SelectedOption label={selectedAssignee.name} detail={selectedAssignee.group?.name ?? ''} />}
+                    <SearchResults items={assigneeResults} empty={Boolean(assigneeSearch.trim())} renderLabel={(item) => item.name} renderDetail={(item) => item.group?.name ?? ''} onSelect={(item) => { setAssigneeId(item.id); setAssigneeSearch('') }} />
                   </SearchField>
                 </div>
 

@@ -3,6 +3,63 @@
 import { prisma } from '@/lib/prisma'
 import { revalidatePath } from 'next/cache'
 import { getCurrentTenantId } from '@/lib/tenant'
+import { splitFullName } from '@/lib/name-utils'
+
+// ════════════════════════════════════════════════════════════════
+// GRUPOS → los integrantes/conductores provienen de la entidad única
+// Publisher. Las respuestas siguen exponiendo `drivers` y `members`
+// (derivados) para compatibilidad con la UI existente.
+// ════════════════════════════════════════════════════════════════
+
+function fullName(publisher: { firstName: string; lastName: string }): string {
+  return `${publisher.firstName} ${publisher.lastName}`.trim()
+}
+
+function normalizeName(value: string): string {
+  return String(value ?? '')
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim()
+}
+
+/** Crea (o marca como conductora) una persona dentro del grupo. */
+async function ensureGroupPublisher(
+  personName: string,
+  groupId: string,
+  tenantId: string | null
+) {
+  const normalizedNew = normalizeName(personName)
+  const groupPublishers = await prisma.publisher.findMany({
+    where: { groupId, tenantId },
+  })
+  const existing = groupPublishers.find(
+    (p) => normalizeName(fullName(p)) === normalizedNew
+  )
+
+  if (existing) {
+    if (!existing.isConductor) {
+      await prisma.publisher.update({
+        where: { id: existing.id },
+        data: { isConductor: true },
+      })
+    }
+    return existing.id
+  }
+
+  const { firstName, lastName } = splitFullName(personName)
+  const publisher = await prisma.publisher.create({
+    data: {
+      firstName: firstName || personName.trim(),
+      lastName,
+      isConductor: true,
+      groupId,
+      tenantId,
+    },
+  })
+  return publisher.id
+}
 
 /**
  * Crea un nuevo grupo
@@ -24,24 +81,14 @@ export async function createGroup(
       },
     })
 
-    // Crear conductores e integrantes automáticamente para superintendente y auxiliar
-    const driversToCreate: Array<{ name: string; groupId: string; tenantId: string }> = []
-    const membersToCreate: Array<{ name: string; groupId: string; tenantId: string }> = []
-
+    // Superintendente y auxiliar se crean una sola vez como publicadores
+    // con capacidad de conductor (antes se duplicaban en Driver + Member)
     if (superintendent) {
-      driversToCreate.push({ name: superintendent, groupId: group.id, tenantId })
-      membersToCreate.push({ name: superintendent, groupId: group.id, tenantId })
+      await ensureGroupPublisher(superintendent, group.id, tenantId)
     }
-
-    if (auxiliary) {
-      driversToCreate.push({ name: auxiliary, groupId: group.id, tenantId })
-      membersToCreate.push({ name: auxiliary, groupId: group.id, tenantId })
+    if (auxiliary && auxiliary !== superintendent) {
+      await ensureGroupPublisher(auxiliary, group.id, tenantId)
     }
-
-    await Promise.all([
-      driversToCreate.length > 0 ? prisma.driver.createMany({ data: driversToCreate }) : Promise.resolve(),
-      membersToCreate.length > 0 ? prisma.member.createMany({ data: membersToCreate }) : Promise.resolve(),
-    ])
 
     revalidatePath('/dashboard')
     revalidatePath('/admin/groups')
@@ -64,7 +111,7 @@ export async function createGroup(
 }
 
 /**
- * Obtiene todos los grupos con sus conductores y miembros
+ * Obtiene todos los grupos con sus conductores y miembros (derivados de Publisher)
  */
 export async function getAllGroups() {
   try {
@@ -72,17 +119,13 @@ export async function getAllGroups() {
     const groups = await prisma.group.findMany({
       where: { tenantId },
       include: {
-        drivers: {
+        publishers: {
           include: {
             _count: {
               select: {
                 assignments: true,
               },
             },
-          },
-        },
-        members: {
-          include: {
             personalAssignments: {
               where: {
                 isActive: true,
@@ -92,9 +135,7 @@ export async function getAllGroups() {
               },
             },
           },
-          orderBy: {
-            name: 'asc',
-          },
+          orderBy: [{ firstName: 'asc' }, { lastName: 'asc' }],
         },
       },
       orderBy: {
@@ -102,9 +143,31 @@ export async function getAllGroups() {
       },
     })
 
+    // Derivar la forma legacy: drivers (isConductor) y members (todos)
+    const data = groups.map((group) => {
+      const { publishers, ...groupFields } = group
+      return {
+        ...groupFields,
+        drivers: publishers
+          .filter((p) => p.isConductor)
+          .map((p) => ({
+            id: p.id,
+            name: fullName(p),
+            groupId: p.groupId,
+            _count: p._count,
+          })),
+        members: publishers.map((p) => ({
+          id: p.id,
+          name: fullName(p),
+          groupId: p.groupId,
+          personalAssignments: p.personalAssignments,
+        })),
+      }
+    })
+
     return {
       success: true,
-      data: groups,
+      data,
     }
   } catch (error) {
     console.error('Error al obtener grupos:', error)
@@ -118,10 +181,10 @@ export async function getAllGroups() {
 
 /**
  * Actualiza un grupo
- * 
- * Si el superintendente o auxiliar cambian, también se actualiza
- * el conductor correspondiente (se crea si no existe, se renombra si ya existe).
- * Si se vacía el campo, el conductor existente NO se elimina.
+ *
+ * Si el superintendente o auxiliar cambian, se sincroniza la persona
+ * correspondiente en Publisher (se crea si no existe, se renombra si ya existe).
+ * Si se vacía el campo, la persona existente NO se elimina.
  */
 export async function updateGroup(
   groupId: string,
@@ -132,12 +195,11 @@ export async function updateGroup(
   try {
     const tenantId = await getCurrentTenantId()
 
-    // Obtener el grupo actual para comparar valores viejos
     const currentGroup = await prisma.group.findFirst({
       where: { id: groupId, tenantId },
       include: {
-        drivers: {
-          select: { id: true, name: true },
+        publishers: {
+          select: { id: true, firstName: true, lastName: true, isConductor: true },
         },
       },
     })
@@ -150,71 +212,48 @@ export async function updateGroup(
     const oldAuxiliary = currentGroup.auxiliary
     const newSuperintendent = superintendent || null
     const newAuxiliary = auxiliary || null
-    const groupDrivers = currentGroup.drivers
-    const groupMembers = await prisma.member.findMany({
-      where: { groupId },
-      select: { id: true, name: true },
-    })
+    const groupPublishers = currentGroup.publishers
 
-    // Función auxiliar: sincroniza un rol con su conductor Y su integrante
-    async function syncRole(
-      oldName: string | null,
-      newName: string | null
-    ) {
-      if (!oldName && !newName) return
+    async function syncRole(oldRoleName: string | null, newRoleName: string | null) {
+      if (!oldRoleName && !newRoleName) return
 
-      // Buscar registros existentes (por nombre viejo si cambió, o por el nombre actual)
-      const searchName = (oldName || newName)!
-      const existingDriver = groupDrivers.find(
-        (d) => d.name.toLowerCase() === searchName.toLowerCase()
-      )
-      const existingMember = groupMembers.find(
-        (m) => m.name.toLowerCase() === searchName.toLowerCase()
+      const searchName = (oldRoleName || newRoleName)!
+      const existing = groupPublishers.find(
+        (p) => normalizeName(fullName(p)) === normalizeName(searchName)
       )
 
-      if (oldName && newName) {
-        // Mismo nombre → verificar que existan los registros, si no, crearlos
-        // Nombre diferente → actualizar
-        const isSameName = oldName.toLowerCase() === newName.toLowerCase()
+      if (oldRoleName && newRoleName) {
+        const isSameName =
+          oldRoleName.toLowerCase() === newRoleName.toLowerCase()
 
         if (isSameName) {
-          // Mismo nombre: solo crear lo que falte
-          await Promise.all([
-            existingDriver
-              ? Promise.resolve()
-              : prisma.driver.create({ data: { name: newName, groupId, tenantId } }),
-            existingMember
-              ? Promise.resolve()
-              : prisma.member.create({ data: { name: newName, groupId, tenantId } }),
-          ])
+          if (!existing) await ensureGroupPublisher(newRoleName, groupId, tenantId)
+          return
+        }
+
+        if (existing) {
+          const { firstName, lastName } = splitFullName(newRoleName)
+          await prisma.publisher.update({
+            where: { id: existing.id },
+            data: { firstName, lastName },
+          })
         } else {
-          // Nombre diferente: actualizar existentes o crear si no hay
-          await Promise.all([
-            existingDriver
-              ? prisma.driver.update({ where: { id: existingDriver.id }, data: { name: newName } })
-              : prisma.driver.create({ data: { name: newName, groupId, tenantId } }),
-            existingMember
-              ? prisma.member.update({ where: { id: existingMember.id }, data: { name: newName } })
-              : prisma.member.create({ data: { name: newName, groupId, tenantId } }),
-          ])
+          await ensureGroupPublisher(newRoleName, groupId, tenantId)
         }
         return
       }
 
-      if (!oldName && newName) {
-        // Se agregó → crear si no existen
-        await Promise.all([
-          existingDriver
-            ? Promise.resolve()
-            : prisma.driver.create({ data: { name: newName, groupId, tenantId } }),
-          existingMember
-            ? Promise.resolve()
-            : prisma.member.create({ data: { name: newName, groupId, tenantId } }),
-        ])
+      if (!oldRoleName && newRoleName) {
+        if (!existing) await ensureGroupPublisher(newRoleName, groupId, tenantId)
+        else if (!existing.isConductor) {
+          // El rol requiere capacidad de conductor
+          const { id } = existing
+          await prisma.publisher.update({ where: { id }, data: { isConductor: true } })
+        }
         return
       }
 
-      // Si oldName tenía valor y newName es null → no eliminamos, se conservan
+      // oldName tenía valor y newName es null → la persona se conserva
     }
 
     await Promise.all([
@@ -253,7 +292,7 @@ export async function updateGroup(
 }
 
 /**
- * Elimina un grupo (solo si no tiene conductores ni miembros)
+ * Elimina un grupo (solo si no tiene publicadores)
  */
 export async function deleteGroup(groupId: string) {
   try {
@@ -261,8 +300,7 @@ export async function deleteGroup(groupId: string) {
     const group = await prisma.group.findFirst({
       where: { id: groupId, tenantId },
       include: {
-        drivers: true,
-        members: true,
+        _count: { select: { publishers: true } },
       },
     })
 
@@ -270,13 +308,7 @@ export async function deleteGroup(groupId: string) {
       throw new Error('Grupo no encontrado')
     }
 
-    if (group.drivers.length > 0) {
-      throw new Error(
-        'No se puede eliminar un grupo que tiene conductores asignados'
-      )
-    }
-
-    if (group.members.length > 0) {
+    if (group._count.publishers > 0) {
       throw new Error(
         'No se puede eliminar un grupo que tiene integrantes asignados'
       )

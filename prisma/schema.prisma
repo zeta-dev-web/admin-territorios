@@ -31,18 +31,18 @@ model Tenant {
 }
 
 model User {
-  id               String    @id @default(cuid())
-  email            String    @unique
-  password         String
-  name             String?
-  role             String    @default("USER") // ADMIN | USER
-  tenantId         String
-  termsAcceptedAt  DateTime? // Fecha en que aceptó los términos
-  createdAt        DateTime  @default(now())
-  updatedAt        DateTime  @updatedAt
+  id              String    @id @default(cuid())
+  email           String    @unique
+  password        String
+  name            String?
+  role            String    @default("USER") // ADMIN | USER
+  tenantId        String
+  termsAcceptedAt DateTime? // Fecha en que aceptó los términos
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
 
-  tenant    Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  apiKeys   ApiKey[]
+  tenant  Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  apiKeys ApiKey[]
 
   @@index([email])
   @@index([tenantId])
@@ -53,13 +53,13 @@ model User {
 // ═══════════════════════════════════════════
 
 model Group {
-  id              String      @id @default(cuid())
-  name            String
-  superintendent  String?
-  auxiliary       String?
-  tenantId        String?
-  createdAt       DateTime    @default(now())
-  updatedAt       DateTime    @updatedAt
+  id             String   @id @default(cuid())
+  name           String
+  superintendent String?
+  auxiliary      String?
+  tenantId       String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 
   tenant      Tenant?     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   drivers     Driver[]
@@ -76,15 +76,15 @@ model Group {
 // ═══════════════════════════════════════════
 
 model Member {
-  id                  String              @id @default(cuid())
-  name                String
-  groupId             String
-  tenantId            String?
-  createdAt           DateTime            @default(now())
-  updatedAt           DateTime            @updatedAt
+  id        String   @id @default(cuid())
+  name      String
+  groupId   String
+  tenantId  String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  tenant              Tenant?             @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  group               Group               @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  tenant              Tenant?              @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  group               Group                @relation(fields: [groupId], references: [id], onDelete: Cascade)
   personalAssignments PersonalAssignment[]
 
   @@index([groupId])
@@ -97,12 +97,12 @@ model Member {
 // ═══════════════════════════════════════════
 
 model Driver {
-  id           String        @id @default(cuid())
-  name         String
-  groupId      String
-  tenantId     String?
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
+  id        String   @id @default(cuid())
+  name      String
+  groupId   String
+  tenantId  String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   tenant       Tenant?       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   assignments  Assignment[]
@@ -133,12 +133,12 @@ model Publisher {
   isPioneer            Boolean   @default(false)
   isConductor          Boolean   @default(false)
   lastAssignedAt       DateTime?
-  groupId              String?
-  tenantId             String
+  groupId              String
+  tenantId             String?
   createdAt            DateTime  @default(now())
   updatedAt            DateTime  @updatedAt
 
-  tenant              Tenant               @relation(fields: [tenantId], references: [id], onDelete: Restrict)
+  tenant              Tenant?              @relation(fields: [tenantId], references: [id], onDelete: Restrict)
   group               Group?               @relation(fields: [groupId], references: [id], onDelete: SetNull)
   assignments         Assignment[]
   dailyRecords        DailyRecord[]
@@ -155,21 +155,21 @@ model Publisher {
 // ═══════════════════════════════════════════
 
 model Territory {
-  id                  String              @id @default(cuid())
-  number              Int
-  description         String?
-  groupId             String
-  tenantId            String?
-  createdAt           DateTime            @default(now())
-  updatedAt           DateTime            @updatedAt
+  id          String   @id @default(cuid())
+  number      Int
+  description String?
+  groupId     String
+  tenantId    String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
-  tenant              Tenant?             @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  group               Group               @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  tenant              Tenant?              @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  group               Group                @relation(fields: [groupId], references: [id], onDelete: Cascade)
   assignments         Assignment[]
   blocks              Block[]
   personalAssignments PersonalAssignment[]
 
-  @@unique([tenantId, number])  // El numero es unico por tenant, no global
+  @@unique([tenantId, number]) // El numero es unico por tenant, no global
   @@index([number])
   @@index([groupId])
   @@index([tenantId])
@@ -180,13 +180,13 @@ model Territory {
 // ═══════════════════════════════════════════
 
 model Block {
-  id           String        @id @default(cuid())
+  id           String   @id @default(cuid())
   letter       String
   territoryId  String
   assignmentId String?
   tenantId     String?
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
   tenant       Tenant?       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   assignment   Assignment?   @relation(fields: [assignmentId], references: [id])
@@ -204,19 +204,19 @@ model Block {
 // ═══════════════════════════════════════════
 
 model Assignment {
-  id           String        @id @default(cuid())
-  territoryId  String
-  driverId     String
-  startDate    DateTime      @default(now())
-  endDate      DateTime?
-  isCompleted  Boolean       @default(false)
-  tenantId     String?
-  publisherId  String?
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
+  id          String    @id @default(cuid())
+  territoryId String
+  driverId    String?
+  startDate   DateTime  @default(now())
+  endDate     DateTime?
+  isCompleted Boolean   @default(false)
+  tenantId    String?
+  publisherId String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 
   tenant       Tenant?       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  driver       Driver        @relation(fields: [driverId], references: [id], onDelete: Cascade)
+  driver       Driver?       @relation(fields: [driverId], references: [id], onDelete: Cascade)
   territory    Territory     @relation(fields: [territoryId], references: [id], onDelete: Cascade)
   publisher    Publisher?    @relation(fields: [publisherId], references: [id], onDelete: Restrict)
   blocks       Block[]
@@ -235,22 +235,22 @@ model Assignment {
 // ═══════════════════════════════════════════
 
 model DailyRecord {
-  id           String     @id @default(cuid())
+  id           String   @id @default(cuid())
   assignmentId String
-  driverId     String
+  driverId     String?
   blockId      String
-  date         DateTime   @default(now())
+  date         DateTime @default(now())
   notes        String?
   tenantId     String?
   publisherId  String?
-  createdAt    DateTime   @default(now())
-  updatedAt    DateTime   @updatedAt
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
-  tenant       Tenant?    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  assignment   Assignment @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
-  block        Block      @relation(fields: [blockId], references: [id], onDelete: Cascade)
-  driver       Driver     @relation(fields: [driverId], references: [id], onDelete: Cascade)
-  publisher    Publisher? @relation(fields: [publisherId], references: [id], onDelete: Restrict)
+  tenant     Tenant?    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  assignment Assignment @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
+  block      Block      @relation(fields: [blockId], references: [id], onDelete: Cascade)
+  driver     Driver?    @relation(fields: [driverId], references: [id], onDelete: Cascade)
+  publisher  Publisher? @relation(fields: [publisherId], references: [id], onDelete: Restrict)
 
   @@unique([assignmentId, blockId, date])
   @@index([assignmentId])
@@ -268,7 +268,7 @@ model DailyRecord {
 model PersonalAssignment {
   id           String    @id @default(cuid())
   territoryId  String
-  memberId     String
+  memberId     String?
   assignedDate DateTime  @default(now())
   returnedDate DateTime?
   isActive     Boolean   @default(true)
@@ -278,10 +278,10 @@ model PersonalAssignment {
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
 
-  tenant       Tenant?   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  territory    Territory @relation(fields: [territoryId], references: [id], onDelete: Cascade)
-  member       Member    @relation(fields: [memberId], references: [id], onDelete: Cascade)
-  publisher    Publisher? @relation(fields: [publisherId], references: [id], onDelete: Restrict)
+  tenant    Tenant?    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  territory Territory  @relation(fields: [territoryId], references: [id], onDelete: Cascade)
+  member    Member?    @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  publisher Publisher? @relation(fields: [publisherId], references: [id], onDelete: Restrict)
 
   @@index([territoryId])
   @@index([memberId])
@@ -298,14 +298,14 @@ model PersonalAssignment {
 
 model TerritoryMap {
   id        String   @id @default(cuid())
-  type      String                    // GENERAL | GROUP
+  type      String // GENERAL | GROUP
   groupId   String?
   tenantId  String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  tenant  Tenant?     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  images  MapImage[]
+  tenant Tenant?    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  images MapImage[]
 
   @@index([type])
   @@index([groupId])
@@ -329,15 +329,15 @@ model MapImage {
 // ═══════════════════════════════════════════
 
 model ApiKey {
-  id        String   @id @default(cuid())
-  key       String   @unique
-  userId    String
-  tenantId  String
-  name      String   @default("default")
+  id         String    @id @default(cuid())
+  key        String    @unique
+  userId     String
+  tenantId   String
+  name       String    @default("default")
   lastUsedAt DateTime?
-  isActive  Boolean  @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  isActive   Boolean   @default(true)
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
 
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
   tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)

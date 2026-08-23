@@ -193,7 +193,7 @@ export async function exportTerritoryHistoryPdf(
       // Asignaciones de conductor
       t.assignments.forEach(a => {
         assignments.push({
-          name: a.driver.name,
+          name: (a.driver?.name ?? '—'),
           assigned: formatDate(a.startDate),
           returned: formatDate(a.endDate),
         })
@@ -202,7 +202,7 @@ export async function exportTerritoryHistoryPdf(
       // Asignaciones personales
       t.personalAssignments.forEach(pa => {
         assignments.push({
-          name: pa.member.name,
+          name: (pa.member?.name ?? '—'),
           assigned: formatDate(pa.assignedDate),
           returned: formatDate(pa.returnedDate),
         })

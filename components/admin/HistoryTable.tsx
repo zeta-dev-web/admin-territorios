@@ -44,8 +44,8 @@ export function HistoryTable({ assignments }: HistoryTableProps) {
   const [deleting, setDeleting] = useState(false)
   const [editModal, setEditModal] = useState<UnifiedHistoryRecord | null>(null)
   const [saving, setSaving] = useState(false)
-  const [drivers, setDrivers] = useState<{ id: string; name: string; group: { name: string } }[]>([])
-  const [members, setMembers] = useState<{ id: string; name: string; group: { name: string } }[]>([])
+  const [drivers, setDrivers] = useState<{ id: string; name: string; group: { name: string } | null }[]>([])
+  const [members, setMembers] = useState<{ id: string; name: string; group: { name: string } | null }[]>([])
   const [editData, setEditData] = useState({
     assigneeId: '',
     startDate: '',
@@ -512,7 +512,7 @@ export function HistoryTable({ assignments }: HistoryTableProps) {
                     <>
                       {drivers.map((driver) => (
                         <option key={driver.id} value={driver.id}>
-                          {driver.name} - {driver.group.name}
+                          {driver.name}{driver.group ? ` - ${driver.group.name}` : ''}
                         </option>
                       ))}
                     </>
@@ -520,7 +520,7 @@ export function HistoryTable({ assignments }: HistoryTableProps) {
                     <>
                       {members.map((member) => (
                         <option key={member.id} value={member.id}>
-                          {member.name} - {member.group.name}
+                          {member.name}{member.group ? ` - ${member.group.name}` : ''}
                         </option>
                       ))}
                     </>

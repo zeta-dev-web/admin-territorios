@@ -5,6 +5,36 @@ import { CreateDailyRecordInput } from '@/types'
 import { revalidatePath } from 'next/cache'
 import { getCurrentTenantId } from '@/lib/tenant'
 
+// Conductor = Publisher (isConductor). Alias `driver` con name calculado
+// para compatibilidad con web/mobile.
+function fullName(publisher: { firstName: string; lastName: string }): string {
+  return `${publisher.firstName} ${publisher.lastName}`.trim()
+}
+
+function mapRecord<T extends { publisher: { firstName: string; lastName: string } | null }>(
+  record: T
+): Omit<T, 'publisher'> & {
+  driver: { name: string } | null
+} {
+  const { publisher, ...rest } = record
+  return {
+    ...rest,
+    driver: publisher ? { ...publisher, name: `${publisher.firstName} ${publisher.lastName}`.trim() } : null,
+  }
+}
+
+function mapAssignment<T extends { publisher: { firstName: string; lastName: string } | null }>(
+  assignment: T
+): Omit<T, 'publisher'> & {
+  driver: { name: string } | null
+} {
+  const { publisher, ...rest } = assignment
+  return {
+    ...rest,
+    driver: publisher ? { ...publisher, name: `${publisher.firstName} ${publisher.lastName}`.trim() } : null,
+  }
+}
+
 /**
  * Crea un nuevo registro de trabajo diario
  * @param input - Datos del registro (assignmentId, driverId, blockId, date, notes)
@@ -31,9 +61,9 @@ export async function createDailyRecord(input: CreateDailyRecordInput) {
       throw new Error('No se puede registrar trabajo en una asignación completada')
     }
 
-    // 2. Validar la existencia del conductor
-    const driver = await prisma.driver.findFirst({
-      where: { id: input.driverId, tenantId },
+    // 2. Validar la existencia del conductor (publicador con capacidad)
+    const driver = await prisma.publisher.findFirst({
+      where: { id: input.driverId, tenantId, isConductor: true },
     })
 
     if (!driver) {
@@ -71,7 +101,7 @@ export async function createDailyRecord(input: CreateDailyRecordInput) {
     const dailyRecord = await prisma.dailyRecord.create({
       data: {
         assignmentId: input.assignmentId,
-        driverId: input.driverId,
+        publisherId: input.driverId,
         blockId: input.blockId,
         date: input.date,
         notes: input.notes,
@@ -79,7 +109,7 @@ export async function createDailyRecord(input: CreateDailyRecordInput) {
       },
       include: {
         block: true,
-        driver: true,
+        publisher: true,
         assignment: {
           include: {
             territory: true,
@@ -123,7 +153,7 @@ export async function createDailyRecord(input: CreateDailyRecordInput) {
         },
         include: {
           territory: true,
-          driver: true,
+          publisher: true,
         },
       })
     }
@@ -138,8 +168,8 @@ export async function createDailyRecord(input: CreateDailyRecordInput) {
     return {
       success: true,
       data: {
-        dailyRecord,
-        assignment: updatedAssignment,
+        dailyRecord: mapRecord(dailyRecord),
+        assignment: updatedAssignment ? mapAssignment(updatedAssignment) : null,
         isAssignmentCompleted: !!updatedAssignment,
         progress: {
           completedBlocks: completedBlocksCount,
@@ -175,7 +205,7 @@ export async function getDailyRecordsByAssignment(assignmentId: string) {
       },
       include: {
         block: true,
-        driver: true,
+        publisher: true,
       },
       orderBy: {
         date: 'desc',
@@ -184,7 +214,7 @@ export async function getDailyRecordsByAssignment(assignmentId: string) {
 
     return {
       success: true,
-      data: records,
+      data: records.map(mapRecord),
     }
   } catch (error) {
     console.error('Error al obtener registros diarios:', error)
@@ -208,7 +238,7 @@ export async function getDailyRecordsByDriver(
     const tenantId = await getCurrentTenantId()
     const records = await prisma.dailyRecord.findMany({
       where: {
-        driverId,
+        publisherId: driverId,
         tenantId,
         ...(startDate &&
           endDate && {
