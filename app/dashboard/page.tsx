@@ -3,6 +3,7 @@ import { TerritoryCard } from '@/components/territories/TerritoryCard'
 import { AtrasadosList } from '@/components/territories/AtrasadosList'
 import { TerritoryFrequencyList } from '@/components/territories/TerritoryFrequencyList'
 import { AppLayout } from '@/components/common/AppLayout'
+import { ThemeToggle } from '@/components/theme/ThemeToggle'
 import { Activity, Clock, BarChart3, TrendingUp } from 'lucide-react'
 
 export const dynamic = 'force-dynamic'
@@ -13,6 +14,9 @@ export default async function DashboardPage() {
   return (
     <AppLayout title="Dashboard">
       <div className="p-6 space-y-6">
+        <div className="flex justify-end">
+          <ThemeToggle />
+        </div>
         {/* Layout principal: Stats unificados + Territorio activo */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Stats unificados */}

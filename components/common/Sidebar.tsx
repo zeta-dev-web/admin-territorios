@@ -22,7 +22,6 @@ import {
 import { logout, getCurrentUserRole, getCurrentUserCongregation } from '@/server/auth'
 import { cn } from '@/lib/utils'
 import { BrandMark } from './BrandMark'
-import { ThemeToggle } from '@/components/theme/ThemeToggle'
 
 interface SidebarProps {
   isOpen: boolean
@@ -147,7 +146,6 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
 
           {/* Footer */}
           <div className="p-4 border-t border-slate-800">
-            <ThemeToggle className="mb-2 w-full justify-between" />
             <button
               onClick={handleLogout}
               disabled={isLoggingOut}
