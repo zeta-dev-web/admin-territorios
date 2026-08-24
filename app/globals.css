@@ -423,6 +423,32 @@ html[data-theme='dark'] .vymc-theme [class~='text-blue-800'] {
   }
 }
 
+/* ═══════════════════════════════════════════════════════════
+   INICIO — Animaciones de entrada del dashboard principal
+   ═══════════════════════════════════════════════════════════ */
+@keyframes inicio-fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.inicio-enter,
+.inicio-card {
+  animation: inicio-fade-up 0.55s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .inicio-enter,
+  .inicio-card {
+    animation: none;
+  }
+}
+
 /* ═══════════════════════════════════════════
    MÓDULO VYMC — paleta propia dual (claro / navy oscuro).
    Redefine las variables semánticas SOLO dentro de su wrapper,
@@ -611,6 +637,17 @@ html[data-theme='dark'] .info-card-congregation {
   border: 1px solid rgba(59, 130, 246, 0.25);
 }
 
+/* Group badge en VYMC publishers */
+.vymc-theme .group-badge-vymc {
+  background: rgb(226 232 240);
+  color: rgb(71 85 105);
+}
+
+html[data-theme='dark'] .vymc-theme .group-badge-vymc {
+  background: rgba(148, 163, 184, 0.2);
+  color: rgb(203 213 225);
+}
+
 
 /* ══════════════════════════════════════════════════════════════
    FIX: Títulos de secciones y asignaciones VYMC visibles en dark mode
@@ -640,4 +677,3 @@ html[data-theme='dark'] .vymc-theme button,
 html[data-theme='dark'] .vymc-theme a {
   color: inherit;
 }
-

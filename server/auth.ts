@@ -54,7 +54,7 @@ export async function login(formData: FormData) {
       }
     }
 
-    return { success: true, redirect: '/territorios' }
+    return { success: true, redirect: '/inicio' }
   }
 
   // Login normal
@@ -82,7 +82,7 @@ export async function login(formData: FormData) {
     return { success: false, message: 'Error al iniciar sesión' }
   }
 
-  return { success: true, redirect: '/territorios' }
+  return { success: true, redirect: '/inicio' }
 }
 
 // ── Logout ──

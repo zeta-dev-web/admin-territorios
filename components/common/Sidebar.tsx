@@ -53,6 +53,7 @@ const modules: Array<{
 ]
 
 const territoriosMenu: MenuItem[] = [
+  { label: 'Inicio', icon: Home, href: '/inicio', exact: true },
   { label: 'Dashboard', icon: LayoutDashboard, href: '/territorios', exact: true },
   { label: 'Territorios', icon: MapPin, href: '/territorios/lista' },
   { label: 'Mapas', icon: Map, href: '/territorios/mapas' },
@@ -60,10 +61,10 @@ const territoriosMenu: MenuItem[] = [
   { label: 'Asignaciones', icon: TrendingUp, href: '/territorios/asignaciones' },
   { label: 'Historial', icon: History, href: '/territorios/historial' },
   { label: 'Tutorial', icon: BookOpen, href: '/territorios/tutorial' },
-  { label: 'Configuración', icon: Settings, href: '/configuracion' },
 ]
 
 const vymcMenu: MenuItem[] = [
+  { label: 'Inicio', icon: Home, href: '/inicio', exact: true },
   { label: 'Dashboard', icon: LayoutDashboard, href: '/vymc', exact: true },
   { label: 'Programas', icon: CalendarDays, href: '/vymc/programas' },
   { label: 'Publicadores', icon: Users, href: '/vymc/publicadores' },
@@ -211,6 +212,22 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
           {/* Footer */}
           <div className="p-4 border-t border-slate-200 dark:border-slate-800/50 space-y-2">
             <AdminSection visible={isAdmin} onNavigate={onClose} />
+            
+            {/* Configuración (para todos los usuarios) */}
+            <Link
+              href="/configuracion"
+              onClick={onClose}
+              className={cn(
+                'flex items-center gap-3 px-4 py-3 rounded-lg font-medium text-sm transition-colors',
+                pathname === '/configuracion'
+                  ? 'bg-slate-200 dark:bg-slate-800 text-slate-900 dark:text-white'
+                  : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800/80 hover:text-slate-900 dark:hover:text-white'
+              )}
+            >
+              <Settings className="h-5 w-5" />
+              <span>Configuración</span>
+            </Link>
+            
             <ThemeToggle />
             <button
               onClick={handleLogout}
