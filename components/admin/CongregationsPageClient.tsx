@@ -35,8 +35,8 @@ export function CongregationsPageClient({ congregations }: CongregationsPageClie
               <Home className="h-6 w-6 text-purple-500" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold text-white">Gestión de Congregaciones</h1>
-              <p className="text-sm text-slate-400 mt-1">
+              <h1 className="text-2xl font-bold" style={{ color: 'var(--app-text)' }}>Gestión de Congregaciones</h1>
+              <p className="text-sm mt-1" style={{ color: 'var(--app-muted)' }}>
                 Administra las congregaciones del sistema
               </p>
             </div>
@@ -51,11 +51,11 @@ export function CongregationsPageClient({ congregations }: CongregationsPageClie
         </div>
 
         {/* Info Card */}
-        <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-4 flex items-start gap-3">
-          <Info className="h-5 w-5 text-blue-400 flex-shrink-0 mt-0.5" />
-          <div className="text-sm text-blue-300">
-            <p className="font-medium mb-1">Acerca de las congregaciones</p>
-            <p className="text-blue-300/80">
+        <div className="info-card-congregation rounded-lg p-4 flex items-start gap-3">
+          <Info className="h-5 w-5 flex-shrink-0 mt-0.5" style={{ color: 'var(--app-accent)' }} />
+          <div className="text-sm">
+            <p className="font-medium mb-1" style={{ color: 'var(--app-text)' }}>Acerca de las congregaciones</p>
+            <p style={{ color: 'var(--app-muted)' }}>
               Cada congregación es independiente y tiene sus propios usuarios, grupos y territorios.
               Los usuarios solo pueden ver y gestionar los datos de su congregación asignada.
             </p>
@@ -65,11 +65,11 @@ export function CongregationsPageClient({ congregations }: CongregationsPageClie
 
       {/* Stats */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-        <div className="bg-slate-800/50 rounded-lg p-4 border border-slate-700">
+        <div className="rounded-lg p-4" style={{ background: 'var(--app-surface-raised)', border: '1px solid var(--app-border)' }}>
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-slate-400">Total Congregaciones</p>
-              <p className="text-2xl font-bold text-white mt-1">{congregations.length}</p>
+              <p className="text-sm" style={{ color: 'var(--app-muted)' }}>Total Congregaciones</p>
+              <p className="text-2xl font-bold mt-1" style={{ color: 'var(--app-text)' }}>{congregations.length}</p>
             </div>
             <div className="w-12 h-12 bg-purple-500/10 rounded-lg flex items-center justify-center">
               <Home className="h-6 w-6 text-purple-500" />
@@ -77,11 +77,11 @@ export function CongregationsPageClient({ congregations }: CongregationsPageClie
           </div>
         </div>
 
-        <div className="bg-slate-800/50 rounded-lg p-4 border border-slate-700">
+        <div className="rounded-lg p-4" style={{ background: 'var(--app-surface-raised)', border: '1px solid var(--app-border)' }}>
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-slate-400">Usuarios Totales</p>
-              <p className="text-2xl font-bold text-white mt-1">
+              <p className="text-sm" style={{ color: 'var(--app-muted)' }}>Usuarios Totales</p>
+              <p className="text-2xl font-bold mt-1" style={{ color: 'var(--app-text)' }}>
                 {congregations.reduce((sum, c) => sum + c._count.users, 0)}
               </p>
             </div>
@@ -93,11 +93,11 @@ export function CongregationsPageClient({ congregations }: CongregationsPageClie
           </div>
         </div>
 
-        <div className="bg-slate-800/50 rounded-lg p-4 border border-slate-700">
+        <div className="rounded-lg p-4" style={{ background: 'var(--app-surface-raised)', border: '1px solid var(--app-border)' }}>
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-slate-400">Territorios Totales</p>
-              <p className="text-2xl font-bold text-white mt-1">
+              <p className="text-sm" style={{ color: 'var(--app-muted)' }}>Territorios Totales</p>
+              <p className="text-2xl font-bold mt-1" style={{ color: 'var(--app-text)' }}>
                 {congregations.reduce((sum, c) => sum + c._count.territories, 0)}
               </p>
             </div>
@@ -112,7 +112,7 @@ export function CongregationsPageClient({ congregations }: CongregationsPageClie
       </div>
 
       {/* Table */}
-      <div className="bg-slate-900/50 rounded-lg border border-slate-800 overflow-hidden">
+      <div className="rounded-lg overflow-hidden" style={{ background: 'var(--app-surface)', border: '1px solid var(--app-border)' }}>
         <CongregationsTable congregations={congregations} />
       </div>
 

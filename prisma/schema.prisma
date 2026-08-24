@@ -94,7 +94,7 @@ model Publisher {
   isPioneer            Boolean   @default(false)
   isConductor          Boolean   @default(false)
   lastAssignedAt       DateTime?
-  groupId              String
+  groupId              String?
   tenantId             String?
   createdAt            DateTime  @default(now())
   updatedAt            DateTime  @updatedAt

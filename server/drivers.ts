@@ -81,7 +81,7 @@ export async function createDriver(data: {
       })
     }
 
-    revalidatePath('/dashboard')
+    revalidatePath('/territorios')
     revalidatePath('/admin/drivers')
     revalidatePath('/admin/groups')
 
@@ -329,7 +329,7 @@ export async function updateDriver(
       }
     }
 
-    revalidatePath('/dashboard')
+    revalidatePath('/territorios')
     revalidatePath('/admin/drivers')
     revalidatePath('/admin/groups')
 
@@ -378,7 +378,7 @@ export async function deleteDriver(driverId: string) {
       data: { isConductor: false },
     })
 
-    revalidatePath('/dashboard')
+    revalidatePath('/territorios')
     revalidatePath('/admin/drivers')
     revalidatePath('/admin/groups')
 

@@ -31,8 +31,8 @@ export async function createTerritory(
       include: { blocks: true, group: true },
     })
 
-    revalidatePath('/dashboard')
-    revalidatePath('/admin/territories')
+    revalidatePath('/territorios')
+    revalidatePath('/territorios/lista')
 
     return { success: true, data: territory, message: `Territorio ${number} creado correctamente` }
   } catch (error) {
@@ -201,8 +201,8 @@ export async function updateTerritory(
       }
     }
 
-    revalidatePath('/dashboard')
-    revalidatePath('/admin/territories')
+    revalidatePath('/territorios')
+    revalidatePath('/territorios/lista')
 
     return { success: true, data: territory, message: `Territorio ${territory.number} actualizado correctamente` }
   } catch (error) {
@@ -259,9 +259,9 @@ export async function addBlocksToTerritory(territoryId: string, blockLetters: st
       include: { blocks: true },
     })
 
-    revalidatePath('/dashboard')
-    revalidatePath(`/dashboard/${territoryId}`)
-    revalidatePath('/admin/territories')
+    revalidatePath('/territorios')
+    revalidatePath(`/territorios/${territoryId}`)
+    revalidatePath('/territorios/lista')
 
     return { success: true, data: updatedTerritory, message: `${newLetters.length} manzana(s) añadida(s) correctamente` }
   } catch (error) {
@@ -286,8 +286,8 @@ export async function deleteTerritory(territoryId: string) {
     }
     await prisma.territory.delete({ where: { id: territoryId } })
 
-    revalidatePath('/dashboard')
-    revalidatePath('/admin/territories')
+    revalidatePath('/territorios')
+    revalidatePath('/territorios/lista')
 
     return { success: true, message: 'Territorio eliminado correctamente' }
   } catch (error) {

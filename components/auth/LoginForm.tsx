@@ -79,7 +79,7 @@ export function LoginForm() {
           <button
             type="button"
             onClick={() => setShowPassword(!showPassword)}
-            className="absolute inset-y-0 right-0 pr-3 flex items-center text-white/70 hover:text-white transition-colors"
+            className="absolute inset-y-0 right-0 pr-3 flex items-center text-cyan-400 hover:text-cyan-200 transition-colors"
             tabIndex={-1}
           >
             {showPassword ? (

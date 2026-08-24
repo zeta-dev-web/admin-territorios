@@ -54,9 +54,9 @@ export function CongregationsTable({ congregations }: CongregationsTableProps) {
   if (congregations.length === 0) {
     return (
       <div className="p-12 text-center">
-        <Home className="h-16 w-16 mx-auto mb-4 text-slate-600" />
-        <p className="text-white font-medium mb-2">No hay congregaciones registradas</p>
-        <p className="text-sm text-slate-400">
+        <Home className="h-16 w-16 mx-auto mb-4" style={{ color: 'var(--app-muted)' }} />
+        <p className="font-medium mb-2" style={{ color: 'var(--app-text)' }}>No hay congregaciones registradas</p>
+        <p className="text-sm" style={{ color: 'var(--app-muted)' }}>
           Crea la primera congregación para comenzar
         </p>
       </div>
@@ -66,24 +66,24 @@ export function CongregationsTable({ congregations }: CongregationsTableProps) {
   return (
     <>
       <Table minWidth="800px">
-        <thead className="border-b border-slate-800">
+        <thead style={{ borderBottom: '1px solid var(--app-border)' }}>
           <tr>
-            <th className="text-left p-4 text-sm font-semibold text-slate-300">
+            <th className="text-left p-4 text-sm font-semibold" style={{ color: 'var(--app-muted)' }}>
               Congregación
             </th>
-            <th className="text-center p-4 text-sm font-semibold text-slate-300">
+            <th className="text-center p-4 text-sm font-semibold" style={{ color: 'var(--app-muted)' }}>
               Usuarios
             </th>
-            <th className="text-center p-4 text-sm font-semibold text-slate-300">
+            <th className="text-center p-4 text-sm font-semibold" style={{ color: 'var(--app-muted)' }}>
               Grupos
             </th>
-            <th className="text-center p-4 text-sm font-semibold text-slate-300">
+            <th className="text-center p-4 text-sm font-semibold" style={{ color: 'var(--app-muted)' }}>
               Territorios
             </th>
-            <th className="text-left p-4 text-sm font-semibold text-slate-300">
+            <th className="text-left p-4 text-sm font-semibold" style={{ color: 'var(--app-muted)' }}>
               Fecha de Creación
             </th>
-            <th className="text-center p-4 text-sm font-semibold text-slate-300">
+            <th className="text-center p-4 text-sm font-semibold" style={{ color: 'var(--app-muted)' }}>
               Acciones
             </th>
           </tr>
@@ -92,7 +92,8 @@ export function CongregationsTable({ congregations }: CongregationsTableProps) {
           {congregations.map((congregation) => (
             <tr
               key={congregation.id}
-              className="border-b border-slate-800 hover:bg-slate-800/30 transition-colors"
+              className="congregation-table-row"
+              style={{ borderBottom: '1px solid var(--app-border)' }}
             >
               {/* Nombre */}
               <td className="p-4">
@@ -101,8 +102,8 @@ export function CongregationsTable({ congregations }: CongregationsTableProps) {
                     <Home className="h-5 w-5 text-purple-500" />
                   </div>
                   <div>
-                    <p className="font-medium text-white">{congregation.name}</p>
-                    <p className="text-xs text-slate-400">ID: {congregation.id.slice(0, 8)}...</p>
+                    <p className="font-medium" style={{ color: 'var(--app-text)' }}>{congregation.name}</p>
+                    <p className="text-xs" style={{ color: 'var(--app-muted)' }}>ID: {congregation.id.slice(0, 8)}...</p>
                   </div>
                 </div>
               </td>
@@ -117,7 +118,7 @@ export function CongregationsTable({ congregations }: CongregationsTableProps) {
 
               {/* Grupos */}
               <td className="p-4 text-center">
-                <span className="inline-flex items-center gap-1 bg-slate-800 text-slate-300 px-2 py-1 rounded text-sm font-medium">
+                <span className="inline-flex items-center gap-1 px-2 py-1 rounded text-sm font-medium" style={{ background: 'var(--app-surface-raised)', color: 'var(--app-muted)' }}>
                   {congregation._count.groups}
                 </span>
               </td>
@@ -132,7 +133,7 @@ export function CongregationsTable({ congregations }: CongregationsTableProps) {
 
               {/* Fecha */}
               <td className="p-4">
-                <span className="text-sm text-slate-400">
+                <span className="text-sm" style={{ color: 'var(--app-muted)' }}>
                   {new Date(congregation.createdAt).toLocaleDateString('es-AR')}
                 </span>
               </td>

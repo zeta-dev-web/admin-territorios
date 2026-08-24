@@ -1,22 +1,35 @@
 'use client'
 
 import { useState, ReactNode } from 'react'
+import { usePathname } from 'next/navigation'
 import { Sidebar } from './Sidebar'
 import { MobileHeader } from './MobileHeader'
 import { ImpersonationBanner } from './ImpersonationBanner'
 import Footer from '@/components/layout/Footer'
+import { CopilotChat } from '@/components/ai/copilot-chat'
+import { CopilotTerritoriosChat } from '@/components/ai/copilot-territorios-chat'
 
 interface AppLayoutProps {
   children: ReactNode
-  title: string
+  title?: string
   showBack?: boolean
 }
 
 export function AppLayout({ children, title, showBack = false }: AppLayoutProps) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
+  const pathname = usePathname()
+  
+  // Determinar qué copiloto mostrar según la ruta
+  const isTerritoriosModule = pathname?.startsWith('/territorios')
+  const isVymcModule = pathname?.startsWith('/vymc')
+  
+  // Log útil para debugging
+  if (typeof window !== 'undefined') {
+    console.log(`[AppLayout] Ruta: ${pathname} | Territorios: ${isTerritoriosModule} | VYMC: ${isVymcModule}`)
+  }
 
   return (
-    <div className="flex h-screen overflow-hidden bg-[#0A0F1C]">
+    <div className="flex h-screen overflow-hidden" style={{ background: 'var(--app-bg)' }}>
       {/* Sidebar */}
       <Sidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
 
@@ -41,6 +54,9 @@ export function AppLayout({ children, title, showBack = false }: AppLayoutProps)
           <main className="flex-1">
             {children}
           </main>
+          {/* Mostrar el copiloto según el módulo */}
+          {isTerritoriosModule && <CopilotTerritoriosChat />}
+          {isVymcModule && <CopilotChat />}
           <Footer />
         </div>
       </div>

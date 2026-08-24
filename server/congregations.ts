@@ -112,7 +112,7 @@ export async function createCongregation(data: { name: string }) {
       },
     })
 
-    revalidatePath('/admin/congregations')
+    revalidatePath('/admin/congregaciones')
 
     return {
       success: true,
@@ -175,7 +175,7 @@ export async function updateCongregation(id: string, data: { name: string }) {
       },
     })
 
-    revalidatePath('/admin/congregations')
+    revalidatePath('/admin/congregaciones')
 
     return {
       success: true,
@@ -235,7 +235,7 @@ export async function deleteCongregation(id: string) {
       where: { id },
     })
 
-    revalidatePath('/admin/congregations')
+    revalidatePath('/admin/congregaciones')
 
     return {
       success: true,

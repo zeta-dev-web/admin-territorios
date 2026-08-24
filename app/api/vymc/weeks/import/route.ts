@@ -44,7 +44,14 @@ export async function POST(request: NextRequest) {
               sectionType: sec.sectionType,
               order: idx + 2,
               items: {
-                create: (sec.items ?? []) as Array<Record<string, unknown>>,
+                create: ((sec.items ?? []) as Array<Record<string, unknown>>).map((it, i) => ({
+                  title: String(it.title ?? ''),
+                  itemType: (it.itemType as string) ?? 'DISCUSSION',
+                  order: Number(it.order ?? i + 1),
+                  requiresStudentHelper: Boolean(it.requiresStudentHelper),
+                  timeMinutes: (it.timeMinutes as number | null) ?? null,
+                  songNumber: (it.songNumber as number | null) ?? null,
+                })),
               },
             })),
             {

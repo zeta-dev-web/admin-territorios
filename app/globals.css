@@ -422,3 +422,222 @@ html[data-theme='dark'] .vymc-theme [class~='text-blue-800'] {
     animation-duration: 0.01ms !important;
   }
 }
+
+/* ═══════════════════════════════════════════
+   MÓDULO VYMC — paleta propia dual (claro / navy oscuro).
+   Redefine las variables semánticas SOLO dentro de su wrapper,
+   conviviendo con la paleta global del sitio.
+   ═══════════════════════════════════════════ */
+.vymc-theme {
+  --color-background: var(--vymc-background);
+  --color-foreground: var(--vymc-foreground);
+  --color-card: var(--vymc-card);
+  --color-card-foreground: var(--vymc-card-foreground);
+  --color-popover: var(--vymc-popover);
+  --color-popover-foreground: var(--vymc-popover-foreground);
+  --color-primary: var(--vymc-primary);
+  --color-primary-foreground: var(--vymc-primary-foreground);
+  --color-secondary: var(--vymc-secondary);
+  --color-secondary-foreground: var(--vymc-secondary-foreground);
+  --color-accent: var(--vymc-accent);
+  --color-accent-foreground: var(--vymc-accent-foreground);
+  --color-muted: var(--vymc-muted);
+  --color-muted-foreground: var(--vymc-muted-foreground);
+  --color-destructive: #EF4444;
+  --color-border: var(--vymc-border);
+  --color-input: var(--vymc-input);
+  --color-ring: var(--vymc-ring);
+
+  --vymc-background: #F8F9FA;
+  --vymc-foreground: #1E3A5F;
+  --vymc-card: #FFFFFF;
+  --vymc-card-foreground: #1E3A5F;
+  --vymc-popover: #FFFFFF;
+  --vymc-popover-foreground: #1E3A5F;
+  --vymc-primary: #2D5F8D;
+  --vymc-primary-foreground: #FFFFFF;
+  --vymc-secondary: #64748B;
+  --vymc-secondary-foreground: #FFFFFF;
+  --vymc-accent: #10B981;
+  --vymc-accent-foreground: #FFFFFF;
+  --vymc-muted: #EEF4F8;
+  --vymc-muted-foreground: #64748B;
+  --vymc-border: #E2E8F0;
+  --vymc-input: #E2E8F0;
+  --vymc-ring: #2D5F8D;
+
+  background: var(--vymc-background);
+  color: var(--vymc-foreground);
+  min-height: 100vh;
+}
+
+[data-theme='dark'] .vymc-theme {
+  --vymc-background: #0F1B2D;
+  --vymc-foreground: #E8EEF6;
+  --vymc-card: #16263C;
+  --vymc-card-foreground: #E8EEF6;
+  --vymc-popover: #16263C;
+  --vymc-popover-foreground: #E8EEF6;
+  --vymc-primary: #63B3ED;
+  --vymc-primary-foreground: #0F1B2D;
+  --vymc-secondary: #2D5F8D;
+  --vymc-secondary-foreground: #FFFFFF;
+  --vymc-accent: #34D399;
+  --vymc-accent-foreground: #0F1B2D;
+  --vymc-muted: #1C2F4A;
+  --vymc-muted-foreground: #94A9C4;
+  --vymc-border: #24374F;
+  --vymc-input: #24374F;
+  --vymc-ring: #63B3ED;
+
+  background: var(--vymc-background);
+  color: var(--vymc-foreground);
+}
+
+/* ── Sidebar: selector de módulos (Territorios/VYMC) — texto siempre claro ── */
+.sidebar a[href='/dashboard'],
+.sidebar a[href='/vymc'] {
+  color: #E2E8F0;
+}
+.sidebar a[href='/dashboard']:hover,
+.sidebar a[href='/vymc']:hover {
+  background-color: rgba(148, 163, 184, 0.15);
+  color: #FFFFFF;
+}
+
+/* ── Tipografía unificada para el módulo VYMC (igual que territorios) ── */
+@theme inline {
+  --font-sans: 'DM Sans', ui-sans-serif, system-ui, sans-serif;
+}
+
+.vymc-theme {
+  font-family: var(--font-sans);
+}
+
+/* ── Switcher de módulos: siempre oscuro con texto blanco (ambos temas) ── */
+html[data-theme='light'] .sidebar .module-switcher {
+  background-color: #0F1729;
+  border-color: #1E293B;
+}
+html[data-theme='light'] .sidebar .module-switcher a {
+  color: #E2E8F0;
+  background-image: none;
+  background-color: transparent;
+}
+html[data-theme='light'] .sidebar .module-switcher a:hover {
+  background-color: #1E293B;
+  color: #FFFFFF;
+}
+html[data-theme='light'] .sidebar .module-switcher a[data-active='true'] {
+  background-image: linear-gradient(90deg, #2563EB, #0891B2);
+  background-color: transparent;
+  color: #FFFFFF;
+}
+
+
+/* ══════════════════════════════════════════════════════════════
+   SIDEBAR OSCURO EN DARK MODE
+   Solo el sidebar tiene fondo más oscuro, el resto mantiene sus colores
+   ══════════════════════════════════════════════════════════════ */
+html[data-theme='dark'] .sidebar {
+  background-color: #020617 !important;
+  border-right-color: rgba(148, 163, 184, 0.2) !important;
+}
+
+html[data-theme='dark'] .sidebar * {
+  border-color: rgba(148, 163, 184, 0.15);
+}
+
+/* Module Switcher en sidebar */
+.module-switcher {
+  background: rgb(241 245 249);
+  border: 1px solid rgb(226 232 240);
+}
+
+html[data-theme='dark'] .module-switcher {
+  background: rgba(15, 23, 42, 0.6);
+  border: 1px solid rgba(51, 65, 85, 0.6);
+}
+
+.module-switcher-active {
+  background: linear-gradient(to right, #2563eb, #0891b2);
+  color: white;
+  box-shadow: 0 10px 15px -3px rgba(37, 99, 235, 0.2);
+}
+
+html[data-theme='dark'] .module-switcher-active {
+  box-shadow: 0 10px 15px -3px rgba(37, 99, 235, 0.4);
+}
+
+.module-switcher-inactive {
+  color: rgb(71 85 105);
+}
+
+html[data-theme='dark'] .module-switcher-inactive {
+  color: rgb(203 213 225);
+}
+
+.module-switcher-inactive:hover {
+  background: rgb(226 232 240);
+  color: rgb(15 23 42);
+}
+
+html[data-theme='dark'] .module-switcher-inactive:hover {
+  background: rgb(51 65 85);
+  color: white;
+}
+
+/* Congregation table row hover */
+.congregation-table-row {
+  transition: background-color 0.2s;
+}
+
+html[data-theme='light'] .congregation-table-row:hover {
+  background: rgba(0, 0, 0, 0.02);
+}
+
+html[data-theme='dark'] .congregation-table-row:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+/* Info card congregation */
+.info-card-congregation {
+  background: rgba(59, 130, 246, 0.08);
+  border: 1px solid rgba(59, 130, 246, 0.15);
+}
+
+html[data-theme='dark'] .info-card-congregation {
+  background: rgba(59, 130, 246, 0.12);
+  border: 1px solid rgba(59, 130, 246, 0.25);
+}
+
+
+/* ══════════════════════════════════════════════════════════════
+   FIX: Títulos de secciones y asignaciones VYMC visibles en dark mode
+   ══════════════════════════════════════════════════════════════ */
+html[data-theme='dark'] .vymc-theme h1,
+html[data-theme='dark'] .vymc-theme h2,
+html[data-theme='dark'] .vymc-theme h3,
+html[data-theme='dark'] .vymc-theme h4,
+html[data-theme='dark'] .vymc-theme h5,
+html[data-theme='dark'] .vymc-theme h6 {
+  color: #ffffff !important;
+}
+
+html[data-theme='dark'] .vymc-theme [class*='text-gray'],
+html[data-theme='dark'] .vymc-theme [class*='text-slate'] {
+  color: #e2e8f0 !important;
+}
+
+/* Títulos de asignaciones específicos */
+html[data-theme='dark'] .vymc-theme p,
+html[data-theme='dark'] .vymc-theme span,
+html[data-theme='dark'] .vymc-theme div {
+  color: inherit;
+}
+
+html[data-theme='dark'] .vymc-theme button,
+html[data-theme='dark'] .vymc-theme a {
+  color: inherit;
+}
+

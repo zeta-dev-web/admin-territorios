@@ -54,7 +54,7 @@ export async function login(formData: FormData) {
       }
     }
 
-    return { success: true, redirect: '/dashboard' }
+    return { success: true, redirect: '/territorios' }
   }
 
   // Login normal
@@ -82,7 +82,7 @@ export async function login(formData: FormData) {
     return { success: false, message: 'Error al iniciar sesión' }
   }
 
-  return { success: true, redirect: '/dashboard' }
+  return { success: true, redirect: '/territorios' }
 }
 
 // ── Logout ──
@@ -178,7 +178,7 @@ export async function createUser(data: {
       },
     })
 
-    revalidatePath('/admin/users')
+    revalidatePath('/admin/usuarios')
 
     // Enviar email con credenciales (fire & forget — no bloquea si falla)
     sendWelcomeEmail({
@@ -246,7 +246,7 @@ export async function resetPassword(userId: string) {
       console.error(`Error al enviar email a ${user.email}:`, err)
     })
 
-    revalidatePath('/admin/users')
+    revalidatePath('/admin/usuarios')
 
     return {
       success: true,
@@ -482,7 +482,7 @@ export async function deleteUser(userId: string) {
 
     await prisma.user.delete({ where: { id: userId } })
 
-    revalidatePath('/admin/users')
+    revalidatePath('/admin/usuarios')
 
     return { success: true, message: 'Usuario eliminado correctamente' }
   } catch (error) {
@@ -539,7 +539,7 @@ export async function updateUser(userId: string, data: {
       },
     })
 
-    revalidatePath('/admin/users')
+    revalidatePath('/admin/usuarios')
 
     return { success: true, message: 'Usuario actualizado correctamente' }
   } catch (error) {

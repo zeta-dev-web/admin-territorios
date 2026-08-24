@@ -66,8 +66,8 @@ export async function createOrUpdateMap(
       })
     }
 
-    revalidatePath('/admin/maps')
-    revalidatePath('/dashboard')
+    revalidatePath('/territorios/mapas')
+    revalidatePath('/territorios')
 
     return {
       success: true,
@@ -145,8 +145,8 @@ export async function deleteMap(mapId: string) {
       where: { id: mapId },
     })
 
-    revalidatePath('/admin/maps')
-    revalidatePath('/dashboard')
+    revalidatePath('/territorios/mapas')
+    revalidatePath('/territorios')
 
     return {
       success: true,

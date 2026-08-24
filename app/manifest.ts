@@ -6,7 +6,7 @@ export default function manifest(): MetadataRoute.Manifest {
     short_name: 'Territorios',
     description:
       'Gestión de territorios, grupos, conductores y asignaciones para congregaciones.',
-    start_url: '/dashboard',
+    start_url: '/territorios',
     display: 'standalone',
     background_color: '#081426',
     theme_color: '#0B1830',

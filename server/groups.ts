@@ -90,7 +90,7 @@ export async function createGroup(
       await ensureGroupPublisher(auxiliary, group.id, tenantId)
     }
 
-    revalidatePath('/dashboard')
+    revalidatePath('/territorios')
     revalidatePath('/admin/groups')
     revalidatePath('/admin/drivers')
 
@@ -271,7 +271,7 @@ export async function updateGroup(
       },
     })
 
-    revalidatePath('/dashboard')
+    revalidatePath('/territorios')
     revalidatePath('/admin/groups')
     revalidatePath('/admin/drivers')
 
@@ -318,7 +318,7 @@ export async function deleteGroup(groupId: string) {
       where: { id: groupId },
     })
 
-    revalidatePath('/dashboard')
+    revalidatePath('/territorios')
 
     return {
       success: true,

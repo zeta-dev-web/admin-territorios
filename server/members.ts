@@ -39,7 +39,7 @@ export async function createMember(name: string, groupId: string) {
     })
 
     revalidatePath('/admin/groups')
-    revalidatePath('/dashboard')
+    revalidatePath('/territorios')
 
     return {
       success: true,
@@ -110,7 +110,7 @@ export async function updateMember(
     })
 
     revalidatePath('/admin/groups')
-    revalidatePath('/dashboard')
+    revalidatePath('/territorios')
 
     return {
       success: true,
@@ -174,7 +174,7 @@ export async function toggleMemberDriver(
       })
       revalidatePath('/admin/groups')
       revalidatePath('/admin/drivers')
-      revalidatePath('/dashboard')
+      revalidatePath('/territorios')
       return {
         success: true,
         wasAdded: false,
@@ -187,7 +187,7 @@ export async function toggleMemberDriver(
       })
       revalidatePath('/admin/groups')
       revalidatePath('/admin/drivers')
-      revalidatePath('/dashboard')
+      revalidatePath('/territorios')
       return {
         success: true,
         wasAdded: true,
@@ -217,7 +217,7 @@ export async function deleteMember(memberId: string) {
     })
 
     revalidatePath('/admin/groups')
-    revalidatePath('/dashboard')
+    revalidatePath('/territorios')
 
     return {
       success: true,

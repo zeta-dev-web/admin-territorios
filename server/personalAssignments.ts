@@ -94,9 +94,9 @@ export async function createPersonalAssignment(
       },
     })
 
-    revalidatePath('/admin/territories')
-    revalidatePath('/admin/assignments')
-    revalidatePath('/dashboard')
+    revalidatePath('/territorios/lista')
+    revalidatePath('/territorios/asignaciones')
+    revalidatePath('/territorios')
 
     return {
       success: true,
@@ -150,10 +150,10 @@ export async function returnPersonalAssignment(assignmentId: string, returnDate?
         publisher: true,
       },
     })
-    revalidatePath('/admin/territories')
-    revalidatePath('/admin/assignments')
-    revalidatePath('/admin/history')
-    revalidatePath('/dashboard')
+    revalidatePath('/territorios/lista')
+    revalidatePath('/territorios/asignaciones')
+    revalidatePath('/territorios/historial')
+    revalidatePath('/territorios')
     return {
       success: true,
       data: withMemberAlias(updatedAssignment),
@@ -291,9 +291,9 @@ export async function deletePersonalAssignment(assignmentId: string) {
     await prisma.personalAssignment.delete({
       where: { id: assignmentId },
     })
-    revalidatePath('/admin/territories')
-    revalidatePath('/admin/assignments')
-    revalidatePath('/dashboard')
+    revalidatePath('/territorios/lista')
+    revalidatePath('/territorios/asignaciones')
+    revalidatePath('/territorios')
     return {
       success: true,
       message: 'Asignación eliminada correctamente',
@@ -347,9 +347,9 @@ export async function updatePersonalAssignment(
         },
       },
     })
-    revalidatePath('/admin/history')
-    revalidatePath('/admin/assignments')
-    revalidatePath('/admin/territories')
+    revalidatePath('/territorios/historial')
+    revalidatePath('/territorios/asignaciones')
+    revalidatePath('/territorios/lista')
     return {
       success: true,
       data: withMemberAlias(updated),
@@ -418,10 +418,10 @@ export async function updateActivePersonalAssignment(
         publisher: { include: { group: true } },
       },
     })
-    revalidatePath('/dashboard')
-    revalidatePath('/admin/assignments')
-    revalidatePath('/admin/history')
-    revalidatePath('/admin/territories')
+    revalidatePath('/territorios')
+    revalidatePath('/territorios/asignaciones')
+    revalidatePath('/territorios/historial')
+    revalidatePath('/territorios/lista')
     return {
       success: true,
       data: withMemberAlias(updated),

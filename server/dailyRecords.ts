@@ -159,11 +159,11 @@ export async function createDailyRecord(input: CreateDailyRecordInput) {
     }
 
     // 8. Revalidar rutas
-    revalidatePath('/dashboard')
-    revalidatePath(`/dashboard/${assignment.territoryId}`)
-    revalidatePath('/admin/assignments')
-    revalidatePath('/admin/history')
-    revalidatePath('/admin/territories')
+    revalidatePath('/territorios')
+    revalidatePath(`/territorios/${assignment.territoryId}`)
+    revalidatePath('/territorios/asignaciones')
+    revalidatePath('/territorios/historial')
+    revalidatePath('/territorios/lista')
 
     return {
       success: true,
@@ -312,11 +312,11 @@ export async function deleteDailyRecord(recordId: string) {
     })
 
     // Revalidar rutas
-    revalidatePath('/dashboard')
-    revalidatePath(`/dashboard/${record.assignment.territoryId}`)
-    revalidatePath('/admin/assignments')
-    revalidatePath('/admin/history')
-    revalidatePath('/admin/territories')
+    revalidatePath('/territorios')
+    revalidatePath(`/territorios/${record.assignment.territoryId}`)
+    revalidatePath('/territorios/asignaciones')
+    revalidatePath('/territorios/historial')
+    revalidatePath('/territorios/lista')
 
     return {
       success: true,

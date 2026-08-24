@@ -30,11 +30,11 @@ function withDriverAlias<T extends { publisher: { firstName: string; lastName: s
 }
 
 function revalidateAssignmentPaths(territoryIds: string[] = []) {
-  revalidatePath('/dashboard')
-  territoryIds.forEach((territoryId) => revalidatePath(`/dashboard/${territoryId}`))
-  revalidatePath('/admin/assignments')
-  revalidatePath('/admin/history')
-  revalidatePath('/admin/territories')
+  revalidatePath('/territorios')
+  territoryIds.forEach((territoryId) => revalidatePath(`/territorios/${territoryId}`))
+  revalidatePath('/territorios/asignaciones')
+  revalidatePath('/territorios/historial')
+  revalidatePath('/territorios/lista')
 }
 
 export async function createAssignment(input: CreateAssignmentInput) {
@@ -200,10 +200,10 @@ export async function completeAssignment(assignmentId: string) {
       include: { territory: true, publisher: true },
     })
 
-    revalidatePath('/dashboard')
-    revalidatePath('/admin/assignments')
-    revalidatePath('/admin/history')
-    revalidatePath('/admin/territories')
+    revalidatePath('/territorios')
+    revalidatePath('/territorios/asignaciones')
+    revalidatePath('/territorios/historial')
+    revalidatePath('/territorios/lista')
     return {
       success: true,
       data: withDriverAlias(updatedAssignment),
@@ -235,10 +235,10 @@ export async function returnAssignment(assignmentId: string, returnDate?: Date) 
       include: { territory: true, publisher: true },
     })
 
-    revalidatePath('/dashboard')
-    revalidatePath('/admin/assignments')
-    revalidatePath('/admin/history')
-    revalidatePath('/admin/territories')
+    revalidatePath('/territorios')
+    revalidatePath('/territorios/asignaciones')
+    revalidatePath('/territorios/historial')
+    revalidatePath('/territorios/lista')
     return {
       success: true,
       data: withDriverAlias(updatedAssignment),
@@ -322,9 +322,9 @@ export async function updateAssignment(
       },
       include: { ...ASSIGNMENT_INCLUDE },
     })
-    revalidatePath('/admin/history')
-    revalidatePath('/admin/assignments')
-    revalidatePath('/admin/territories')
+    revalidatePath('/territorios/historial')
+    revalidatePath('/territorios/asignaciones')
+    revalidatePath('/territorios/lista')
     return { success: true, data: withDriverAlias(updated), message: 'Asignación actualizada correctamente' }
   } catch (error) {
     console.error('Error al actualizar asignación:', error)

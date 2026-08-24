@@ -8,7 +8,7 @@ export default async function LoginPage() {
   const session = await getSession()
   
   if (session?.isAuthenticated) {
-    redirect('/dashboard')
+    redirect('/territorios')
   }
 
   return (

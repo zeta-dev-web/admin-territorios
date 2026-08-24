@@ -32,12 +32,12 @@ export async function middleware(request: NextRequest) {
 
   // Redirigir a dashboard si ya está autenticado y va a login
   if (isAuthRoute && session?.isAuthenticated) {
-    return NextResponse.redirect(new URL('/dashboard', request.nextUrl))
+    return NextResponse.redirect(new URL('/territorios', request.nextUrl))
   }
 
   // Proteger /admin/users — solo ADMIN puede gestionar usuarios
-  if (path === '/admin/users' && session?.role !== 'ADMIN') {
-    return NextResponse.redirect(new URL('/dashboard', request.nextUrl))
+  if (path === '/admin/usuarios' && session?.role !== 'ADMIN') {
+    return NextResponse.redirect(new URL('/territorios', request.nextUrl))
   }
 
   return NextResponse.next()
