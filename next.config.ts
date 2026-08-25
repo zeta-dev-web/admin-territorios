@@ -3,6 +3,9 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   /* config options here */
 
+  // Módulos nativos/complejos que deben resolverse en runtime, no empaquetarse
+  serverExternalPackages: ["@napi-rs/canvas", "pdfjs-dist", "xlsx"],
+
   async redirects() {
     return [
       // ── Compatibilidad rutas viejas → nuevas (paso 6 unificación) ──

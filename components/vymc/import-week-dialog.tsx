@@ -130,7 +130,7 @@ export function ImportWeekDialog({ open, onOpenChange, onImported }: ImportWeekD
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+      <DialogContent className="w-[calc(100vw-2rem)] max-w-2xl max-h-[80vh] overflow-y-auto p-4 sm:w-full sm:p-6">
         <DialogHeader>
           <DialogTitle className="text-card-foreground">Agregar Semana</DialogTitle>
           <DialogDescription className="text-muted-foreground">
@@ -144,7 +144,7 @@ export function ImportWeekDialog({ open, onOpenChange, onImported }: ImportWeekD
             <Label className="text-foreground font-medium">
               Lunes de la semana
             </Label>
-            <div className="flex gap-3 mt-1.5">
+            <div className="flex flex-col gap-3 mt-1.5 sm:flex-row sm:items-start">
               <div className="flex-1">
                 <DatePicker
                   date={selectedDate}
@@ -161,7 +161,7 @@ export function ImportWeekDialog({ open, onOpenChange, onImported }: ImportWeekD
               <Button
                 onClick={handleScrape}
                 disabled={isScraping || isSaving}
-                className="bg-primary hover:bg-primary/90 text-primary-foreground px-6 self-start"
+                className="bg-primary hover:bg-primary/90 text-primary-foreground px-6 w-full sm:w-auto"
               >
                 {isScraping ? (
                   <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Obteniendo programa...</>
@@ -186,7 +186,7 @@ export function ImportWeekDialog({ open, onOpenChange, onImported }: ImportWeekD
               <div className="w-12 h-12 border-3 border-primary border-t-transparent rounded-full animate-spin mb-4" />
               <p className="text-foreground/80 font-medium">Obteniendo programa...</p>
               <p className="text-sm text-muted-foreground/70 mt-1">
-                Scrapeando {formatDateForDisplay(createDate)}
+                Scrapeando {formatDateForDisplay(selectedDate.toISOString().split("T")[0])}
               </p>
             </div>
           )}
@@ -194,7 +194,7 @@ export function ImportWeekDialog({ open, onOpenChange, onImported }: ImportWeekD
           {scrapeResult && (
             <>
               <div className="space-y-4 border border-border rounded-lg p-4 bg-muted">
-                <div className="flex items-center justify-between">
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                   <div>
                     <h4 className="font-semibold text-card-foreground">
                       Preview — Semana {scrapeResult.weekNumber} de {scrapeResult.year}
@@ -241,7 +241,7 @@ export function ImportWeekDialog({ open, onOpenChange, onImported }: ImportWeekD
                 </div>
               )}
 
-              <DialogFooter className="flex gap-2">
+              <DialogFooter className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
                 <Button
                   type="button"
                   variant="outline"
