@@ -134,9 +134,9 @@ export function InicioDashboard({
             </div>
             <div>
               <p className="text-sm font-bold leading-tight">
-                Territorios <span className="text-cyan-400">App</span>
+                Recursos <span className="text-cyan-400">App</span>
               </p>
-              <p className="text-xs text-slate-500">Centro unificado</p>
+              <p className="text-xs text-slate-500">sistema unificado</p>
             </div>
           </div>
           <div className="flex items-center gap-2">
