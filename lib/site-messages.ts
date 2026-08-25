@@ -23,8 +23,8 @@ export const SITE_MESSAGES: SiteMessage[] = [
   {
     id: 'bienvenida-unificada',
     type: 'success',
-    title: 'Territorios y VYMC ahora viven juntos',
-    body: 'Elegí el sistema al que querés entrar desde las tarjetas de arriba. Este es un aviso de ejemplo: editá lib/site-messages.ts para mostrar los tuyos.',
+    title: '¡Ahora agregamos vymc al sistema!',
+    body: 'Elegí el sistema al que querés entrar.',
     active: true,
   },
 ]

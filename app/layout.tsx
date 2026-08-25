@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Script from "next/script";
 import { Toaster } from "react-hot-toast";
+import { ThemeInit } from "@/components/theme/theme-init";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -58,8 +59,17 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="es">
+    <html lang="es" suppressHydrationWarning>
+      <head>
+        {/* Aplica el tema guardado ANTES del primer paint (evita el flash dark→light) */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{var t=localStorage.getItem('territorios-theme');document.documentElement.dataset.theme=t==='dark'?'dark':'light';}catch(e){document.documentElement.dataset.theme='light';}})();`,
+          }}
+        />
+      </head>
       <body className="min-h-screen antialiased">
+        <ThemeInit />
         <Script src="https://js.puter.com/v2/" strategy="afterInteractive" />
         {children}
         <Toaster

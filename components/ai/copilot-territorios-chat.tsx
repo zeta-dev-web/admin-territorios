@@ -387,13 +387,13 @@ export function CopilotTerritoriosChat() {
         <button
           type="button"
           onClick={() => setIsOpen(true)}
-          className="fixed bottom-6 right-6 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br from-[#059669] to-[#047857] text-[#ffffff] shadow-xl transition-transform hover:scale-105 active:scale-95"
+          className="fixed bottom-6 right-6 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br from-[#DC2626] to-[#B91C1C] text-[#ffffff] shadow-xl transition-transform hover:scale-105 active:scale-95"
           title="Abrir Copiloto IA de Territorios"
         >
           <Sparkles className="h-6 w-6" />
           <span className="absolute -top-0.5 -right-0.5 flex h-3.5 w-3.5">
-            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-60"></span>
-            <span className="relative inline-flex h-3.5 w-3.5 rounded-full bg-emerald-500 border-2 border-white"></span>
+            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-400 opacity-60"></span>
+            <span className="relative inline-flex h-3.5 w-3.5 rounded-full bg-red-500 border-2 border-white"></span>
           </span>
         </button>
       )}
@@ -402,7 +402,7 @@ export function CopilotTerritoriosChat() {
       {isOpen && (
         <div className="fixed bottom-6 right-6 z-50 flex h-[520px] max-h-[85vh] w-[92vw] max-w-[380px] flex-col overflow-hidden rounded-2xl border border-[#E2E8F0] bg-white shadow-2xl">
           {/* Encabezado */}
-          <div className="flex items-center justify-between bg-gradient-to-r from-[#059669] to-[#047857] px-4 py-3">
+          <div className="flex items-center justify-between bg-gradient-to-r from-[#DC2626] to-[#B91C1C] px-4 py-3">
             <div className="flex items-center gap-2.5">
               <div className="flex h-9 w-9 items-center justify-center rounded-full bg-white/15">
                 <Bot className="h-5 w-5 text-white" />
@@ -439,7 +439,7 @@ export function CopilotTerritoriosChat() {
                       key={suggestion}
                       type="button"
                       onClick={() => void sendMessage(suggestion)}
-                      className="w-full rounded-lg border border-[#E2E8F0] bg-white px-3 py-2 text-left text-xs text-[#059669] transition-colors hover:border-[#059669] hover:bg-emerald-50"
+                      className="w-full rounded-lg border border-[#E2E8F0] bg-white px-3 py-2 text-left text-xs text-[#DC2626] transition-colors hover:border-[#DC2626] hover:bg-red-50"
                     >
                       {suggestion}
                     </button>
@@ -456,7 +456,7 @@ export function CopilotTerritoriosChat() {
                 <div
                   className={`max-w-[85%] whitespace-pre-wrap rounded-2xl px-3.5 py-2.5 text-sm leading-relaxed ${
                     message.role === "user"
-                      ? "rounded-br-sm bg-[#059669] text-white"
+                      ? "rounded-br-sm bg-[#DC2626] text-white"
                       : "rounded-tl-sm border border-[#E2E8F0] bg-white text-[#2D3748]"
                   }`}
                 >
@@ -468,7 +468,7 @@ export function CopilotTerritoriosChat() {
             {isLoading && (
               <div className="flex justify-start">
                 <div className="flex items-center gap-2 rounded-2xl rounded-tl-sm border border-[#E2E8F0] bg-white px-3.5 py-2.5 text-xs text-[#718096]">
-                  <Loader2 className="h-3.5 w-3.5 animate-spin text-[#059669]" />
+                  <Loader2 className="h-3.5 w-3.5 animate-spin text-[#DC2626]" />
                   {toolStatus ?? "Pensando..."}
                 </div>
               </div>
@@ -485,14 +485,14 @@ export function CopilotTerritoriosChat() {
               onKeyDown={handleKeyDown}
               placeholder="Escribe tu consulta..."
               disabled={isLoading}
-              className="h-9 flex-1 rounded-full border border-[#E2E8F0] bg-[#F8F9FA] px-4 text-sm text-[#2D3748] placeholder:text-[#A0AEC0] focus:border-[#059669] focus:outline-none disabled:opacity-60"
+              className="h-9 flex-1 rounded-full border border-[#E2E8F0] bg-[#F8F9FA] px-4 text-sm text-[#2D3748] placeholder:text-[#A0AEC0] focus:border-[#DC2626] focus:outline-none disabled:opacity-60"
             />
             <Button
               type="button"
               onClick={() => void sendMessage()}
               disabled={isLoading || !input.trim()}
               size="icon"
-              className="h-9 w-9 shrink-0 rounded-full bg-[#059669] hover:bg-[#047857]"
+              className="h-9 w-9 shrink-0 rounded-full bg-[#DC2626] hover:bg-[#B91C1C]"
               title="Enviar"
             >
               <Send className="h-4 w-4" />

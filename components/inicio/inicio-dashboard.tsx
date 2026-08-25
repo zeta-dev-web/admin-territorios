@@ -13,15 +13,15 @@ import {
   AlertTriangle,
 } from 'lucide-react'
 import { BrandMark } from '@/components/common/BrandMark'
+import { StarTrail } from '@/components/common/StarTrail'
 import { ThemeToggle } from '@/components/theme/ThemeToggle'
+import Footer from '@/components/layout/Footer'
 import { logout } from '@/server/auth'
-import type { ModuleCode } from '@/lib/module-access'
 import type { SiteMessage, SiteMessageType } from '@/lib/site-messages'
 
 interface InicioDashboardProps {
   userName: string
   congregationName: string
-  modules: ModuleCode[]
   messages: SiteMessage[]
 }
 
@@ -31,30 +31,30 @@ const MODULE_CARDS = [
     href: '/territorios',
     title: 'Territorios',
     description:
-      'Organizá territorios, mapas, asignaciones y el avance de la predicación de tu congregación.',
+      'Organizá y descargá los territorios, mapas, asignaciones y el avance de la predicación de tu congregación.',
     cta: 'Ingresar a Territorios',
     icon: MapPin,
-    tile: 'from-blue-600 to-cyan-500',
-    glow: 'rgba(6, 182, 212, 0.16)',
-    accentText: 'text-cyan-400',
-    hoverBorder: 'hover:border-cyan-400/60',
-    hoverShadow: 'hover:shadow-[0_24px_70px_-18px_rgba(6,182,212,0.4)]',
-    focusRing: 'focus-visible:ring-cyan-400/70',
+    tile: 'from-red-500 to-red-600',
+    glow: 'rgba(239, 68, 68, 0.16)',
+    accentText: 'text-red-400',
+    hoverBorder: 'hover:border-red-400/60',
+    hoverShadow: 'hover:shadow-[0_24px_70px_-18px_rgba(239,68,68,0.4)]',
+    focusRing: 'focus-visible:ring-red-400/70',
   },
   {
     module: 'VYMC' as const,
     href: '/vymc',
     title: 'VYMC',
     description:
-      'Programas semanales, publicadores y asignaciones de Vida y Ministerio Cristiano.',
+      'Prepará y descargá los programas para las reuniones de Vida y Ministerio Cristiano de tu congregación.',
     cta: 'Ingresar a VYMC',
     icon: CalendarDays,
-    tile: 'from-[#2C5282] to-emerald-500',
-    glow: 'rgba(16, 185, 129, 0.16)',
-    accentText: 'text-emerald-400',
-    hoverBorder: 'hover:border-emerald-400/60',
-    hoverShadow: 'hover:shadow-[0_24px_70px_-18px_rgba(16,185,129,0.4)]',
-    focusRing: 'focus-visible:ring-emerald-400/70',
+    tile: 'from-[#1A365D] to-[#2D5F8D]',
+    glow: 'rgba(59, 130, 246, 0.16)',
+    accentText: 'text-blue-400',
+    hoverBorder: 'hover:border-blue-400/60',
+    hoverShadow: 'hover:shadow-[0_24px_70px_-18px_rgba(59,130,246,0.4)]',
+    focusRing: 'focus-visible:ring-blue-400/70',
   },
 ]
 
@@ -83,11 +83,11 @@ const MESSAGE_STYLES: Record<
 export function InicioDashboard({
   userName,
   congregationName,
-  modules,
   messages,
 }: InicioDashboardProps) {
   const firstName = userName.split('@')[0]
-  const cards = MODULE_CARDS.filter((card) => modules.includes(card.module))
+  // Ambos sistemas se muestran siempre como opciones de entrada.
+  const cards = MODULE_CARDS
 
   const handleMove = useCallback((event: React.MouseEvent<HTMLElement>) => {
     const el = event.currentTarget
@@ -98,6 +98,9 @@ export function InicioDashboard({
 
   return (
     <div className="relative min-h-screen overflow-hidden bg-[#0A0F1C] text-white">
+      {/* Estrellas que siguen al cursor */}
+      <StarTrail />
+
       {/* Fondo: grilla sutil + orbes ambientales */}
       <div
         aria-hidden
@@ -114,11 +117,11 @@ export function InicioDashboard({
       />
       <div
         aria-hidden
-        className="absolute -bottom-52 -right-32 h-[30rem] w-[30rem] rounded-full bg-cyan-500/10 blur-[130px]"
+        className="absolute -bottom-52 -right-32 h-[30rem] w-[30rem] rounded-full bg-red-500/15 blur-[130px]"
       />
       <div
         aria-hidden
-        className="absolute -bottom-40 -left-32 h-[26rem] w-[26rem] rounded-full bg-emerald-500/10 blur-[130px]"
+        className="absolute -bottom-40 -left-32 h-[26rem] w-[26rem] rounded-full bg-cyan-500/10 blur-[130px]"
       />
 
       <div className="relative mx-auto flex min-h-screen w-full max-w-5xl flex-col px-5 py-6 sm:px-8">
@@ -137,11 +140,11 @@ export function InicioDashboard({
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <ThemeToggle className="h-10 w-10 justify-center px-0 [&_.theme-toggle__label]:hidden" />
+            <ThemeToggle className="theme-toggle--compact" />
             <button
               type="button"
               onClick={() => void logout()}
-              className="flex h-10 items-center gap-2 rounded-xl border border-white/10 bg-[#0F1729]/70 px-3.5 text-sm font-medium text-slate-300 transition-colors hover:border-red-400/50 hover:text-white"
+              className="logout-button-inicio flex h-10 items-center gap-2 rounded-xl border px-3.5 text-sm font-medium transition-colors"
             >
               <LogOut className="h-4 w-4" />
               <span className="hidden sm:inline">Cerrar sesión</span>
@@ -152,7 +155,7 @@ export function InicioDashboard({
         {/* Bienvenida */}
         <section className="inicio-enter mt-14 text-center sm:mt-20">
           <p className="text-xs font-bold uppercase tracking-[0.28em] text-cyan-400">
-            Sistema unificado de congregación
+            Sistema unificado de recursos
           </p>
           <h1 className="mt-4 text-4xl font-bold tracking-tight sm:text-5xl">
             Hola, {firstName}
@@ -186,9 +189,13 @@ export function InicioDashboard({
 
                 <div className="relative">
                   <div
-                    className={`mb-6 flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br ${card.tile} text-white shadow-lg transition-transform duration-300 group-hover:-rotate-3 group-hover:scale-110`}
+                    className={`mb-6 flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br ${card.tile} shadow-lg transition-transform duration-300 group-hover:-rotate-3 group-hover:scale-110`}
                   >
-                    <Icon className="h-7 w-7" strokeWidth={2} />
+                    <Icon
+                      className="h-7 w-7 text-white"
+                      strokeWidth={2}
+                      fill={card.module === 'TERRITORIES' ? 'none' : 'none'}
+                    />
                   </div>
 
                   <h2 className="text-2xl font-bold tracking-tight">{card.title}</h2>
@@ -213,7 +220,7 @@ export function InicioDashboard({
           <div className="mb-4 flex items-center gap-2.5">
             <Megaphone className="h-4 w-4 text-amber-400" />
             <h2 className="text-xs font-bold uppercase tracking-[0.2em] text-slate-400">
-              Avisos y notificaciones
+              Novedades
             </h2>
           </div>
 
@@ -253,10 +260,10 @@ export function InicioDashboard({
           )}
         </section>
 
-        <footer className="mt-auto pt-12 pb-2 text-center text-xs text-slate-600">
-          Territorios App · by ZetaDev
-        </footer>
       </div>
+
+      {/* Pie con el estilo de Territorios */}
+      <Footer />
     </div>
   )
 }

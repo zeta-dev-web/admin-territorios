@@ -7,7 +7,7 @@ export const metadata = {
 
 export default function TermsAndConditionsPage() {
   return (
-    <div className="min-h-screen bg-[#0A0F1C] text-slate-200">
+    <div className="terms-page min-h-screen bg-[#0A0F1C] text-slate-200">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         {/* Header */}
         <div className="mb-8">
@@ -222,7 +222,7 @@ export default function TermsAndConditionsPage() {
               Para consultas o soporte, contacte al administrador de su sistema.
             </p>
             <a
-              href="/territorios"
+              href="/inicio"
               className="inline-flex items-center gap-2 px-6 py-3 bg-blue-500 hover:bg-blue-600 text-white rounded-lg font-medium transition-colors"
             >
               Volver al Sistema

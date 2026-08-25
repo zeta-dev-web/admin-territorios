@@ -55,10 +55,12 @@ export function MobileHeader({
           )}
         </div>
 
-        {/* Título */}
-        <h1 className="text-lg font-bold text-slate-900 dark:text-white truncate">
-          {displayTitle}
-        </h1>
+        {/* Título - Solo si no está vacío */}
+        {displayTitle && (
+          <h1 className="text-lg font-bold text-slate-900 dark:text-white truncate">
+            {displayTitle}
+          </h1>
+        )}
 
         {/* Espaciador derecho */}
         <div className="w-10" />

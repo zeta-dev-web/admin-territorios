@@ -4,7 +4,7 @@ import { prisma } from '@/lib/prisma'
 import { VymcSessionProvider } from '@/lib/vymc-session'
 import { CongregationProvider } from '@/contexts/congregation-context'
 import { TooltipProvider } from '@/components/ui/tooltip'
-import { AppLayout } from '@/components/common/AppLayout'
+import { AppLayoutVymc } from '@/components/vymc/app-layout-vymc'
 
 export default async function VymcLayout({ children }: { children: React.ReactNode }) {
   const session = await getSession()
@@ -24,7 +24,7 @@ export default async function VymcLayout({ children }: { children: React.ReactNo
         congregationName: tenant?.name ?? '',
       }}
     >
-      <AppLayout title="Vida y Ministerio Cristiano">
+      <AppLayoutVymc>
         <div className="vymc-theme min-h-full">
           <TooltipProvider>
             <CongregationProvider>
@@ -34,7 +34,7 @@ export default async function VymcLayout({ children }: { children: React.ReactNo
             </CongregationProvider>
           </TooltipProvider>
         </div>
-      </AppLayout>
+      </AppLayoutVymc>
     </VymcSessionProvider>
   )
 }

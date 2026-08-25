@@ -236,6 +236,18 @@ html[data-theme='dark'] ::selection {
   outline-offset: 2px;
 }
 
+/* Variante compacta (solo ícono): usada en el header del inicio */
+.theme-toggle--compact {
+  width: 2.5rem;
+  padding-inline: 0;
+  justify-content: center;
+}
+
+.theme-toggle--compact .theme-toggle__label,
+.theme-toggle--compact .theme-toggle__switch {
+  display: none !important;
+}
+
 .theme-toggle__icon {
   display: grid;
   place-items: center;
@@ -449,6 +461,71 @@ html[data-theme='dark'] .vymc-theme [class~='text-blue-800'] {
   }
 }
 
+/* ═══════════════════════════════════════════════════════════
+   LOGIN — Tema claro (el oscuro actual queda intacto)
+   ═══════════════════════════════════════════════════════════ */
+html[data-theme='light'] .login-page {
+  background-color: var(--app-bg);
+}
+
+html[data-theme='light'] .login-card {
+  background-color: var(--app-surface);
+  border-color: var(--app-border);
+  box-shadow: 0 18px 45px rgba(31, 70, 103, 0.12);
+}
+
+html[data-theme='light'] .login-page [class~='border-white/5'],
+html[data-theme='light'] .login-page [class~='border-white/10'],
+html[data-theme='light'] .login-page [class~='border-white/20'] {
+  border-color: var(--app-border) !important;
+}
+
+html[data-theme='light'] .login-page [class~='bg-white/10'] {
+  background-color: color-mix(in srgb, var(--app-text) 5%, var(--app-surface)) !important;
+}
+
+html[data-theme='light'] .login-page [class~='placeholder-white/50']::placeholder {
+  color: var(--app-muted) !important;
+}
+
+html[data-theme='light'] .login-page [class~='text-white/50'] {
+  color: color-mix(in srgb, var(--app-text) 50%, transparent) !important;
+}
+
+html[data-theme='light'] .login-page [class~='focus:ring-white/50']:focus {
+  --tw-ring-color: color-mix(in srgb, var(--app-accent) 40%, transparent) !important;
+}
+
+html[data-theme='light'] .login-page [class~='text-cyan-300'] {
+  color: #0E7490 !important;
+}
+
+html[data-theme='light'] .login-page [class~='text-cyan-400'] {
+  color: #0891B2 !important;
+}
+
+html[data-theme='light'] .login-page [class~='hover:text-cyan-200']:hover {
+  color: #0E7490 !important;
+}
+
+html[data-theme='light'] .login-page [class~='bg-white'][class~='text-indigo-600'] {
+  background-color: var(--app-accent) !important;
+  color: #FFFFFF !important;
+}
+
+html[data-theme='light'] .login-page [class~='hover:bg-gray-50']:hover {
+  background-color: color-mix(in srgb, var(--app-accent) 85%, #000) !important;
+}
+
+html[data-theme='light'] .login-page [class~='active:bg-gray-100']:active {
+  background-color: color-mix(in srgb, var(--app-accent) 75%, #000) !important;
+}
+
+/* Términos y condiciones: botón "Volver al Sistema" mantiene texto blanco en claro */
+html[data-theme='light'] .terms-page [class~='bg-blue-500'][class~='text-white'] {
+  color: #FFFFFF !important;
+}
+
 /* ═══════════════════════════════════════════
    MÓDULO VYMC — paleta propia dual (claro / navy oscuro).
    Redefine las variables semánticas SOLO dentro de su wrapper,
@@ -646,6 +723,314 @@ html[data-theme='dark'] .info-card-congregation {
 html[data-theme='dark'] .vymc-theme .group-badge-vymc {
   background: rgba(148, 163, 184, 0.2);
   color: rgb(203 213 225);
+}
+
+/* Logout button en inicio */
+.logout-button-inicio {
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  background: rgba(241, 245, 249, 0.9);
+  color: rgb(51, 65, 85);
+  transition: border-color 180ms ease, background-color 180ms ease,
+    color 180ms ease, transform 180ms ease;
+}
+
+.logout-button-inicio:hover {
+  border-color: rgba(239, 68, 68, 0.65) !important;
+  background: rgb(254, 242, 242) !important;
+  color: rgb(220, 38, 38) !important;
+  transform: translateY(-1px);
+}
+
+.logout-button-inicio:focus-visible {
+  outline: 3px solid rgba(239, 68, 68, 0.45);
+  outline-offset: 2px;
+}
+
+html[data-theme='dark'] .logout-button-inicio {
+  border-color: rgba(255, 255, 255, 0.12);
+  background: rgba(15, 23, 41, 0.75);
+  color: rgb(203, 213, 225);
+}
+
+html[data-theme='dark'] .logout-button-inicio:hover {
+  border-color: rgba(248, 113, 113, 0.65) !important;
+  background: rgba(239, 68, 68, 0.16) !important;
+  color: #FCA5A5 !important;
+  transform: translateY(-1px);
+}
+
+/* Footer light/dark mode */
+.footer-recursos {
+  background: linear-gradient(to bottom, rgb(248 250 252), rgb(241 245 249), rgb(248 250 252)) !important;
+  border-color: rgb(226 232 240) !important;
+}
+
+html[data-theme='dark'] .footer-recursos {
+  background: linear-gradient(to bottom, #0A0F1C, #0F1729, #0A0F1C) !important;
+  border-color: rgba(148, 163, 184, 0.3) !important;
+}
+
+.footer-glow-top {
+  background: linear-gradient(to right, transparent, rgb(59 130 246 / 0.3), transparent) !important;
+}
+
+html[data-theme='dark'] .footer-glow-top {
+  background: linear-gradient(to right, transparent, rgb(59 130 246 / 0.5), transparent) !important;
+}
+
+.footer-brand-glow {
+  background: rgb(34 211 238) !important;
+}
+
+.footer-title {
+  background: linear-gradient(to right, rgb(59 130 246), rgb(34 211 238)) !important;
+  -webkit-background-clip: text !important;
+  background-clip: text !important;
+  color: transparent !important;
+}
+
+.footer-subtitle {
+  color: rgb(100 116 139) !important;
+}
+
+html[data-theme='dark'] .footer-subtitle {
+  color: rgb(148 163 184) !important;
+}
+
+.footer-feature {
+  color: rgb(100 116 139) !important;
+}
+
+.footer-feature--territorios:hover {
+  color: rgb(239 68 68) !important;
+}
+
+.footer-feature--vymc:hover {
+  color: rgb(59 130 246) !important;
+}
+
+.footer-feature--ia:hover {
+  color: rgb(34 211 238) !important;
+}
+
+html[data-theme='dark'] .footer-feature {
+  color: rgb(148 163 184) !important;
+}
+
+html[data-theme='dark'] .footer-feature--territorios:hover {
+  color: rgb(248 113 113) !important;
+}
+
+html[data-theme='dark'] .footer-feature--vymc:hover {
+  color: rgb(96 165 250) !important;
+}
+
+html[data-theme='dark'] .footer-feature--ia:hover {
+  color: rgb(103 232 249) !important;
+}
+
+.footer-copyright {
+  color: rgb(51 65 85) !important;
+}
+
+html[data-theme='dark'] .footer-copyright {
+  color: rgb(203 213 225) !important;
+}
+
+.footer-dev-label {
+  color: rgb(100 116 139) !important;
+}
+
+html[data-theme='dark'] .footer-dev-label {
+  color: rgb(148 163 184) !important;
+}
+
+.footer-dev-badge {
+  background: linear-gradient(to right, rgb(37 99 235 / 0.15), rgb(6 182 212 / 0.15)) !important;
+  border-color: rgb(59 130 246 / 0.3) !important;
+}
+
+.footer-dev-badge:hover {
+  border-color: rgb(59 130 246 / 0.5) !important;
+}
+
+html[data-theme='dark'] .footer-dev-badge {
+  background: linear-gradient(to right, rgb(37 99 235 / 0.2), rgb(6 182 212 / 0.2)) !important;
+  border-color: rgb(59 130 246 / 0.3) !important;
+}
+
+html[data-theme='dark'] .footer-dev-badge:hover {
+  border-color: rgb(96 165 250 / 0.5) !important;
+}
+
+.footer-dev-shine {
+  background: linear-gradient(to right, rgb(59 130 246 / 0), rgb(59 130 246 / 0.1), rgb(6 182 212 / 0)) !important;
+}
+
+.footer-dev-icon {
+  color: rgb(59 130 246) !important;
+}
+
+html[data-theme='dark'] .footer-dev-icon {
+  color: rgb(96 165 250) !important;
+}
+
+.footer-dev-name {
+  background: linear-gradient(to right, rgb(59 130 246), rgb(34 211 238), rgb(59 130 246)) !important;
+  -webkit-background-clip: text !important;
+  background-clip: text !important;
+  color: transparent !important;
+}
+
+html[data-theme='dark'] .footer-dev-name {
+  background: linear-gradient(to right, rgb(96 165 250), rgb(103 232 249), rgb(96 165 250)) !important;
+  -webkit-background-clip: text !important;
+  background-clip: text !important;
+  color: transparent !important;
+}
+
+.footer-bottom {
+  border-color: rgb(226 232 240) !important;
+}
+
+html[data-theme='dark'] .footer-bottom {
+  border-color: rgba(148, 163, 184, 0.3) !important;
+}
+
+.footer-version {
+  color: rgb(100 116 139) !important;
+}
+
+.footer-version:hover {
+  color: rgb(71 85 105) !important;
+}
+
+html[data-theme='dark'] .footer-version {
+  color: rgb(148 163 184) !important;
+}
+
+html[data-theme='dark'] .footer-version:hover {
+  color: rgb(203 213 225) !important;
+}
+
+.footer-separator {
+  color: rgb(203 213 225) !important;
+}
+
+html[data-theme='dark'] .footer-separator {
+  color: rgb(71 85 105) !important;
+}
+
+.footer-link {
+  color: rgb(100 116 139) !important;
+}
+
+.footer-link:hover {
+  color: rgb(51 65 85) !important;
+}
+
+html[data-theme='dark'] .footer-link {
+  color: rgb(148 163 184) !important;
+}
+
+html[data-theme='dark'] .footer-link:hover {
+  color: rgb(203 213 225) !important;
+}
+
+.footer-glow-bottom {
+  background: linear-gradient(to right, transparent, rgb(6 182 212 / 0.2), transparent) !important;
+}
+
+html[data-theme='dark'] .footer-glow-bottom {
+  background: linear-gradient(to right, transparent, rgb(6 182 212 / 0.3), transparent) !important;
+}
+
+/* VYMC Premium Header */
+.vymc-premium-header {
+  background: rgb(248 250 252);
+  border-color: rgb(226 232 240);
+}
+
+html[data-theme='dark'] .vymc-premium-header {
+  background: #0F1729;
+  border-color: rgba(148, 163, 184, 0.2);
+}
+
+.vymc-header-gradient {
+  background: linear-gradient(135deg, rgba(37, 99, 235, 0.03) 0%, rgba(147, 51, 234, 0.03) 100%);
+}
+
+html[data-theme='dark'] .vymc-header-gradient {
+  background: linear-gradient(135deg, rgba(37, 99, 235, 0.08) 0%, rgba(147, 51, 234, 0.08) 100%);
+}
+
+.vymc-header-icon {
+  background: linear-gradient(135deg, rgb(59, 130, 246) 0%, rgb(147, 51, 234) 100%);
+  color: white;
+  box-shadow: 0 4px 14px rgba(59, 130, 246, 0.25);
+}
+
+html[data-theme='dark'] .vymc-header-icon {
+  box-shadow: 0 4px 14px rgba(59, 130, 246, 0.4);
+}
+
+.vymc-header-title {
+  background: linear-gradient(90deg, rgb(37, 99, 235), rgb(147, 51, 234));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.vymc-header-subtitle {
+  color: rgb(100, 116, 139);
+}
+
+html[data-theme='dark'] .vymc-header-subtitle {
+  color: rgb(148, 163, 184);
+}
+
+/* Territorios Premium Header */
+.territorios-premium-header {
+  background: rgb(248 250 252);
+  border-color: rgb(226 232 240);
+}
+
+html[data-theme='dark'] .territorios-premium-header {
+  background: #0F1729;
+  border-color: rgba(148, 163, 184, 0.2);
+}
+
+.territorios-header-gradient {
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.03) 0%, rgba(220, 38, 38, 0.03) 100%);
+}
+
+html[data-theme='dark'] .territorios-header-gradient {
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.08) 0%, rgba(220, 38, 38, 0.08) 100%);
+}
+
+.territorios-header-icon {
+  background: linear-gradient(135deg, rgb(239, 68, 68) 0%, rgb(220, 38, 38) 100%);
+  color: white;
+  box-shadow: 0 4px 14px rgba(239, 68, 68, 0.25);
+}
+
+html[data-theme='dark'] .territorios-header-icon {
+  box-shadow: 0 4px 14px rgba(239, 68, 68, 0.4);
+}
+
+.territorios-header-title {
+  background: linear-gradient(90deg, rgb(239, 68, 68), rgb(220, 38, 38));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.territorios-header-subtitle {
+  color: rgb(100, 116, 139);
+}
+
+html[data-theme='dark'] .territorios-header-subtitle {
+  color: rgb(148, 163, 184);
 }
 
 

@@ -74,7 +74,7 @@ export function PublishersTable({
                 </TableCell>
                 <TableCell>
                   {p.group?.name ? (
-                    <span className="inline-flex items-center gap-1 text-xs text-slate-600 bg-slate-100 px-2 py-0.5 rounded-full">
+                    <span className="group-badge-vymc inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full">
                       <Users className="w-3 h-3" />{p.group.name}
                     </span>
                   ) : (

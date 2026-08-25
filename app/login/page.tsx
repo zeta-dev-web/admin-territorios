@@ -1,5 +1,7 @@
 import { LoginForm } from '@/components/auth/LoginForm'
 import { BrandMark } from '@/components/common/BrandMark'
+import { StarTrail } from '@/components/common/StarTrail'
+import { ThemeToggle } from '@/components/theme/ThemeToggle'
 import { getSession } from '@/lib/auth'
 import { redirect } from 'next/navigation'
 import { Shield } from 'lucide-react'
@@ -12,7 +14,15 @@ export default async function LoginPage() {
   }
 
   return (
-    <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-[#07111F] p-4">
+    <div className="login-page relative flex min-h-screen items-center justify-center overflow-hidden bg-[#07111F] p-4">
+      {/* Estrellas que siguen al cursor */}
+      <StarTrail />
+
+      {/* Switch dark/light */}
+      <div className="fixed right-4 top-4 z-[70]">
+        <ThemeToggle className="theme-toggle--compact" />
+      </div>
+
       <div
         className="absolute inset-0 opacity-40"
         style={{
@@ -26,7 +36,7 @@ export default async function LoginPage() {
       <div className="absolute left-[58%] top-[12%] h-40 w-40 rotate-12 rounded-[2.5rem] border border-cyan-200/10 bg-cyan-300/[0.03]" />
 
       <div className="relative w-full max-w-md">
-        <div className="rounded-[2rem] border border-white/10 bg-[#0D1A2D]/90 p-7 shadow-2xl shadow-black/45 backdrop-blur-xl sm:p-9">
+        <div className="login-card rounded-[2rem] border border-white/10 bg-[#0D1A2D]/90 p-7 shadow-2xl shadow-black/45 backdrop-blur-xl sm:p-9">
           <div className="mb-8 text-center">
             <div className="relative mx-auto mb-5 w-fit">
               <div className="absolute inset-3 rounded-2xl bg-cyan-400/35 blur-2xl" />
@@ -38,15 +48,11 @@ export default async function LoginPage() {
               />
             </div>
             <p className="mb-2 text-xs font-bold uppercase tracking-[0.24em] text-cyan-300">
-              Gestión simple y ordenada
+              Sistema unificado de recursos
             </p>
             <h1 className="text-3xl font-bold tracking-tight text-white">
-              Territorios <span className="text-cyan-300">App</span>
+              Recursos <span className="text-cyan-300">App</span>
             </h1>
-            <p className="mx-auto mt-3 max-w-xs text-sm leading-6 text-slate-400">
-              Organiza los territorios, las asignaciones y el avance de tu
-              congregación desde un solo lugar.
-            </p>
           </div>
 
           <LoginForm />

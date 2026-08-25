@@ -13,9 +13,10 @@ interface AppLayoutProps {
   children: ReactNode
   title?: string
   showBack?: boolean
+  customHeader?: ReactNode
 }
 
-export function AppLayout({ children, title, showBack = false }: AppLayoutProps) {
+export function AppLayout({ children, title, showBack = false, customHeader }: AppLayoutProps) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
   const pathname = usePathname()
   
@@ -39,12 +40,18 @@ export function AppLayout({ children, title, showBack = false }: AppLayoutProps)
           isSidebarOpen ? 'ml-72' : 'ml-0'
         }`}
       >
-        {/* Header */}
-        <MobileHeader
-          title={title}
-          showBack={showBack}
-          onMenuClick={() => setIsSidebarOpen(!isSidebarOpen)}
-        />
+        {/* Header - Custom o default */}
+        {customHeader ? (
+          <div onClick={() => customHeader && setIsSidebarOpen(!isSidebarOpen)}>
+            {customHeader}
+          </div>
+        ) : (
+          <MobileHeader
+            title={title}
+            showBack={showBack}
+            onMenuClick={() => setIsSidebarOpen(!isSidebarOpen)}
+          />
+        )}
 
         {/* Banner de impersonación */}
         <ImpersonationBanner />

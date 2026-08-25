@@ -36,7 +36,6 @@ export default async function InicioPage() {
     <InicioDashboard
       userName={user?.name ?? session.email}
       congregationName={tenant?.name ?? ''}
-      modules={modules}
       messages={messages}
     />
   )
