@@ -25,7 +25,7 @@ export default function TermsAndConditionsPage() {
         </div>
 
         {/* Advertencia importante */}
-        <div className="bg-gradient-to-r from-amber-500/10 to-orange-500/10 rounded-xl border border-amber-500/30 p-6 mb-8">
+        <div className="bg-gradient-to-r from-amber-500/10 to-orange-500/10 rounded-xl border border-amber-500/30 p-6 mb-6">
           <div className="flex items-start gap-3">
             <div className="w-10 h-10 bg-amber-500/20 rounded-lg flex items-center justify-center flex-shrink-0">
               <AlertTriangle className="h-5 w-5 text-amber-400" />
@@ -35,6 +35,26 @@ export default function TermsAndConditionsPage() {
               <p className="text-sm text-slate-300">
                 Al utilizar este sistema, usted acepta los siguientes términos y condiciones. 
                 Por favor, léalos cuidadosamente antes de continuar usando la aplicación.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Descargo de no afiliación */}
+        <div className="bg-gradient-to-r from-red-500/10 to-orange-500/10 rounded-xl border border-red-500/30 p-6 mb-8">
+          <div className="flex items-start gap-3">
+            <div className="w-10 h-10 bg-red-500/20 rounded-lg flex items-center justify-center flex-shrink-0">
+              <Shield className="h-5 w-5 text-red-400" />
+            </div>
+            <div>
+              <h2 className="text-lg font-bold text-white mb-2">Descargo de Responsabilidad — Sin Afiliación</h2>
+              <p className="text-sm text-slate-300">
+                Este sitio <strong>NO tiene ninguna relación, afiliación, respaldo ni conexión</strong> con 
+                jw.org, la Watch Tower Bible and Tract Society ni ninguna de sus entidades legales. No forma 
+                parte de sus sitios oficiales y no cuenta con su autorización ni aprobación. Todos los logotipos, 
+                marcas registradas y nombres mencionados pertenecen a sus respectivos propietarios. Se trata de una 
+                herramienta <strong>totalmente independiente, desarrollada por terceros ajenos</strong>, destinada 
+                únicamente a facilitar la organización administrativa interna de congregaciones locales.
               </p>
             </div>
           </div>
@@ -52,7 +72,7 @@ export default function TermsAndConditionsPage() {
             </div>
             <div className="space-y-3 text-sm text-slate-300">
               <p>
-                El sistema <strong>"Territorios App"</strong> es una herramienta de gestión proporcionada 
+                El sistema <strong>"Recursos App"</strong> es una herramienta de gestión proporcionada 
                 <strong> "TAL CUAL ES"</strong> (AS IS) sin garantías de ningún tipo, ya sean expresas o implícitas.
               </p>
               <p>
@@ -62,13 +82,36 @@ export default function TermsAndConditionsPage() {
             </div>
           </section>
 
-          {/* 2. Responsabilidad sobre los Datos */}
+          {/* 2. Sin Afiliación con jw.org */}
+          <section className="bg-[#0F1729] rounded-xl border border-slate-800 p-6">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-8 h-8 bg-red-500/10 rounded-lg flex items-center justify-center">
+                <Shield className="h-4 w-4 text-red-400" />
+              </div>
+              <h2 className="text-xl font-bold text-white">2. Independencia y Ausencia de Afiliación</h2>
+            </div>
+            <div className="space-y-3 text-sm text-slate-300">
+              <p>
+                <strong>&quot;Recursos App&quot;</strong> es un desarrollo completamente independiente, creado 
+                y mantenido por <strong>terceros ajenos</strong> a jw.org, la Watch Tower Bible and Tract Society 
+                of Pennsylvania y cualquier otra entidad, corporación o asociación relacionada.
+              </p>
+              <ul className="list-disc list-inside space-y-2 ml-4">
+                <li>Este sistema <strong>no es un sitio oficial</strong> ni cuenta con aprobación, patrocinio o respaldo de jw.org o sus entidades legales.</li>
+                <li><strong>No se encuentra afiliado, asociado ni conectado</strong> de manera alguna con dichas organizaciones.</li>
+                <li>Todas las marcas, logotipos y nombres comerciales que pudieran mencionarse pertenecen a sus respectivos propietarios; su eventual mención es meramente descriptiva.</li>
+                <li>El contenido, las funcionalidades, las opiniones y la disponibilidad del sistema son responsabilidad exclusiva de sus desarrolladores independientes.</li>
+              </ul>
+            </div>
+          </section>
+
+          {/* 3. Responsabilidad sobre los Datos */}
           <section className="bg-[#0F1729] rounded-xl border border-slate-800 p-6">
             <div className="flex items-center gap-3 mb-4">
               <div className="w-8 h-8 bg-red-500/10 rounded-lg flex items-center justify-center">
                 <Database className="h-4 w-4 text-red-400" />
               </div>
-              <h2 className="text-xl font-bold text-white">2. Responsabilidad sobre los Datos</h2>
+              <h2 className="text-xl font-bold text-white">3. Responsabilidad sobre los Datos</h2>
             </div>
             <div className="space-y-3 text-sm text-slate-300">
               <p className="font-semibold text-white">
@@ -101,13 +144,13 @@ export default function TermsAndConditionsPage() {
             </div>
           </section>
 
-          {/* 3. Limitación de Responsabilidad */}
+          {/* 4. Limitación de Responsabilidad */}
           <section className="bg-[#0F1729] rounded-xl border border-slate-800 p-6">
             <div className="flex items-center gap-3 mb-4">
               <div className="w-8 h-8 bg-orange-500/10 rounded-lg flex items-center justify-center">
                 <Scale className="h-4 w-4 text-orange-400" />
               </div>
-              <h2 className="text-xl font-bold text-white">3. Limitación de Responsabilidad</h2>
+              <h2 className="text-xl font-bold text-white">4. Limitación de Responsabilidad</h2>
             </div>
             <div className="space-y-3 text-sm text-slate-300">
               <p>
@@ -124,13 +167,13 @@ export default function TermsAndConditionsPage() {
             </div>
           </section>
 
-          {/* 4. Protección de Datos y Privacidad */}
+          {/* 5. Protección de Datos y Privacidad */}
           <section className="bg-[#0F1729] rounded-xl border border-slate-800 p-6">
             <div className="flex items-center gap-3 mb-4">
               <div className="w-8 h-8 bg-purple-500/10 rounded-lg flex items-center justify-center">
                 <Shield className="h-4 w-4 text-purple-400" />
               </div>
-              <h2 className="text-xl font-bold text-white">4. Protección de Datos y Privacidad</h2>
+              <h2 className="text-xl font-bold text-white">5. Protección de Datos y Privacidad</h2>
             </div>
             <div className="space-y-3 text-sm text-slate-300">
               <p>
@@ -150,13 +193,13 @@ export default function TermsAndConditionsPage() {
             </div>
           </section>
 
-          {/* 5. Uso Apropiado */}
+          {/* 6. Uso Apropiado */}
           <section className="bg-[#0F1729] rounded-xl border border-slate-800 p-6">
             <div className="flex items-center gap-3 mb-4">
               <div className="w-8 h-8 bg-green-500/10 rounded-lg flex items-center justify-center">
                 <FileText className="h-4 w-4 text-green-400" />
               </div>
-              <h2 className="text-xl font-bold text-white">5. Uso Apropiado</h2>
+              <h2 className="text-xl font-bold text-white">6. Uso Apropiado</h2>
             </div>
             <div className="space-y-3 text-sm text-slate-300">
               <p>El usuario se compromete a:</p>
@@ -170,13 +213,13 @@ export default function TermsAndConditionsPage() {
             </div>
           </section>
 
-          {/* 6. Modificaciones */}
+          {/* 7. Modificaciones */}
           <section className="bg-[#0F1729] rounded-xl border border-slate-800 p-6">
             <div className="flex items-center gap-3 mb-4">
               <div className="w-8 h-8 bg-cyan-500/10 rounded-lg flex items-center justify-center">
                 <FileText className="h-4 w-4 text-cyan-400" />
               </div>
-              <h2 className="text-xl font-bold text-white">6. Modificaciones del Servicio</h2>
+              <h2 className="text-xl font-bold text-white">7. Modificaciones del Servicio</h2>
             </div>
             <div className="space-y-3 text-sm text-slate-300">
               <p>
@@ -190,13 +233,13 @@ export default function TermsAndConditionsPage() {
             </div>
           </section>
 
-          {/* 7. Aceptación */}
+          {/* 8. Aceptación */}
           <section className="bg-gradient-to-r from-blue-500/10 to-cyan-500/10 rounded-xl border border-blue-500/30 p-6">
             <div className="flex items-center gap-3 mb-4">
               <div className="w-8 h-8 bg-blue-500/20 rounded-lg flex items-center justify-center">
                 <Shield className="h-4 w-4 text-blue-400" />
               </div>
-              <h2 className="text-xl font-bold text-white">7. Aceptación de Términos</h2>
+              <h2 className="text-xl font-bold text-white">8. Aceptación de Términos</h2>
             </div>
             <div className="space-y-3 text-sm text-slate-300">
               <p className="font-semibold text-white">
@@ -204,6 +247,7 @@ export default function TermsAndConditionsPage() {
               </p>
               <ul className="list-disc list-inside space-y-2 ml-4">
                 <li>Ha leído, comprendido y aceptado estos términos y condiciones.</li>
+                <li>Reconoce que este sistema es un desarrollo independiente de terceros, sin afiliación con jw.org ni sus entidades legales.</li>
                 <li>Es consciente de las limitaciones y riesgos del sistema.</li>
                 <li>Asume toda la responsabilidad sobre el resguardo de sus datos.</li>
                 <li>Exime a Zeta Dev de cualquier responsabilidad relacionada con el uso del sistema.</li>

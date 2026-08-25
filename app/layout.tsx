@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import Script from "next/script";
 import { Toaster } from "react-hot-toast";
 import { ThemeInit } from "@/components/theme/theme-init";
 import "./globals.css";
@@ -70,7 +69,6 @@ export default function RootLayout({
       </head>
       <body className="min-h-screen antialiased">
         <ThemeInit />
-        <Script src="https://js.puter.com/v2/" strategy="afterInteractive" />
         {children}
         <Toaster
           position="top-right"

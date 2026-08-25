@@ -19,38 +19,46 @@ El copiloto de territorios permite hacer consultas en lenguaje natural sobre:
 1. **`components/ai/copilot-territorios-chat.tsx`**
    - Componente React del chat flotante
    - Interfaz de usuario con botón flotante y ventana de chat
-   - Integración con Puter.js para ejecutar el modelo de IA (Grok/Llama)
-   - Manejo de tool calling (llamadas a herramientas)
+   - Toda la lógica de conversación vive en el hook compartido `components/ai/use-copilot-chat.ts`
 
 2. **`services/ai-tools-territorios.service.ts`**
    - Funciones de solo lectura que consultan la base de datos
    - Cada función es una "herramienta" que la IA puede invocar
    - Todas las consultas están aisladas por `tenantId` (multinquilino)
 
-3. **`app/api/ai/query-territorios/route.ts`**
-   - Endpoint API seguro: `POST /api/ai/query-territorios`
-   - Valida autenticación y aislamiento por congregación
-   - Lista blanca estricta de herramientas (no ejecuta SQL arbitrario)
-   - Esquema de validación con Zod
+3. **`app/api/ai/chat/route.ts`**
+   - Endpoint unificado: `POST /api/ai/chat` con `{ module: "vymc" | "territorios", messages }`
+   - Valida autenticación, aplica rate limiting diario y corre el loop de tool calling completo del lado del servidor
+   - Ejecuta las herramientas directamente contra los services (sin HTTP intermedio)
+
+4. **`lib/ai/openrouter.ts`**
+   - Cliente server-only de OpenRouter (API compatible con OpenAI)
+   - Cadena de fallback entre modelos configurables (`OPENROUTER_MODEL` + `OPENROUTER_FALLBACK_MODELS`)
+   - Timeout por request y logs de fallos por modelo
+
+5. **`lib/ai/copilot-config.ts`**
+   - Definiciones de herramientas (formato OpenAI) y system prompts por módulo (variables server-only)
+   - Ejecutores de herramientas con validación Zod
+
+6. **`lib/ai/rate-limit.ts`**
+   - Límite diario por usuario (`AI_USER_DAILY_LIMIT`) y global (`AI_GLOBAL_DAILY_LIMIT`) en memoria, reseteo diario UTC
 
 ### Flujo de datos
 
 ```
 Usuario escribe pregunta
     ↓
-CopilotTerritoriosChat (navegador)
+CopilotTerritoriosChat → POST /api/ai/chat { module: "territorios", messages }
     ↓
-Puter.js ejecuta modelo IA (Grok/Llama)
+Endpoint valida sesión + rate limit
+    ↓
+Servidor llama a OpenRouter (modelo con tool calling)
     ↓
 IA decide qué herramienta(s) invocar
     ↓
-CopilotTerritoriosChat → POST /api/ai/query-territorios
+Endpoint ejecuta la tool contra ai-tools-territorios.service (solo lectura, tenantId de sesión)
     ↓
-Endpoint valida sesión + herramienta
-    ↓
-ai-tools-territorios.service consulta BD (solo lectura)
-    ↓
-Resultado JSON → IA → Respuesta en lenguaje natural
+Resultados JSON vuelven al modelo → Respuesta final en lenguaje natural
 ```
 
 ## Herramientas disponibles
@@ -135,13 +143,22 @@ Ninguno
 
 ### Variables de entorno
 
-Agregar en `.env`:
+Agregar en `.env` (server-only, no se exponen al navegador):
 
 ```env
-NEXT_PUBLIC_COPILOT_TERRITORIOS_SYSTEM_PROMPT="Eres un asistente experto en gestión de territorios de predicación. Hoy es {{TODAY}}. Usa las herramientas disponibles para consultar información sobre territorios, asignaciones, publicadores, grupos y estadísticas. Responde de forma concisa, profesional y útil en español."
+OPENROUTER_API_KEY="sk-or-v1-..."
+OPENROUTER_MODEL="meta-llama/llama-3.3-70b-instruct:free"
+OPENROUTER_FALLBACK_MODELS="qwen/qwen3-coder-480b-a35b-instruct:free,openai/gpt-oss-20b:free,openrouter/free"
+AI_USER_DAILY_LIMIT=6
+AI_GLOBAL_DAILY_LIMIT=40
+AI_COPILOT_TERRITORIOS_SYSTEM_PROMPT="Eres un asistente experto en gestión de territorios de predicación. Hoy es {{TODAY}}. Usa las herramientas disponibles para consultar información sobre territorios, asignaciones, publicadores, grupos y estadísticas. Responde de forma concisa, profesional y útil en español."
 ```
 
-El placeholder `{{TODAY}}` se reemplaza automáticamente con la fecha actual.
+Notas:
+- El placeholder `{{TODAY}}` se reemplaza automáticamente con la fecha actual.
+- Los modelos `:free` de OpenRouter rotan constantemente y a veces no soportan tools: por eso la cadena de fallbacks es importante. Verificar disponibilidad en openrouter.ai/models.
+- Los endpoints `:free` pueden registrar los prompts enviados. No enviar información sensible más allá de los nombres ya presentes en el sistema.
+- Sin créditos en OpenRouter el límite es 50 requests/día (20/min); con USD 10 cargados una sola vez sube a 1000/día. Cada mensaje del copiloto puede consumir varias llamadas (loop de tools, máx. 4).
 
 ### Integración con AppLayout
 
@@ -166,8 +183,9 @@ const isTerritoriosModule = pathname?.startsWith('/territorios')
 
 ### Límites
 
-- 6 iteraciones máximas por conversación (previene loops infinitos)
-- Timeout de 120 segundos en consultas
+- 4 llamadas máximas al modelo por mensaje (3 rondas de tools + respuesta final)
+- Límite diario de mensajes por usuario y global (rate limiting en memoria)
+- Timeout de 45 segundos por request a OpenRouter
 - Validación de rangos numéricos (ej: territorio entre 1-9999)
 - Validación de longitud de strings
 
@@ -198,31 +216,30 @@ const isTerritoriosModule = pathname?.startsWith('/territorios')
 | Aspecto | Copiloto VYMC | Copiloto Territorios |
 |---------|---------------|---------------------|
 | **Ruta** | `/vymc/*` | `/territorios/*` |
-| **Color** | Azul (`#2C5282`) | Verde (`#059669`) |
-| **Endpoint** | `/api/ai/query-db` | `/api/ai/query-territorios` |
+| **Color** | Azul (`#2C5282`) | Rojo (`#DC2626`) |
+| **Endpoint** | `POST /api/ai/chat` (`module: "vymc"`) | `POST /api/ai/chat` (`module: "territorios"`) |
 | **Herramientas** | 4 herramientas (publicadores, semanas, estadísticas) | 5 herramientas (territorios, asignaciones, estadísticas) |
-| **Prompt** | `NEXT_PUBLIC_COPILOT_SYSTEM_PROMPT` | `NEXT_PUBLIC_COPILOT_TERRITORIOS_SYSTEM_PROMPT` |
+| **Prompt** | `AI_COPILOT_SYSTEM_PROMPT` | `AI_COPILOT_TERRITORIOS_SYSTEM_PROMPT` |
 
 ## Mantenimiento
 
 ### Agregar nuevas herramientas
 
-1. Crear función en `ai-tools-territorios.service.ts`
-2. Agregar validación en `query-territorios/route.ts`
-3. Agregar definición de herramienta en `copilot-territorios-chat.tsx`
+1. Crear función en el service correspondiente (`ai-tools-territorios.service.ts`)
+2. Agregar definición de herramienta y schema Zod en `lib/ai/copilot-config.ts`
+3. Conectarla en `executeCopilotTool`
 4. Actualizar documentación
 
 ### Debugging
 
 Logs disponibles en:
-- Cliente: Consola del navegador
-- Servidor: `console.error` en `/api/ai/query-territorios`
+- Servidor: `console.warn`/`console.error` en `/api/ai/chat` y `[openrouter]` por cada modelo que falla
+- Cliente: mensajes de error dentro del propio chat
 
 ## Tecnologías
 
-- **Next.js 15**: Framework y API routes
-- **Puter.js**: SDK para ejecutar IA en el navegador (sin API keys)
-- **Grok/Llama 4**: Modelo de lenguaje con tool calling
+- **Next.js**: Framework y API routes
+- **OpenRouter**: Gateway de LLMs (API compatible con OpenAI), modelos free con fallback automático entre modelos
 - **Prisma**: ORM para consultas a base de datos
 - **Zod**: Validación de esquemas
 - **TypeScript**: Type safety en toda la aplicación
@@ -259,9 +276,10 @@ Logs disponibles en:
 ### Limitaciones conocidas
 
 - La IA puede incluir información no solicitada (se está refinando el comportamiento)
-- Máximo 6 iteraciones de consulta por conversación
+- Máximo 4 llamadas al modelo por mensaje
 - No puede modificar datos (solo consulta)
 - No tiene acceso a información fuera de la base de datos de territorios
+- Sujeto a los límites del free tier de OpenRouter (rotación de modelos, throttling en picos)
 
 ### Tips
 

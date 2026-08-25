@@ -30,7 +30,6 @@ import {
 } from "lucide-react";
 import toast from "react-hot-toast";
 import {
-  generateAiGrokMessage,
   generateTemplateMessage,
   createWhatsAppUrl,
   MessageTone,
@@ -94,21 +93,30 @@ export function WhatsAppShareDialog({
 
   if (!data) return null;
 
-  // Generar mensaje con IA Grok
+  // Generar mensaje con IA (OpenRouter, server-side) con plantilla de respaldo
   const handleGenerateAiMessage = async (selectedTone: MessageTone = tone) => {
     setIsGenerating(true);
     try {
-      const aiText = await generateAiGrokMessage({
-        ...data,
-        tone: selectedTone,
+      const res = await fetch("/api/ai/whatsapp-message", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ...data, tone: selectedTone }),
       });
-      setMessage(aiText);
-      toast.success("Mensaje redactado con IA");
-    } catch (error) {
-      const reason = error instanceof Error ? error.message : "error desconocido";
-      toast.error(`IA no disponible (${reason}). Usando plantilla estándar`, {
-        duration: 5000,
-      });
+      const result = await res.json().catch(() => null);
+
+      if (!res.ok || !result?.message) {
+        throw new Error(result?.error ?? "error desconocido");
+      }
+
+      setMessage(result.message);
+      if (result.source === "ai") {
+        toast.success("Mensaje redactado con IA");
+      } else {
+        toast.error("IA no disponible. Usando plantilla estándar", {
+          duration: 5000,
+        });
+      }
+    } catch {
       setMessage(generateTemplateMessage({ ...data, tone: selectedTone }));
     } finally {
       setIsGenerating(false);

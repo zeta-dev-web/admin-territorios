@@ -1,5 +1,4 @@
 import { getAllTerritoriesForAdmin, getAllGroups } from '@/server'
-import { AppLayout } from '@/components/common/AppLayout'
 import { TerritoriesPageClient } from '@/components/admin/TerritoriesPageClient'
 
 export const dynamic = 'force-dynamic'
@@ -17,16 +16,14 @@ export default async function TerritoriesPage() {
   const totalBlocks = territoriesResult.success ? territoriesResult.totalBlocks : 0
 
   return (
-    <AppLayout title="Territorios">
-      <div className="p-6 space-y-6">
-        <TerritoriesPageClient
-          territories={territories}
-          groups={groups}
-          total={total}
-          territoriesWithAssignments={territoriesWithAssignments}
-          totalBlocks={totalBlocks}
-        />
-      </div>
-    </AppLayout>
+    <div className="p-6 space-y-6">
+      <TerritoriesPageClient
+        territories={territories}
+        groups={groups}
+        total={total}
+        territoriesWithAssignments={territoriesWithAssignments}
+        totalBlocks={totalBlocks}
+      />
+    </div>
   )
 }

@@ -1,6 +1,7 @@
 /**
- * Servicio de Generación de Mensajes de WhatsApp con IA (Grok / Puter.js)
- * y plantillas de respaldo para el Sistema VYMC.
+ * Plantillas de mensajes de WhatsApp para el Sistema VYMC.
+ * La redacción con IA vive en el endpoint /api/ai/whatsapp-message (OpenRouter)
+ * y usa estas plantillas como respaldo.
  */
 
 export type MessageTone = "FRATERNAL" | "FORMAL" | "REMINDER";
@@ -8,7 +9,7 @@ export type MessageTone = "FRATERNAL" | "FORMAL" | "REMINDER";
 export type AssignmentMessageParams = {
   publisherName: string;
   gender: "MALE" | "FEMALE";
-  role: string;
+  role?: string;
   roleLabel: string;
   partTitle: string;
   sectionTitle: string;
@@ -80,15 +81,6 @@ export function generateTemplateMessage(params: AssignmentMessageParams): string
   );
 }
 
-type PuterGlobal = {
-  ai?: {
-    chat?: (
-      prompt: string,
-      options?: Record<string, unknown>
-    ) => Promise<unknown>;
-  };
-};
-
 export type MonthlyAssignmentEntry = {
   dateLabel: string;
   partTitle: string;
@@ -141,99 +133,6 @@ export function generateMonthlySummaryMessage(
     `${list}\n\n` +
     `Que Jehová bendiga su preparación para cada parte.`
   );
-}
-
-/**
- * Generador con IA Grok a través de Puter.js (en el navegador)
- */
-export async function generateAiGrokMessage(
-  params: AssignmentMessageParams
-): Promise<string> {
-  const {
-    publisherName,
-    gender,
-    roleLabel,
-    partTitle,
-    sectionTitle,
-    weekRangeText,
-    durationMinutes,
-    helperName,
-    assignedName,
-    tone = "FRATERNAL",
-  } = params;
-
-  const prefix = gender === "MALE" ? "hermano" : "hermana";
-  const durationText = durationMinutes ? `${durationMinutes} minutos` : "no especificada";
-
-  const toneInstructions = {
-    FRATERNAL: process.env.NEXT_PUBLIC_WHATSAPP_PROMPT_FRATERNAL,
-    FORMAL: process.env.NEXT_PUBLIC_WHATSAPP_PROMPT_FORMAL,
-    REMINDER: process.env.NEXT_PUBLIC_WHATSAPP_PROMPT_REMINDER,
-  }[tone];
-
-  if (!toneInstructions) {
-    throw new Error(`Falta configurar NEXT_PUBLIC_WHATSAPP_PROMPT_${tone} en .env`);
-  }
-
-  const prompt = `
-Eres un asistente teocrático para la congregación de los Testigos de Jehová.
-Redacta un mensaje de WhatsApp para notificar a un publicador sobre su asignación en la reunión "Vida y Ministerio Cristianos".
-
-Datos de la asignación:
-- Destinatario: ${prefix} ${publisherName}
-- Género: ${gender === "MALE" ? "Varón" : "Mujer"}
-- Semana de la reunión: ${weekRangeText}
-- Sección de la reunión: ${sectionTitle}
-- Título de la parte: ${partTitle}
-- Rol: ${roleLabel}
-- Tiempo de duración: ${durationText}
-${helperName ? `- Ayudante con quien presenta la parte: ${helperName}` : ""}
-${assignedName ? `- Asignado principal de la parte: ${assignedName}` : ""}
-
-Instrucciones de formato y estilo:
-- ${toneInstructions}
-- Usa formato de WhatsApp con asteriscos para negritas (ej: *Semana del...*, *Parte:*).
-- Organiza el mensaje en líneas cortas y separa saludo, detalles de la asignación y despedida con líneas en blanco.
-- Incluye siempre los datos disponibles: semana, sección, parte, rol, duración y compañero o asignado principal cuando corresponda.
-- Conserva literalmente estas etiquetas: *Semana del*, *Sección de la reunión*, *Parte*, *Rol*, *Duración* y *Asignado principal*.
-- Respeta exactamente la cantidad y ubicación de emojis indicada por el prompt del tono; no agregues emojis por iniciativa propia.
-- No inventes frases, títulos ni datos que no estén incluidos en la información recibida.
-- Sé claro, preciso y respetuoso.
-- Devuelve ÚNICAMENTE el texto listo para enviar por WhatsApp, sin explicaciones ni comillas al inicio o final.
-`.trim();
-
-  try {
-    // Verificar si Puter está disponible en el objeto global del navegador
-    const puter =
-      typeof window !== "undefined"
-        ? (window as unknown as { puter?: PuterGlobal }).puter
-        : undefined;
-
-    if (puter?.ai?.chat) {
-      const response = await puter.ai.chat(prompt, {
-        model: "meta-llama/llama-4-maverick",
-      });
-
-      const responseObj = response as {
-        message?: { content?: string };
-        text?: string;
-      } | null;
-
-      const messageContent =
-        typeof response === "string"
-          ? response
-          : responseObj?.message?.content || responseObj?.text || "";
-
-      if (messageContent && messageContent.trim().length > 20) {
-        return messageContent.trim();
-      }
-    }
-  } catch (error) {
-    console.warn("Puter Grok AI no disponible o tardó demasiado, usando plantilla estructurada:", error);
-  }
-
-  // Fallback garantizado e instantáneo
-  return generateTemplateMessage(params);
 }
 
 /**

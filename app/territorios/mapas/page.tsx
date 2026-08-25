@@ -1,4 +1,3 @@
-import { AppLayout } from '@/components/common/AppLayout'
 import { MapsPageClient } from '@/components/admin/MapsPageClient'
 import { getAllMaps, getAllGroups } from '@/server'
 
@@ -11,11 +10,9 @@ export default async function MapsPage() {
   ])
 
   return (
-    <AppLayout title="Mapas de Territorios">
-      <MapsPageClient
-        initialMaps={mapsResult.data}
-        groups={groupsResult.success ? groupsResult.data : []}
-      />
-    </AppLayout>
+    <MapsPageClient
+      initialMaps={mapsResult.data}
+      groups={groupsResult.success ? groupsResult.data : []}
+    />
   )
 }

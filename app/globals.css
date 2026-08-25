@@ -20,7 +20,17 @@
   }
 }
 
-/* Scrollbar oscuro personalizado */
+/* Ocultar scrollbar pero mantener funcionalidad */
+* {
+  scrollbar-width: none !important; /* Firefox */
+  -ms-overflow-style: none !important; /* IE/Edge */
+}
+
+*::-webkit-scrollbar {
+  display: none !important; /* Chrome/Safari/Opera */
+}
+
+/* Scrollbar oscuro personalizado (oculto por defecto) */
 ::-webkit-scrollbar {
   width: 8px;
   height: 8px;
@@ -153,7 +163,6 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover {
 .vymc-theme {
   background: var(--vymc-background);
   color: var(--vymc-foreground);
-  min-height: 100vh;
 }
 
 .vymc-theme *,
@@ -571,7 +580,6 @@ html[data-theme='light'] .terms-page [class~='bg-blue-500'][class~='text-white']
 
   background: var(--vymc-background);
   color: var(--vymc-foreground);
-  min-height: 100vh;
 }
 
 [data-theme='dark'] .vymc-theme {

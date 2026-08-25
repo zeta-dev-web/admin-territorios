@@ -1,4 +1,3 @@
-import { AppLayout } from '@/components/common/AppLayout'
 import { PublishersView } from "@/components/vymc/publishers/publishers-view";
 
 /**
@@ -7,10 +6,8 @@ import { PublishersView } from "@/components/vymc/publishers/publishers-view";
  */
 export default function TerritoriesPublishersPage() {
   return (
-    <AppLayout title="Publicadores">
-      <div className="p-6">
-        <PublishersView />
-      </div>
-    </AppLayout>
+    <div className="p-6">
+      <PublishersView />
+    </div>
   );
 }

@@ -17,7 +17,6 @@ import {
   UserCircle,
   Users,
 } from 'lucide-react'
-import { AppLayout } from '@/components/common/AppLayout'
 
 const VIDEO_URL = 'https://www.image2url.com/r2/default/videos/1784995980517-d2e7a08f-9314-4ba9-9dfc-b44ddfe9e620.mp4'
 
@@ -217,8 +216,7 @@ export default function TutorialPage() {
   const SelectedIcon = selected.icon
 
   return (
-    <AppLayout title="Tutorial">
-      <div className="mx-auto max-w-7xl space-y-5 p-4 sm:p-6 lg:p-8">
+    <div className="mx-auto max-w-7xl space-y-5 p-4 sm:p-6 lg:p-8">
         <header className="relative overflow-hidden rounded-3xl border border-blue-400/20 bg-[#0F1729] px-6 py-7 shadow-2xl shadow-black/20 sm:px-8">
           <div className="absolute -right-16 -top-24 h-64 w-64 rounded-full bg-blue-500/20 blur-3xl" />
           <div className="absolute -bottom-28 left-1/3 h-56 w-56 rounded-full bg-cyan-400/10 blur-3xl" />
@@ -405,6 +403,5 @@ export default function TutorialPage() {
           )}
         </section>
       </div>
-    </AppLayout>
   )
 }

@@ -97,7 +97,7 @@ export function InicioDashboard({
   }, [])
 
   return (
-    <div className="relative min-h-screen overflow-hidden bg-[#0A0F1C] text-white">
+    <div className="relative flex min-h-screen flex-col overflow-hidden bg-[#0A0F1C] text-white">
       {/* Estrellas que siguen al cursor */}
       <StarTrail />
 
@@ -124,7 +124,7 @@ export function InicioDashboard({
         className="absolute -bottom-40 -left-32 h-[26rem] w-[26rem] rounded-full bg-cyan-500/10 blur-[130px]"
       />
 
-      <div className="relative mx-auto flex min-h-screen w-full max-w-5xl flex-col px-5 py-6 sm:px-8">
+      <div className="relative mx-auto flex w-full max-w-5xl flex-1 flex-col px-5 py-6 sm:px-8">
         {/* Barra superior */}
         <header className="inicio-enter flex items-center justify-between">
           <div className="flex items-center gap-3">

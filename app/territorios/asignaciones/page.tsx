@@ -1,5 +1,4 @@
 import { getAllUnifiedAssignmentsForAdmin } from '@/server'
-import { AppLayout } from '@/components/common/AppLayout'
 import { AssignmentsPageClient } from '@/components/admin/AssignmentsPageClient'
 
 export const dynamic = 'force-dynamic'
@@ -13,16 +12,14 @@ export default async function AssignmentsPage() {
   const uniqueTerritories = result.success ? result.uniqueTerritories : 0
 
   return (
-    <AppLayout title="Asignaciones">
-      <div className="p-6 space-y-6">
-        <AssignmentsPageClient
-          assignments={assignments}
-          total={total}
-          conductorCount={conductorCount}
-          personalCount={personalCount}
-          uniqueTerritories={uniqueTerritories}
-        />
-      </div>
-    </AppLayout>
+    <div className="p-6 space-y-6">
+      <AssignmentsPageClient
+        assignments={assignments}
+        total={total}
+        conductorCount={conductorCount}
+        personalCount={personalCount}
+        uniqueTerritories={uniqueTerritories}
+      />
+    </div>
   )
 }
