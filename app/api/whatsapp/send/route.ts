@@ -45,7 +45,12 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const item = enqueueMessage({ phone: normalized, message, recipientLabel });
+    const item = enqueueMessage({ 
+      phone: normalized, 
+      message, 
+      recipientLabel,
+      userId: session.userId 
+    });
 
     return NextResponse.json(
       {

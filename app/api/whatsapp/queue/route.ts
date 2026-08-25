@@ -19,16 +19,21 @@ export async function GET() {
       return NextResponse.json({ error: "No autorizado" }, { status: 401 });
     }
 
-    const items = getQueueSnapshot().map((item) => ({
-      id: item.id,
-      phone: item.phone,
-      recipientLabel: item.recipientLabel ?? null,
-      preview: item.message.slice(0, 140),
-      status: item.status,
-      error: item.error ?? null,
-      createdAt: item.createdAt.toISOString(),
-      sentAt: item.sentAt?.toISOString() ?? null,
-    }));
+    const allItems = getQueueSnapshot();
+    
+    // Admin ve todos, usuario normal solo los suyos
+    const isAdmin = session.role === 'ADMIN';
+    const items = (isAdmin ? allItems : allItems.filter(item => item.userId === session.userId))
+      .map((item) => ({
+        id: item.id,
+        phone: item.phone,
+        recipientLabel: item.recipientLabel ?? null,
+        preview: item.message.slice(0, 140),
+        status: item.status,
+        error: item.error ?? null,
+        createdAt: item.createdAt.toISOString(),
+        sentAt: item.sentAt?.toISOString() ?? null,
+      }));
 
     return NextResponse.json({ items });
   } catch (error) {

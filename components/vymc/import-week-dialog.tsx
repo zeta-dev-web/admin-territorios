@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { AlertCircle, CheckCircle2, Download, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { DatePicker } from "@/components/ui/calendar";
 import { Label } from "@/components/ui/label";
 import {
   Dialog,
@@ -44,9 +44,7 @@ type ImportWeekDialogProps = {
 
 export function ImportWeekDialog({ open, onOpenChange, onImported }: ImportWeekDialogProps) {
   const router = useRouter();
-  const [createDate, setCreateDate] = useState(
-    getNearestMonday(new Date()).toISOString().split("T")[0]
-  );
+  const [selectedDate, setSelectedDate] = useState<Date>(getNearestMonday(new Date()));
   const [isScraping, setIsScraping] = useState(false);
   const [scrapeResult, setScrapeResult] = useState<ScrapeResult | null>(null);
   const [scrapeError, setScrapeError] = useState<string | null>(null);
@@ -55,7 +53,7 @@ export function ImportWeekDialog({ open, onOpenChange, onImported }: ImportWeekD
   // Reset the dialog state every time it is opened
   useEffect(() => {
     if (open) {
-      setCreateDate(getNearestMonday(new Date()).toISOString().split("T")[0]);
+      setSelectedDate(getNearestMonday(new Date()));
       setScrapeResult(null);
       setScrapeError(null);
     }
@@ -66,6 +64,7 @@ export function ImportWeekDialog({ open, onOpenChange, onImported }: ImportWeekD
     setScrapeError(null);
     setScrapeResult(null);
     try {
+      const createDate = selectedDate.toISOString().split("T")[0];
       const d = new Date(createDate + "T12:00:00Z");
       const wkNum = getWeekNumberForDate(d);
       const yr = d.getFullYear();
@@ -93,6 +92,7 @@ export function ImportWeekDialog({ open, onOpenChange, onImported }: ImportWeekD
 
     setIsSaving(true);
     try {
+      const createDate = selectedDate.toISOString().split("T")[0];
       const d = new Date(createDate + "T12:00:00Z");
       const endDate = new Date(d);
       endDate.setDate(d.getDate() + 6);
@@ -146,17 +146,16 @@ export function ImportWeekDialog({ open, onOpenChange, onImported }: ImportWeekD
             </Label>
             <div className="flex gap-3 mt-1.5">
               <div className="flex-1">
-                <Input
-                  type="date"
-                  value={createDate}
-                  onChange={(e) => {
-                    const selected = new Date(e.target.value + "T12:00:00Z");
-                    const monday = getNearestMonday(selected);
-                    const mondayStr = monday.toISOString().split("T")[0];
-                    setCreateDate(mondayStr);
+                <DatePicker
+                  date={selectedDate}
+                  onDateChange={(date) => {
+                    if (date) {
+                      const monday = getNearestMonday(date);
+                      setSelectedDate(monday);
+                    }
                   }}
                   disabled={isScraping || isSaving}
-                  className="border-border"
+                  placeholder="Seleccionar fecha"
                 />
               </div>
               <Button
@@ -172,10 +171,12 @@ export function ImportWeekDialog({ open, onOpenChange, onImported }: ImportWeekD
               </Button>
             </div>
             <p className="text-xs text-muted-foreground/70 mt-1">
-              {(() => {
-                const d = new Date(createDate + "T12:00:00Z");
-                return `Lunes, ${d.getDate()} de ${d.toLocaleDateString("es-ES", { month: "long", timeZone: "UTC" })} de ${d.getFullYear()}`;
-              })()}
+              {new Intl.DateTimeFormat("es-ES", {
+                weekday: "long",
+                year: "numeric",
+                month: "long",
+                day: "numeric",
+              }).format(selectedDate)}
             </p>
           </div>
 

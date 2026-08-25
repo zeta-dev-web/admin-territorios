@@ -21,6 +21,7 @@ export type QueueItem = {
   error?: string;
   createdAt: Date;
   sentAt?: Date;
+  userId: string; // ID del usuario que encoló el mensaje
 };
 
 type QueueState = {
@@ -54,6 +55,7 @@ export function enqueueMessage(params: {
   phone: string;
   message: string;
   recipientLabel?: string;
+  userId: string;
 }): QueueItem {
   const state = getState();
 
@@ -74,6 +76,7 @@ export function enqueueMessage(params: {
     message: params.message,
     status: "QUEUED",
     createdAt: new Date(),
+    userId: params.userId,
   };
 
   state.items.set(item.id, item);

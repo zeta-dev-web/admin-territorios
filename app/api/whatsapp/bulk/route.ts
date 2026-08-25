@@ -309,6 +309,7 @@ export async function POST(request: NextRequest) {
         phone: publisher.phone,
         message,
         recipientLabel: `${publisher.firstName} ${publisher.lastName} · ${entries.length} asignaciones (${monthLabel})`,
+        userId: session.userId,
       });
       queued++;
     }

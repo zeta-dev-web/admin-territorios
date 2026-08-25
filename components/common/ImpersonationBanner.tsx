@@ -29,7 +29,7 @@ export function ImpersonationBanner() {
     const result = await stopImpersonating()
     if (result.success) {
       toast.success('Volviste a tu sesión de administrador')
-      window.location.href = '/territorios'
+      window.location.href = '/inicio'
     } else {
       toast.error(result.message)
       setStopping(false)
