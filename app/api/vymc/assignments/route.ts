@@ -25,7 +25,7 @@ export async function POST(request: NextRequest) {
     if (!item || item.weekSection.week.tenantId !== tenantId) {
       return NextResponse.json({ error: 'Parte no encontrada' }, { status: 404 })
     }
-    if (item.weekSection.week.weekType !== 'REGULAR') {
+    if (item.weekSection.week.weekType === 'REGIONAL_ASSEMBLY' || item.weekSection.week.weekType === 'CIRCUIT_ASSEMBLY') {
       return NextResponse.json({ error: 'Las semanas especiales no admiten asignaciones' }, { status: 400 })
     }
     if (item.assignments.some((a) => a.role === b.role)) {

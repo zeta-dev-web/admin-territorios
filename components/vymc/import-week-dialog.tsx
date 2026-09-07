@@ -48,6 +48,8 @@ const SPECIAL_WEEK_OPTIONS = [
   { value: "CIRCUIT_SUPERVISOR_VISIT", label: "Visita del sup. de circuito" },
 ] as const;
 
+const ASSEMBLY_WEEK_TYPES = ["REGIONAL_ASSEMBLY", "CIRCUIT_ASSEMBLY"] as const;
+
 export function ImportWeekDialog({ open, onOpenChange, onImported }: ImportWeekDialogProps) {
   const router = useRouter();
   const [selectedDate, setSelectedDate] = useState<Date>(getNearestMonday(new Date()));
@@ -56,6 +58,7 @@ export function ImportWeekDialog({ open, onOpenChange, onImported }: ImportWeekD
   const [scrapeResult, setScrapeResult] = useState<ScrapeResult | null>(null);
   const [scrapeError, setScrapeError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const isAssemblyWeek = ASSEMBLY_WEEK_TYPES.includes(weekType as (typeof ASSEMBLY_WEEK_TYPES)[number]);
 
   // Reset the dialog state every time it is opened
   useEffect(() => {
@@ -68,7 +71,7 @@ export function ImportWeekDialog({ open, onOpenChange, onImported }: ImportWeekD
   }, [open]);
 
   const handleScrape = async () => {
-    if (weekType !== "REGULAR") {
+    if (isAssemblyWeek) {
       setScrapeError(null);
       setScrapeResult(null);
       return;
@@ -174,7 +177,7 @@ export function ImportWeekDialog({ open, onOpenChange, onImported }: ImportWeekD
               </div>
               <Button
                 onClick={handleScrape}
-                disabled={isScraping || isSaving || weekType !== "REGULAR"}
+                disabled={isScraping || isSaving || isAssemblyWeek}
                 className="bg-primary hover:bg-primary/90 text-primary-foreground px-6 w-full sm:w-auto"
               >
                 {isScraping ? (
@@ -205,7 +208,7 @@ export function ImportWeekDialog({ open, onOpenChange, onImported }: ImportWeekD
                 day: "numeric",
               }).format(selectedDate)}
             </p>
-            {weekType !== "REGULAR" && (
+            {isAssemblyWeek && (
               <p className="mt-2 rounded-md border border-amber-300/50 bg-amber-100/60 px-3 py-2 text-sm font-medium text-amber-900">
                 Esta semana se guardará sin traer el programa ni crear asignaciones.
               </p>
@@ -223,7 +226,7 @@ export function ImportWeekDialog({ open, onOpenChange, onImported }: ImportWeekD
             </div>
           )}
 
-          {weekType !== "REGULAR" && (
+          {isAssemblyWeek && (
             <DialogFooter className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={isSaving}>Cancelar</Button>
               <Button onClick={handleSave} disabled={isSaving} className="bg-accent hover:bg-accent/90 text-accent-foreground">
@@ -232,7 +235,7 @@ export function ImportWeekDialog({ open, onOpenChange, onImported }: ImportWeekD
             </DialogFooter>
           )}
 
-          {scrapeResult && weekType === "REGULAR" && (
+          {scrapeResult && !isAssemblyWeek && (
             <>
               <div className="space-y-4 border border-border rounded-lg p-4 bg-muted">
                 <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">

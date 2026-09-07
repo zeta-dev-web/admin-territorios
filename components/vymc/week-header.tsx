@@ -6,6 +6,8 @@ import { formatDateRange } from "@/components/vymc/week-display-config";
 import { WEEK_TYPE_LABELS } from "@/components/vymc/week-display-config";
 import type { WeekType } from "@/types/week-detail";
 
+const isAssemblyWeek = (weekType: WeekType) => weekType === "REGIONAL_ASSEMBLY" || weekType === "CIRCUIT_ASSEMBLY";
+
 type WeekHeaderProps = {
   startDate: string;
   endDate: string;
@@ -29,11 +31,11 @@ export function WeekHeader({
       {weekType !== "REGULAR" && <p className="mt-1 text-sm font-semibold uppercase tracking-wide text-amber-200">{WEEK_TYPE_LABELS[weekType]}</p>}
       <Button
         onClick={onAutoAssign}
-        disabled={isAutoAssigning || weekType !== "REGULAR"}
+        disabled={isAutoAssigning || isAssemblyWeek(weekType)}
         className="mt-4 bg-white/15 hover:bg-white/25 text-white border border-white/30"
       >
         {isAutoAssigning ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Wand2 className="w-4 h-4 mr-2" />}
-        {weekType !== "REGULAR" ? "Sin asignaciones" : isAutoAssigning ? "Completando..." : "Completar automáticamente"}
+        {isAssemblyWeek(weekType) ? "Sin asignaciones" : isAutoAssigning ? "Completando..." : "Completar automáticamente"}
       </Button>
       {biblicalReading && (
         <p className="text-white/80 text-sm mt-2">

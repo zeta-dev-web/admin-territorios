@@ -32,7 +32,7 @@ export async function POST(request: NextRequest, ctx: { params: Promise<{ id: st
       },
     })
     if (!week) return NextResponse.json({ error: 'Programa no encontrado' }, { status: 404 })
-    if (week.weekType !== 'REGULAR') return NextResponse.json({ error: 'Las semanas especiales no admiten asignaciones' }, { status: 400 })
+    if (week.weekType === 'REGIONAL_ASSEMBLY' || week.weekType === 'CIRCUIT_ASSEMBLY') return NextResponse.json({ error: 'Las semanas de asamblea no admiten asignaciones' }, { status: 400 })
 
     const publishers = await prisma.publisher.findMany({
       where: { tenantId },

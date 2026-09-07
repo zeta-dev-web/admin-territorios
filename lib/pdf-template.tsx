@@ -181,6 +181,7 @@ type WeekData = {
   openingSongNumber?: number;
   closingSongNumber?: number;
   biblicalReading?: string;
+  weekType?: string;
   sections: SectionData[];
 };
 
@@ -331,6 +332,14 @@ const WeekProgram = ({
   isFirstOnPage: boolean;
 }) => {
   let itemCounter = 0;
+  const isAssemblyWeek = week.weekType === "REGIONAL_ASSEMBLY" || week.weekType === "CIRCUIT_ASSEMBLY";
+  const specialTitle = week.weekType === "REGIONAL_ASSEMBLY"
+    ? "ASAMBLEA REGIONAL"
+    : week.weekType === "CIRCUIT_ASSEMBLY"
+      ? "ASAMBLEA DE CIRCUITO"
+      : week.weekType === "CIRCUIT_SUPERVISOR_VISIT"
+        ? "VISITA DEL SUP. DE CIRCUITO"
+        : "";
   
   return (
     <View style={{ marginTop: isFirstOnPage ? 0 : 10 }}>
@@ -338,6 +347,7 @@ const WeekProgram = ({
       <View style={styles.weekTitle}>
         <Text>
           {formatDateRange(week.startDate, week.endDate)}
+          {specialTitle ? ` - ${specialTitle}` : ""}
           {week.biblicalReading ? ` | ${week.biblicalReading}` : ""}
         </Text>
         {week.presidentName && (
@@ -346,7 +356,7 @@ const WeekProgram = ({
       </View>
 
       {/* Opening Song and Prayer */}
-      <View style={styles.songRow}>
+      {!isAssemblyWeek && <View style={styles.songRow}>
         <View style={{ flex: 1 }}>
           <Text>●Canción {week.openingSongNumber || "[Número]"}</Text>
         </View>
@@ -355,14 +365,14 @@ const WeekProgram = ({
             <Text>Oración: {week.openingPrayerName}</Text>
           </View>
         )}
-      </View>
+      </View>}
 
       {/* Introduction */}
-      <View style={styles.timeRow}>
+      {!isAssemblyWeek && <View style={styles.timeRow}>
         <View style={{ flex: 1 }}>
           <Text>●Palabras de introducción (1 min.)</Text>
         </View>
-      </View>
+      </View>}
 
       {/* Sections */}
       {week.sections.map((section, sectionIndex) => {

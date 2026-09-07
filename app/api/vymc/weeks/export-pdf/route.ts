@@ -104,6 +104,7 @@ export async function POST(request: NextRequest) {
         openingSongNumber,
         closingSongNumber,
         biblicalReading: week.biblicalReading ?? undefined,
+        weekType: week.weekType,
         sections: week.sections.map((section) => ({
           sectionType: section.sectionType,
           title: section.sectionType,

@@ -50,8 +50,8 @@ export async function PUT(request: NextRequest, ctx: { params: Promise<{ id: str
 
     const week = await prisma.week.findFirst({ where: { id, tenantId } })
     if (!week) return NextResponse.json({ error: 'Semana no encontrada' }, { status: 404 })
-    if (week.weekType !== 'REGULAR') {
-      return NextResponse.json({ error: 'Las semanas especiales no admiten asignaciones' }, { status: 400 })
+    if (week.weekType === 'REGIONAL_ASSEMBLY' || week.weekType === 'CIRCUIT_ASSEMBLY') {
+      return NextResponse.json({ error: 'Las semanas de asamblea no admiten asignaciones' }, { status: 400 })
     }
 
     const data: Record<string, string | null> = {}
