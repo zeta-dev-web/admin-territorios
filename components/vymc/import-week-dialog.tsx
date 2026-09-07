@@ -161,8 +161,8 @@ export function ImportWeekDialog({ open, onOpenChange, onImported }: ImportWeekD
             <Label className="text-foreground font-medium">
               Lunes de la semana
             </Label>
-            <div className="flex flex-col gap-3 mt-1.5 sm:flex-row sm:items-start">
-              <div className="flex-1">
+            <div className="mt-1.5 grid grid-cols-1 gap-3 sm:grid-cols-[minmax(0,1.25fr)_minmax(170px,1fr)_minmax(170px,1fr)] sm:items-end">
+              <div className="min-w-0">
                 <DatePicker
                   date={selectedDate}
                   onDateChange={(date) => {
@@ -178,7 +178,7 @@ export function ImportWeekDialog({ open, onOpenChange, onImported }: ImportWeekD
               <Button
                 onClick={handleScrape}
                 disabled={isScraping || isSaving || isAssemblyWeek}
-                className="bg-primary hover:bg-primary/90 text-primary-foreground px-6 w-full sm:w-auto"
+                className="w-full whitespace-nowrap bg-primary px-2.5 text-sm text-primary-foreground hover:bg-primary/90"
               >
                 {isScraping ? (
                   <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Obteniendo programa...</>
@@ -186,14 +186,14 @@ export function ImportWeekDialog({ open, onOpenChange, onImported }: ImportWeekD
                   <><Download className="w-4 h-4 mr-2" /> Obtener programa</>
                 )}
               </Button>
-              <div className="sm:w-64">
+              <div className="min-w-0">
                 <Label htmlFor="week-type" className="text-foreground font-medium">Tipo de semana</Label>
                 <select
                   id="week-type"
                   value={weekType}
                   onChange={(event) => setWeekType(event.target.value as typeof weekType)}
                   disabled={isScraping || isSaving}
-                  className="mt-1.5 h-10 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground"
+                  className="mt-1.5 h-10 w-full min-w-0 rounded-md border border-input bg-background px-3 text-sm text-foreground"
                 >
                   <option value="REGULAR">Semana normal</option>
                   {SPECIAL_WEEK_OPTIONS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
