@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Calendar, ChevronDown, ChevronRight, Trash2 } from "lucide-react";
-import { formatWeekRangeLabel } from "@/components/vymc/week-display-config";
+import { formatWeekRangeLabel, WEEK_TYPE_LABELS } from "@/components/vymc/week-display-config";
 import type { WeekSummary } from "@/types/week-detail";
 
 type WeeksTableProps = {
@@ -98,6 +98,11 @@ export function WeeksTable({ weeks, onSelectWeek, onDeleteWeek }: WeeksTableProp
                           <p className="font-semibold text-card-foreground">
                             Semana del {startDay}-{endDay} de {month}
                           </p>
+                          {week.weekType !== "REGULAR" && (
+                            <p className="mt-1 text-sm font-semibold uppercase tracking-wide text-amber-700">
+                              {WEEK_TYPE_LABELS[week.weekType]}
+                            </p>
+                          )}
                           {week.biblicalReading && (
                             <p className="text-sm text-muted-foreground mt-0.5">
                               📖 {week.biblicalReading}

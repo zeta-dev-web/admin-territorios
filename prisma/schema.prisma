@@ -340,6 +340,13 @@ enum ItemType {
   PRAYER
 }
 
+enum WeekType {
+  REGULAR
+  REGIONAL_ASSEMBLY
+  CIRCUIT_ASSEMBLY
+  CIRCUIT_SUPERVISOR_VISIT
+}
+
 enum AssignmentRole {
   ASSIGNEE
   STUDENT
@@ -358,6 +365,7 @@ model Week {
   presidentId     String?
   openingPrayerId String?
   biblicalReading String?
+  weekType        WeekType  @default(REGULAR)
   scrapedAt       DateTime?
   isConfirmed     Boolean   @default(false)
   createdAt       DateTime  @default(now())

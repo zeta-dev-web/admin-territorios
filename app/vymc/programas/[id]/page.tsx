@@ -516,6 +516,7 @@ export default function WeekDetailPage() {
         startDate={week.startDate}
         endDate={week.endDate}
         biblicalReading={week.biblicalReading}
+        weekType={week.weekType}
         isAutoAssigning={isAutoAssigning}
         onAutoAssign={handleAutoAssign}
       />
@@ -525,6 +526,14 @@ export default function WeekDetailPage() {
         </div>
       )}
 
+      {week.weekType !== "REGULAR" && (
+        <div className="rounded-xl border border-amber-300/60 bg-amber-50 px-5 py-4 text-amber-900">
+          <p className="font-semibold">Semana especial</p>
+          <p className="mt-1 text-sm">No se trae programa y no se realizan asignaciones para esta semana.</p>
+        </div>
+      )}
+
+      {week.weekType === "REGULAR" && <>
       {/* Presidencia */}
       <Card className="border overflow-hidden">
         <div className="px-5 py-2.5 bg-card border-gray-200">
@@ -606,6 +615,7 @@ export default function WeekDetailPage() {
             />
           ))}
       </div>
+      </>}
 
       {/* Assign Dialog */}
       <AssignmentDialog

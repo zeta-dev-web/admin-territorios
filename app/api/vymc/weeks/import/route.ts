@@ -10,7 +10,8 @@ export async function POST(request: NextRequest) {
     const tenantId = await getCurrentTenantId()
     const b = await request.json()
 
-    if (!Number.isInteger(b.weekNumber) || !Number.isInteger(b.year) || !b.startDate || !Array.isArray(b.sections)) {
+    const validWeekTypes = ['REGULAR', 'REGIONAL_ASSEMBLY', 'CIRCUIT_ASSEMBLY', 'CIRCUIT_SUPERVISOR_VISIT']
+    if (!Number.isInteger(b.weekNumber) || !Number.isInteger(b.year) || !b.startDate || !Array.isArray(b.sections) || !validWeekTypes.includes(b.weekType ?? 'REGULAR')) {
       return NextResponse.json({ error: 'Payload incompleto' }, { status: 400 })
     }
 
@@ -24,6 +25,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    const weekType = b.weekType ?? 'REGULAR'
     const total = b.sections.length
     const week = await prisma.week.create({
       data: {
@@ -32,9 +34,10 @@ export async function POST(request: NextRequest) {
         startDate: new Date(b.startDate),
         endDate: new Date(b.endDate),
         biblicalReading: b.biblicalReading ?? null,
+        weekType,
         scrapedAt: new Date(),
         tenantId,
-        sections: {
+        sections: weekType === 'REGULAR' ? {
           create: [
             {
               sectionType: 'PRESIDENT', order: 0,
@@ -59,7 +62,7 @@ export async function POST(request: NextRequest) {
               items: { create: [{ title: 'Oración final', itemType: 'PRAYER', order: 1 }] },
             },
           ],
-        },
+        } : undefined,
       },
       include: { sections: { include: { items: true }, orderBy: { order: 'asc' } } },
     })

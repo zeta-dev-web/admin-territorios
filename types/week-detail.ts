@@ -48,6 +48,7 @@ export type WeekDetail = {
   isConfirmed: boolean;
   scrapedAt: string | null;
   biblicalReading: string | null;
+  weekType: WeekType;
   president: {
     id: string;
     firstName: string;
@@ -62,6 +63,12 @@ export type WeekDetail = {
   } | null;
   sections: WeekSection[];
 };
+
+export type WeekType =
+  | "REGULAR"
+  | "REGIONAL_ASSEMBLY"
+  | "CIRCUIT_ASSEMBLY"
+  | "CIRCUIT_SUPERVISOR_VISIT";
 
 export type SpecialAssignType = "president" | "prayer";
 
@@ -80,4 +87,5 @@ export type WeekSummary = {
   isConfirmed: boolean;
   scrapedAt: string | null;
   biblicalReading: string | null;
+  weekType: WeekType;
 };

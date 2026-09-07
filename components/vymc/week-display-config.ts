@@ -1,4 +1,12 @@
 import type { WeekDetail, WeekItem, WeekSection } from "@/types/week-detail";
+import type { WeekType } from "@/types/week-detail";
+
+export const WEEK_TYPE_LABELS: Record<WeekType, string> = {
+  REGULAR: "",
+  REGIONAL_ASSEMBLY: "ASAMBLEA REGIONAL",
+  CIRCUIT_ASSEMBLY: "ASAMBLEA DE CIRCUITO",
+  CIRCUIT_SUPERVISOR_VISIT: "VISITA DEL SUP. DE CIRCUITO",
+};
 
 export const SECTION_ORDER: Record<string, number> = {
   PRESIDENT: 0,

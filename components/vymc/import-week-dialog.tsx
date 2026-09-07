@@ -42,9 +42,16 @@ type ImportWeekDialogProps = {
   onImported: () => void;
 };
 
+const SPECIAL_WEEK_OPTIONS = [
+  { value: "REGIONAL_ASSEMBLY", label: "Asamblea regional" },
+  { value: "CIRCUIT_ASSEMBLY", label: "Asamblea de circuito" },
+  { value: "CIRCUIT_SUPERVISOR_VISIT", label: "Visita del sup. de circuito" },
+] as const;
+
 export function ImportWeekDialog({ open, onOpenChange, onImported }: ImportWeekDialogProps) {
   const router = useRouter();
   const [selectedDate, setSelectedDate] = useState<Date>(getNearestMonday(new Date()));
+  const [weekType, setWeekType] = useState<(typeof SPECIAL_WEEK_OPTIONS)[number]["value"] | "REGULAR">("REGULAR");
   const [isScraping, setIsScraping] = useState(false);
   const [scrapeResult, setScrapeResult] = useState<ScrapeResult | null>(null);
   const [scrapeError, setScrapeError] = useState<string | null>(null);
@@ -54,12 +61,18 @@ export function ImportWeekDialog({ open, onOpenChange, onImported }: ImportWeekD
   useEffect(() => {
     if (open) {
       setSelectedDate(getNearestMonday(new Date()));
+      setWeekType("REGULAR");
       setScrapeResult(null);
       setScrapeError(null);
     }
   }, [open]);
 
   const handleScrape = async () => {
+    if (weekType !== "REGULAR") {
+      setScrapeError(null);
+      setScrapeResult(null);
+      return;
+    }
     setIsScraping(true);
     setScrapeError(null);
     setScrapeResult(null);
@@ -88,7 +101,7 @@ export function ImportWeekDialog({ open, onOpenChange, onImported }: ImportWeekD
   };
 
   const handleSave = async () => {
-    if (!scrapeResult) return;
+    if (weekType === "REGULAR" && !scrapeResult) return;
 
     setIsSaving(true);
     try {
@@ -101,12 +114,13 @@ export function ImportWeekDialog({ open, onOpenChange, onImported }: ImportWeekD
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          weekNumber: scrapeResult.weekNumber,
-          year: scrapeResult.year,
+          weekNumber: scrapeResult?.weekNumber ?? getWeekNumberForDate(d),
+          year: scrapeResult?.year ?? d.getFullYear(),
           startDate: createDate,
           endDate: endDate.toISOString().split("T")[0],
-          biblicalReading: scrapeResult.biblicalReading,
-          sections: scrapeResult.sections,
+          biblicalReading: scrapeResult?.biblicalReading,
+          sections: scrapeResult?.sections ?? [],
+          weekType,
         }),
       });
 
@@ -160,7 +174,7 @@ export function ImportWeekDialog({ open, onOpenChange, onImported }: ImportWeekD
               </div>
               <Button
                 onClick={handleScrape}
-                disabled={isScraping || isSaving}
+                disabled={isScraping || isSaving || weekType !== "REGULAR"}
                 className="bg-primary hover:bg-primary/90 text-primary-foreground px-6 w-full sm:w-auto"
               >
                 {isScraping ? (
@@ -169,6 +183,19 @@ export function ImportWeekDialog({ open, onOpenChange, onImported }: ImportWeekD
                   <><Download className="w-4 h-4 mr-2" /> Obtener programa</>
                 )}
               </Button>
+              <div className="sm:w-64">
+                <Label htmlFor="week-type" className="text-foreground font-medium">Tipo de semana</Label>
+                <select
+                  id="week-type"
+                  value={weekType}
+                  onChange={(event) => setWeekType(event.target.value as typeof weekType)}
+                  disabled={isScraping || isSaving}
+                  className="mt-1.5 h-10 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground"
+                >
+                  <option value="REGULAR">Semana normal</option>
+                  {SPECIAL_WEEK_OPTIONS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
+                </select>
+              </div>
             </div>
             <p className="text-xs text-muted-foreground/70 mt-1">
               {new Intl.DateTimeFormat("es-ES", {
@@ -178,6 +205,11 @@ export function ImportWeekDialog({ open, onOpenChange, onImported }: ImportWeekD
                 day: "numeric",
               }).format(selectedDate)}
             </p>
+            {weekType !== "REGULAR" && (
+              <p className="mt-2 rounded-md border border-amber-300/50 bg-amber-100/60 px-3 py-2 text-sm font-medium text-amber-900">
+                Esta semana se guardará sin traer el programa ni crear asignaciones.
+              </p>
+            )}
           </div>
 
           {/* Loading overlay */}
@@ -191,7 +223,16 @@ export function ImportWeekDialog({ open, onOpenChange, onImported }: ImportWeekD
             </div>
           )}
 
-          {scrapeResult && (
+          {weekType !== "REGULAR" && (
+            <DialogFooter className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+              <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={isSaving}>Cancelar</Button>
+              <Button onClick={handleSave} disabled={isSaving} className="bg-accent hover:bg-accent/90 text-accent-foreground">
+                {isSaving ? "Guardando..." : "Guardar semana especial"}
+              </Button>
+            </DialogFooter>
+          )}
+
+          {scrapeResult && weekType === "REGULAR" && (
             <>
               <div className="space-y-4 border border-border rounded-lg p-4 bg-muted">
                 <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">

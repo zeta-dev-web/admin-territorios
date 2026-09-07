@@ -18,12 +18,15 @@ export async function POST(request: NextRequest) {
     const item = await prisma.weekItem.findFirst({
       where: { id: b.weekItemId },
       include: {
-        weekSection: { select: { sectionType: true, week: { select: { id: true, startDate: true, tenantId: true } } } },
+        weekSection: { select: { sectionType: true, week: { select: { id: true, startDate: true, tenantId: true, weekType: true } } } },
         assignments: true,
       },
     })
     if (!item || item.weekSection.week.tenantId !== tenantId) {
       return NextResponse.json({ error: 'Parte no encontrada' }, { status: 404 })
+    }
+    if (item.weekSection.week.weekType !== 'REGULAR') {
+      return NextResponse.json({ error: 'Las semanas especiales no admiten asignaciones' }, { status: 400 })
     }
     if (item.assignments.some((a) => a.role === b.role)) {
       return NextResponse.json({ error: 'Ese rol ya está asignado en esta parte' }, { status: 400 })
