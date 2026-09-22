@@ -368,8 +368,17 @@ export function buildSystemPrompt(module: CopilotModule): string {
 
   return configuredPrompt
     .replaceAll("{{TODAY}}", today)
-    .replace(/\\n/g, "\n");
+    .replace(/\\n/g, "\n") + FORMAT_SUFFIX;
 }
+
+// El chat muestra texto plano (sin render markdown): prohibir tablas y
+// formato markdown para que la respuesta se lea bien en la burbuja.
+const FORMAT_SUFFIX = `
+
+Formato de respuesta obligatorio (el chat muestra texto plano):
+- NUNCA uses tablas markdown ni ningún formato de tabla.
+- NO uses negritas con asteriscos, títulos con # ni ningún marcado: solo texto plano.
+- Para listas usá guiones simples, un ítem por línea. Sé breve.`;
 
 export async function executeCopilotTool(
   module: CopilotModule,
