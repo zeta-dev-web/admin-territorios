@@ -314,8 +314,7 @@ export async function getAllTerritoriesForSelect() {
   }
 }
 
-export async function getAllTerritoriesForAdmin() {
-  try {
+export async function getAllTerritoriesForAdmin() {  try {
     const tenantId = await getCurrentTenantId()
 
     const [lastDriverEnds, lastPersonalReturns] = await Promise.all([
@@ -396,5 +395,96 @@ export async function getAllTerritoriesForAdmin() {
   } catch (error) {
     console.error('Error al obtener territorios:', error)
     return { success: false, data: [], total: 0, territoriesWithAssignments: 0, totalBlocks: 0 }
+  }
+}
+
+export interface UnassignedTerritoriesParams {
+  desde?: string | Date
+  hasta?: string | Date
+}
+
+function parseOptionalDate(value: string | Date | undefined, endOfDay: boolean): Date | undefined {
+  if (value === undefined || value === null || value === '') return undefined
+  const d = value instanceof Date ? new Date(value.getTime()) : new Date(value)
+  if (Number.isNaN(d.getTime())) throw new Error('Fecha inválida: usá formato YYYY-MM-DD o ISO')
+  if (typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value.trim())) {
+    // Fecha sin hora: interpretar en hora local para evitar desfase UTC
+    const [y, m, day] = value.trim().split('-').map(Number)
+    d.setFullYear(y, m - 1, day)
+  }
+  if (endOfDay) d.setHours(23, 59, 59, 999)
+  else d.setHours(0, 0, 0, 0)
+  return d
+}
+
+/**
+ * Territorios NO asignados.
+ *
+ * - Sin `desde`/`hasta`: devuelve los territorios que NUNCA fueron asignados
+ *   (sin Assignment ni PersonalAssignment asociados).
+ * - Con `desde`/`hasta` (uno o ambos): devuelve los que NO tuvieron NINGUNA
+ *   asignación iniciada en ese periodo (Assignment.startDate ni
+ *   PersonalAssignment.assignedDate dentro del rango). Si un territorio fue
+ *   asignado a un conductor o en forma personal en el periodo, queda excluido.
+ */
+export async function getUnassignedTerritories(params: UnassignedTerritoriesParams = {}) {
+  try {
+    const tenantId = await getCurrentTenantId()
+
+    const desde = parseOptionalDate(params.desde, false)
+    const hasta = parseOptionalDate(params.hasta, true)
+
+    if (desde && hasta && desde > hasta) {
+      throw new Error('El parámetro "desde" no puede ser posterior a "hasta"')
+    }
+
+    const hasPeriod = Boolean(desde || hasta)
+    const rangeFilter =
+      desde && hasta
+        ? { gte: desde, lte: hasta }
+        : desde
+          ? { gte: desde }
+          : hasta
+            ? { lte: hasta }
+            : undefined
+
+    const territories = await prisma.territory.findMany({
+      where: tenantFilter(tenantId, {
+        AND: [
+          rangeFilter
+            ? { assignments: { none: { startDate: rangeFilter } } }
+            : { assignments: { none: {} } },
+          rangeFilter
+            ? { personalAssignments: { none: { assignedDate: rangeFilter } } }
+            : { personalAssignments: { none: {} } },
+        ],
+      }) as any,
+      include: {
+        group: true,
+        blocks: { orderBy: { letter: 'asc' } },
+        _count: { select: { assignments: true, personalAssignments: true } },
+      },
+      orderBy: { number: 'asc' },
+    })
+
+    return {
+      success: true,
+      data: territories,
+      total: territories.length,
+      desde: desde?.toISOString() ?? null,
+      hasta: hasta?.toISOString() ?? null,
+      mode: hasPeriod ? 'not-assigned-in-period' : 'never-assigned',
+    }
+  } catch (error) {
+    console.error('Error al obtener territorios no asignados:', error)
+    return {
+      success: false,
+      data: [],
+      total: 0,
+      desde: null,
+      hasta: null,
+      mode: null,
+      message: error instanceof Error ? error.message : 'Error al obtener los territorios no asignados',
+    }
   }
 }

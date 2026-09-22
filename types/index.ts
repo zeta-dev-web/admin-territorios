@@ -36,6 +36,8 @@ export interface TerritoryFrequency {
 export interface DashboardMetrics {
   activeTerritoriesProgress: TerritoryProgress[]
   atrasados: AtrasadoTerritory[]
+  /** Todos los territorios libres con su última fecha (sin umbral), para filtrar en el cliente. */
+  atrasadosCandidates: AtrasadoTerritory[]
   territoryFrequency: TerritoryFrequency[]
 }
 

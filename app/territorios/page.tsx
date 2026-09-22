@@ -1,6 +1,6 @@
 import { getDashboardMetrics } from '@/server'
 import { TerritoryCard } from '@/components/territories/TerritoryCard'
-import { AtrasadosList } from '@/components/territories/AtrasadosList'
+import { AtrasadosSection } from '@/components/territories/AtrasadosSection'
 import { TerritoryFrequencyList } from '@/components/territories/TerritoryFrequencyList'
 import { Activity, Clock, BarChart3, TrendingUp } from 'lucide-react'
 
@@ -113,20 +113,7 @@ export default async function DashboardPage() {
       {/* Grid de 2 columnas: Atrasados y Frecuencia */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Territorios Atrasados */}
-        <section className="bg-[#0F1729] rounded-xl border border-slate-800 p-6">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="w-10 h-10 bg-orange-500/10 rounded-xl flex items-center justify-center">
-              <Clock className="h-5 w-5 text-orange-500" />
-            </div>
-            <div>
-              <h2 className="text-lg font-bold text-white">
-                Territorios Atrasados
-              </h2>
-              <p className="text-sm text-slate-400">+6 meses sin asignarse</p>
-            </div>
-          </div>
-          <AtrasadosList territories={metrics.atrasados} />
-        </section>
+        <AtrasadosSection territories={metrics.atrasadosCandidates ?? metrics.atrasados} />
 
         {/* Frecuencia */}
         <section className="bg-[#0F1729] rounded-xl border border-slate-800 p-6">

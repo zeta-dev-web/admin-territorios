@@ -25,6 +25,13 @@ export const SITE_MESSAGES: SiteMessage[] = [
     type: 'success',
     title: '¡Ahora agregamos vymc al sistema!',
     body: 'Elegí el sistema al que querés entrar.',
+    active: false,
+  },
+  {
+    id: 'filtro-no-asignados',
+    type: 'megaphone',
+    title: '¡Nuevo! Territorios no asignados por periodo',
+    body: 'En Resumen y en la lista de Territorios ahora podés filtrar qué territorios no se asignaron hace 1, 3 o 6 meses, en un periodo específico o nunca. También podés preguntarle al copiloto.',
     active: true,
   },
 ]

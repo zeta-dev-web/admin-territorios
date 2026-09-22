@@ -7,11 +7,12 @@ import { formatDateShort } from '@/lib/utils'
 
 interface AtrasadosListProps {
   territories: AtrasadoTerritory[]
+  emptyHint?: string
 }
 
 const ITEMS_PER_PAGE = 5
 
-export function AtrasadosList({ territories }: AtrasadosListProps) {
+export function AtrasadosList({ territories, emptyHint }: AtrasadosListProps) {
   const [currentPage, setCurrentPage] = useState(1)
 
   if (territories.length === 0) {
@@ -20,7 +21,7 @@ export function AtrasadosList({ territories }: AtrasadosListProps) {
         <Clock className="h-12 w-12 mx-auto mb-2 opacity-50" />
         <p className="text-sm">No hay territorios atrasados</p>
         <p className="text-xs text-slate-600 mt-1">
-          Todos los territorios libres se han asignado en los últimos 6 meses
+          {emptyHint ?? 'Todos los territorios libres se han asignado en los últimos 6 meses'}
         </p>
       </div>
     )

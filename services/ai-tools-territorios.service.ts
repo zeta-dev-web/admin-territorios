@@ -12,7 +12,8 @@ export type AiToolTerritoriosName =
   | "getPublisherTerritoryHistory"
   | "getTerritoryStatus"
   | "getAvailableTerritories"
-  | "getTerritoriesStats";
+  | "getTerritoriesStats"
+  | "getUnassignedTerritories";
 
 function daysBetween(from: Date, to: Date): number {
   return Math.floor((to.getTime() - from.getTime()) / MS_PER_DAY);
@@ -523,5 +524,88 @@ export async function getTerritoriesStats(tenantId: string) {
       daysAgo: assignment.endDate ? daysBetween(assignment.endDate, now) : null,
     })),
     topConductors: conductorsWithNames.filter((c) => c !== null),
+  };
+}
+
+// ============================================
+// Tool 6: Territorios no asignados en un periodo
+// ============================================
+
+const MAX_UNASSIGNED_RESULTS = 200;
+
+function parseAiDate(value: string | undefined, endOfDay: boolean): Date | undefined {
+  if (value === undefined || value.trim() === "") return undefined;
+  const raw = value.trim();
+  const d = new Date(raw);
+  if (Number.isNaN(d.getTime())) {
+    throw new Error(`Fecha inválida: "${value}". Usá formato YYYY-MM-DD.`);
+  }
+  if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) {
+    const [y, m, day] = raw.split("-").map(Number);
+    d.setFullYear(y, m - 1, day);
+  }
+  if (endOfDay) d.setHours(23, 59, 59, 999);
+  else d.setHours(0, 0, 0, 0);
+  return d;
+}
+
+export async function getUnassignedTerritories(
+  tenantId: string,
+  args: { desde?: string; hasta?: string }
+) {
+  const desde = parseAiDate(args.desde, false);
+  const hasta = parseAiDate(args.hasta, true);
+
+  if (desde && hasta && desde > hasta) {
+    return {
+      found: false,
+      message: 'El parámetro "desde" no puede ser posterior a "hasta".',
+    };
+  }
+
+  const hasPeriod = Boolean(desde || hasta);
+  const rangeFilter =
+    desde && hasta
+      ? { gte: desde, lte: hasta }
+      : desde
+        ? { gte: desde }
+        : hasta
+          ? { lte: hasta }
+          : undefined;
+
+  const territories = await prisma.territory.findMany({
+    where: {
+      tenantId,
+      AND: [
+        rangeFilter
+          ? { assignments: { none: { startDate: rangeFilter } } }
+          : { assignments: { none: {} } },
+        rangeFilter
+          ? { personalAssignments: { none: { assignedDate: rangeFilter } } }
+          : { personalAssignments: { none: {} } },
+      ],
+    },
+    include: {
+      group: { select: { name: true } },
+    },
+    orderBy: { number: "asc" },
+    take: MAX_UNASSIGNED_RESULTS + 1,
+  });
+
+  const truncated = territories.length > MAX_UNASSIGNED_RESULTS;
+  const shown = truncated ? territories.slice(0, MAX_UNASSIGNED_RESULTS) : territories;
+
+  return {
+    found: true,
+    mode: hasPeriod ? "not-assigned-in-period" : "never-assigned",
+    desde: desde?.toISOString() ?? null,
+    hasta: hasta?.toISOString() ?? null,
+    total: truncated ? `más de ${MAX_UNASSIGNED_RESULTS}` : territories.length,
+    truncated,
+    territories: shown.map((t) => ({
+      number: t.number,
+      description: t.description,
+      group: t.group.name,
+    })),
   };
 }

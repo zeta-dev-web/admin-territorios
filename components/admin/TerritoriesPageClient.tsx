@@ -1,10 +1,11 @@
 'use client'
 
-import { useState, useMemo } from 'react'
-import { Plus, MapPin, Search, X } from 'lucide-react'
+import { useState, useMemo, useEffect, useRef } from 'react'
+import { Plus, MapPin, Search, X, Loader2 } from 'lucide-react'
 import { TerritoriesTableWithModal } from './TerritoriesTableWithModal'
 import { TerritoryModal } from './TerritoryModal'
 import { ClientPagination } from '@/components/common/ClientPagination'
+import { getUnassignedTerritories } from '@/server/territories'
 
 interface Territory {
   id: string
@@ -45,10 +46,71 @@ export function TerritoriesPageClient({
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedGroup, setSelectedGroup] = useState<string>('all')
   const [assignmentStatus, setAssignmentStatus] = useState<'all' | 'assigned' | 'free'>('all')
+  // Filtro exacto de periodo: se resuelve en el servidor (ninguna asignación
+  // de conductor ni personal iniciada en el rango) y se cruza por id.
+  const [periodFilter, setPeriodFilter] = useState<'all' | 'never' | '30' | '90' | '180' | 'custom'>('all')
+  const [periodDesde, setPeriodDesde] = useState('')
+  const [periodHasta, setPeriodHasta] = useState('')
+  const [unassignedIds, setUnassignedIds] = useState<Set<string> | null>(null)
+  const [periodLoading, setPeriodLoading] = useState(false)
+  const [periodError, setPeriodError] = useState<string | null>(null)
+  const periodCache = useRef(new Map<string, Set<string>>())
+  const periodRequest = useRef(0)
   const [currentPage, setCurrentPage] = useState(1)
   const pageSize = 10
 
-  // Filtrar territorios por búsqueda, grupo y estado de asignación
+  const periodActive =
+    periodFilter !== 'all' && !(periodFilter === 'custom' && !periodDesde && !periodHasta)
+
+  useEffect(() => {
+    if (!periodActive) return
+
+    let params: { desde?: string | Date; hasta?: string | Date }
+    if (periodFilter === 'never') {
+      params = {}
+    } else if (periodFilter === 'custom') {
+      params = { desde: periodDesde || undefined, hasta: periodHasta || undefined }
+    } else {
+      const desde = new Date()
+      desde.setDate(desde.getDate() - Number(periodFilter))
+      desde.setHours(0, 0, 0, 0)
+      params = { desde }
+    }
+    const cacheKey = JSON.stringify({
+      d: params.desde instanceof Date ? params.desde.toISOString() : (params.desde ?? null),
+      h: params.hasta instanceof Date ? (params.hasta as Date).toISOString() : (params.hasta ?? null),
+    })
+    const cached = periodCache.current.get(cacheKey)
+    if (cached) {
+      setUnassignedIds(cached)
+      setPeriodError(null)
+      setPeriodLoading(false)
+      return
+    }
+
+    const token = ++periodRequest.current
+    setPeriodLoading(true)
+    setPeriodError(null)
+    getUnassignedTerritories(params)
+      .then((res) => {
+        if (periodRequest.current !== token) return
+        setPeriodLoading(false)
+        if (res.success) {
+          const ids = new Set(res.data.map((t) => t.id))
+          periodCache.current.set(cacheKey, ids)
+          setUnassignedIds(ids)
+        } else {
+          setPeriodError(res.message ?? 'No se pudo aplicar el filtro de periodo')
+        }
+      })
+      .catch(() => {
+        if (periodRequest.current !== token) return
+        setPeriodLoading(false)
+        setPeriodError('No se pudo aplicar el filtro de periodo')
+      })
+  }, [periodActive, periodFilter, periodDesde, periodHasta])
+
+  // Filtrar territorios por búsqueda, grupo, estado de asignación y periodo
   const filteredTerritories = useMemo(() => {
     return territories.filter((territory) => {
       const matchesSearch = 
@@ -69,9 +131,12 @@ export function TerritoriesPageClient({
         (assignmentStatus === 'assigned' && hasActiveAssignment) ||
         (assignmentStatus === 'free' && !hasActiveAssignment)
 
-      return matchesSearch && matchesGroup && matchesStatus
+      const matchesPeriod =
+        unassignedIds === null || unassignedIds.has(territory.id)
+
+      return matchesSearch && matchesGroup && matchesStatus && matchesPeriod
     })
-  }, [territories, searchTerm, selectedGroup, assignmentStatus])
+  }, [territories, searchTerm, selectedGroup, assignmentStatus, unassignedIds])
 
   // Paginación local
   const totalPages = Math.ceil(filteredTerritories.length / pageSize)
@@ -94,14 +159,41 @@ export function TerritoriesPageClient({
     setCurrentPage(1)
   }
 
+  const resetPeriodResult = () => {
+    periodRequest.current += 1
+    setUnassignedIds(null)
+    setPeriodError(null)
+    setPeriodLoading(false)
+  }
+
+  const handlePeriodChange = (value: 'all' | 'never' | '30' | '90' | '180' | 'custom') => {
+    setPeriodFilter(value)
+    if (value === 'all' || value === 'custom') resetPeriodResult()
+    setCurrentPage(1)
+  }
+
+  const handlePeriodDateChange = (which: 'desde' | 'hasta', value: string) => {
+    const nextDesde = which === 'desde' ? value : periodDesde
+    const nextHasta = which === 'hasta' ? value : periodHasta
+    if (which === 'desde') setPeriodDesde(value)
+    else setPeriodHasta(value)
+    if (!nextDesde && !nextHasta) resetPeriodResult()
+    setCurrentPage(1)
+  }
+
   const clearFilters = () => {
     setSearchTerm('')
     setSelectedGroup('all')
     setAssignmentStatus('all')
+    setPeriodFilter('all')
+    setPeriodDesde('')
+    setPeriodHasta('')
+    setUnassignedIds(null)
+    setPeriodError(null)
     setCurrentPage(1)
   }
 
-  const hasActiveFilters = searchTerm !== '' || selectedGroup !== 'all' || assignmentStatus !== 'all'
+  const hasActiveFilters = searchTerm !== '' || selectedGroup !== 'all' || assignmentStatus !== 'all' || periodFilter !== 'all'
 
   return (
     <>
@@ -159,7 +251,7 @@ export function TerritoriesPageClient({
           )}
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {/* Buscador */}
           <div>
             <label className="block text-sm font-medium text-slate-300 mb-2">
@@ -211,7 +303,69 @@ export function TerritoriesPageClient({
               <option value="free">Libres</option>
             </select>
           </div>
+
+          {/* Filtro por periodo sin asignar (exacto, servidor) */}
+          <div>
+            <label className="block text-sm font-medium text-slate-300 mb-2">
+              Sin asignar en periodo
+            </label>
+            <select
+              value={periodFilter}
+              onChange={(e) => handlePeriodChange(e.target.value as 'all' | 'never' | '30' | '90' | '180' | 'custom')}
+              className="w-full px-4 py-2 bg-slate-800 border border-slate-700 text-slate-200 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 [color-scheme:dark]"
+            >
+              <option value="all">Todos</option>
+              <option value="never">Nunca asignados</option>
+              <option value="30">Sin asignar hace 1 mes</option>
+              <option value="90">Sin asignar hace 3 meses</option>
+              <option value="180">Sin asignar hace 6 meses</option>
+              <option value="custom">Periodo específico…</option>
+            </select>
+          </div>
         </div>
+
+        {/* Rango personalizado */}
+        {periodFilter === 'custom' && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
+            <div>
+              <label className="block text-sm font-medium text-slate-300 mb-2">
+                Desde
+              </label>
+              <input
+                type="date"
+                value={periodDesde}
+                max={periodHasta || undefined}
+                onChange={(e) => handlePeriodDateChange('desde', e.target.value)}
+                className="w-full px-4 py-2 bg-slate-800 border border-slate-700 text-slate-200 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 [color-scheme:dark]"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-300 mb-2">
+                Hasta
+              </label>
+              <input
+                type="date"
+                value={periodHasta}
+                min={periodDesde || undefined}
+                onChange={(e) => handlePeriodDateChange('hasta', e.target.value)}
+                className="w-full px-4 py-2 bg-slate-800 border border-slate-700 text-slate-200 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 [color-scheme:dark]"
+              />
+            </div>
+          </div>
+        )}
+
+        {/* Estado del filtro de periodo */}
+        {periodLoading && (
+          <div className="mt-3 flex items-center gap-2 text-sm text-slate-400">
+            <Loader2 className="h-4 w-4 animate-spin" />
+            Buscando territorios sin asignar en el periodo…
+          </div>
+        )}
+        {periodError && (
+          <div className="mt-3 text-sm text-red-400">
+            {periodError}
+          </div>
+        )}
 
         {/* Contador de resultados */}
         {hasActiveFilters && (

@@ -54,7 +54,7 @@ const modules: Array<{
 
 const territoriosMenu: MenuItem[] = [
   { label: 'Inicio', icon: Home, href: '/inicio', exact: true },
-  { label: 'Dashboard', icon: LayoutDashboard, href: '/territorios', exact: true },
+  { label: 'Resumen', icon: LayoutDashboard, href: '/territorios', exact: true },
   { label: 'Territorios', icon: MapPin, href: '/territorios/lista' },
   { label: 'Mapas', icon: Map, href: '/territorios/mapas' },
   { label: 'Publicadores', icon: Users, href: '/territorios/publicadores' },
@@ -65,7 +65,7 @@ const territoriosMenu: MenuItem[] = [
 
 const vymcMenu: MenuItem[] = [
   { label: 'Inicio', icon: Home, href: '/inicio', exact: true },
-  { label: 'Dashboard', icon: LayoutDashboard, href: '/vymc', exact: true },
+  { label: 'Resumen', icon: LayoutDashboard, href: '/vymc', exact: true },
   { label: 'Programas', icon: CalendarDays, href: '/vymc/programas' },
   { label: 'Publicadores', icon: Users, href: '/vymc/publicadores' },
   { label: 'WhatsApp', icon: MessageCircle, href: '/vymc/whatsapp' },

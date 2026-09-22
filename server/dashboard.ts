@@ -93,10 +93,8 @@ export async function getDashboardMetrics(): Promise<DashboardMetrics> {
       }
     )
 
-    // 2. TERRITORIOS "ATRASADOS" (+6 meses sin asignación)
+    // 2. TERRITORIOS "ATRASADOS" (sin asignación activa + última fecha)
     // Buscar el último evento de cada territorio (asignación completada o personal devuelto)
-    const sixMonthsAgo = new Date()
-    sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6)
 
     // Obtener la última fecha de asignación de cada territorio
     const [lastDriverAssignments, lastPersonalAssignments] = await Promise.all([
@@ -145,7 +143,7 @@ export async function getDashboardMetrics(): Promise<DashboardMetrics> {
       orderBy: { number: 'asc' },
     })
 
-    const atrasados: AtrasadoTerritory[] = allTerritories
+    const freeTerritories: AtrasadoTerritory[] = allTerritories
       .filter((t) => !activeTerritoryIds.has(t.id)) // Sin asignación activa
       .map((t) => {
         const lastInfo = lastDateMap.get(t.id)
@@ -168,16 +166,17 @@ export async function getDashboardMetrics(): Promise<DashboardMetrics> {
           lastAssignmentType,
         }
       })
-      .filter((t) => {
-        // Solo los que superan los 6 meses (o nunca se asignaron)
-        if (t.daysSinceLastAssignment === null) return true // nunca asignado
-        return t.daysSinceLastAssignment > 180 // más de ~6 meses
-      })
       .sort((a, b) => {
         // Los más atrasados primero
         if (a.daysSinceLastAssignment === null) return -1
         if (b.daysSinceLastAssignment === null) return 1
         return b.daysSinceLastAssignment - a.daysSinceLastAssignment
+    })
+
+    const atrasados: AtrasadoTerritory[] = freeTerritories.filter((t) => {
+      // Solo los que superan los 6 meses (o nunca se asignaron)
+      if (t.daysSinceLastAssignment === null) return true // nunca asignado
+      return t.daysSinceLastAssignment > 180 // más de ~6 meses
     })
 
     // 3. HISTORIAL Y FRECUENCIA DE TERRITORIOS
@@ -220,6 +219,7 @@ export async function getDashboardMetrics(): Promise<DashboardMetrics> {
     return {
       activeTerritoriesProgress,
       atrasados,
+      atrasadosCandidates: freeTerritories,
       territoryFrequency,
     }
   } catch (error) {
@@ -228,6 +228,7 @@ export async function getDashboardMetrics(): Promise<DashboardMetrics> {
     return {
       activeTerritoriesProgress: [],
       atrasados: [],
+      atrasadosCandidates: [],
       territoryFrequency: [],
     }
   }

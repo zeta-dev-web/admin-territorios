@@ -362,6 +362,12 @@ export const actions: Record<string, ActionHandler> = {
 
   getAllTerritoriesForAdmin: () => server.getAllTerritoriesForAdmin(),
 
+  getUnassignedTerritories: (p) =>
+    server.getUnassignedTerritories({
+      desde: (p.desde ?? p.from ?? p.startDate) as string | undefined,
+      hasta: (p.hasta ?? p.to ?? p.endDate) as string | undefined,
+    }),
+
   // ═══════════════════════════════════════════
   //  MAPAS
   // ═══════════════════════════════════════════

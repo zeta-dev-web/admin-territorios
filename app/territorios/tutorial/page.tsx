@@ -37,14 +37,14 @@ interface TutorialSection {
 const tutorialSections: TutorialSection[] = [
   {
     id: 'dashboard',
-    title: 'Dashboard',
+    title: 'Resumen',
     description: 'Consulta el estado general del trabajo.',
     icon: BarChart3,
     steps: [
       {
         title: 'Revisa las estadísticas',
         description:
-          'Activos muestra los territorios en progreso, Atrasados los que llevan más de 6 meses sin trabajarse y Total Trabajados las asignaciones completadas.',
+          'Activos muestra los territorios en progreso, Atrasados los que llevan tiempo sin trabajarse (podés filtrar por 1, 3 o 6 meses, o por un periodo específico) y Total Trabajados las asignaciones completadas.',
       },
       {
         title: 'Detecta prioridades',

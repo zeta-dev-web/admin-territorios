@@ -11,6 +11,7 @@ import {
   getTerritoryStatus,
   getTerritoriesStats,
   getPublisherTerritoryHistory,
+  getUnassignedTerritories,
 } from "@/services/ai-tools-territorios.service";
 import type { ToolDefinition } from "./llm";
 
@@ -188,6 +189,29 @@ const TERRITORIOS_TOOLS: ToolDefinition[] = [
       parameters: { type: "object", properties: {} },
     },
   },
+  {
+    type: "function",
+    function: {
+      name: "getUnassignedTerritories",
+      description:
+        "Lista los territorios que NO fueron asignados a nadie (ni a conductor ni en forma personal) en un periodo. Sin fechas devuelve los que nunca fueron asignados. Acepta fechas opcionales desde/hasta en formato YYYY-MM-DD.",
+      parameters: {
+        type: "object",
+        properties: {
+          desde: {
+            type: ["string", "null"],
+            description:
+              "Fecha inicial del periodo en formato YYYY-MM-DD (opcional).",
+          },
+          hasta: {
+            type: ["string", "null"],
+            description:
+              "Fecha final del periodo en formato YYYY-MM-DD (opcional).",
+          },
+        },
+      },
+    },
+  },
 ];
 
 const toolArgsSchemas = {
@@ -217,6 +241,10 @@ const toolArgsSchemas = {
     includePersonalAssignments: z.boolean().optional(),
   }),
   getTerritoriesStats: z.object({}).strict(),
+  getUnassignedTerritories: z.object({
+    desde: z.string().max(30).optional(),
+    hasta: z.string().max(30).optional(),
+  }),
 } as const;
 
 export function getToolsForModule(module: CopilotModule): ToolDefinition[] {
@@ -313,6 +341,8 @@ export async function executeCopilotTool(
       return getAvailableTerritories(tenantId, validArgs as never);
     case "getTerritoriesStats":
       return getTerritoriesStats(tenantId);
+    case "getUnassignedTerritories":
+      return getUnassignedTerritories(tenantId, validArgs as never);
   }
 
   return { error: `Herramienta no disponible para el módulo ${module}` };

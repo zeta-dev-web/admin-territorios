@@ -97,6 +97,7 @@ export {
   deleteTerritory,
   getAllTerritoriesForSelect,
   getAllTerritoriesForAdmin,
+  getUnassignedTerritories,
 } from './territories'
 
 export {

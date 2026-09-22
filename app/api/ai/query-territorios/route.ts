@@ -7,6 +7,7 @@ import {
   getTerritoryStatus,
   getAvailableTerritories,
   getTerritoriesStats,
+  getUnassignedTerritories,
 } from "@/services/ai-tools-territorios.service";
 
 /**
@@ -46,6 +47,13 @@ const queryTerritoriosSchema = z.discriminatedUnion("tool", [
     tool: z.literal("getTerritoriesStats"),
     args: z.object({}).strict(),
   }),
+  z.object({
+    tool: z.literal("getUnassignedTerritories"),
+    args: z.object({
+      desde: z.string().max(30).optional(),
+      hasta: z.string().max(30).optional(),
+    }),
+  }),
 ]);
 
 // POST /api/ai/query-territorios
@@ -83,9 +91,12 @@ export async function POST(request: NextRequest) {
       case "getAvailableTerritories":
         result = await getAvailableTerritories(tenantId, args);
         break;
-      case "getTerritoriesStats":
-        result = await getTerritoriesStats(tenantId);
-        break;
+    case "getTerritoriesStats":
+      result = await getTerritoriesStats(tenantId);
+      break;
+    case "getUnassignedTerritories":
+      result = await getUnassignedTerritories(tenantId, args);
+      break;
     }
 
     return NextResponse.json(result);
