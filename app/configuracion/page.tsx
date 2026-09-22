@@ -113,6 +113,7 @@ export default function SettingsPage() {
   const [copied, setCopied] = useState<'prompt' | 'zapia' | 'apiKey' | null>(null)
   const [showAiSection, setShowAiSection] = useState(false)
   const [apiKey, setApiKey] = useState<string | null>(null)
+  const [hasApiKey, setHasApiKey] = useState(false)
   const [apiKeyLoading, setApiKeyLoading] = useState(false)
   const [apiKeyRevealed, setApiKeyRevealed] = useState(false)
   const [regenerating, setRegenerating] = useState(false)
@@ -121,17 +122,23 @@ export default function SettingsPage() {
     getCurrentUserInfo().then(setUserInfo)
   }, [])
 
-  useEffect(() => {
-    if (showAiSection && !apiKey && !apiKeyLoading) {
+  function handleToggleAiSection() {
+    const next = !showAiSection
+    setShowAiSection(next)
+    if (next && !apiKey && !hasApiKey && !apiKeyLoading) {
       setApiKeyLoading(true)
       getOrCreateApiKey().then((result) => {
         if (result.success && result.data) {
           setApiKey(result.data)
+          setHasApiKey(true)
+        } else if (result.success && result.hasKey) {
+          // Ya existe una key pero no se puede revelar (solo se guarda el hash)
+          setHasApiKey(true)
         }
         setApiKeyLoading(false)
       })
     }
-  }, [showAiSection])
+  }
 
   // ── Handlers ──
 
@@ -184,6 +191,8 @@ export default function SettingsPage() {
       const result = await regenerateApiKey()
       if (result.success && result.data) {
         setApiKey(result.data)
+        setHasApiKey(true)
+        setApiKeyRevealed(true)
         toast.success('API key regenerada correctamente')
       } else {
         toast.error(result.message || 'Error al regenerar')
@@ -338,7 +347,7 @@ export default function SettingsPage() {
         {/* ── INTEGRACIÓN IA (colapsable) ── */}
         <div className="bg-[#0F1729] rounded-xl border border-slate-800">
           <button
-            onClick={() => setShowAiSection(!showAiSection)}
+            onClick={handleToggleAiSection}
             className="w-full flex items-center justify-between p-5 sm:p-6 hover:bg-slate-800/30 transition-colors rounded-xl"
           >
             <div className="flex items-center gap-3">
@@ -409,7 +418,28 @@ export default function SettingsPage() {
                         >
                           {copied === 'apiKey' ? (
                             <Check className="h-4 w-4 text-green-500" />
-                          ) : (
+                  ) : hasApiKey ? (
+                    <>
+                      <div className="flex items-center gap-2">
+                        <code className="flex-1 text-xs font-mono text-slate-400 bg-slate-900/70 rounded-lg p-3 border border-slate-700 break-all select-all min-h-[42px]">
+                          ••••••••••••••••••••••••••••••••
+                        </code>
+                      </div>
+                      <p className="mt-2 text-xs text-slate-400">
+                        Ya tenés una API key activa. Por seguridad no se puede volver a mostrar:
+                        regenerala para ver el nuevo valor (copialo en ese momento).
+                      </p>
+
+                      <button
+                        onClick={handleRegenerateKey}
+                        disabled={regenerating}
+                        className="mt-2 flex items-center gap-1.5 text-xs text-slate-400 hover:text-yellow-400 transition-colors disabled:opacity-50"
+                      >
+                        <RefreshCw className={"h-3.5 w-3.5 " + (regenerating ? 'animate-spin' : '')} />
+                        Regenerar API key
+                      </button>
+                    </>
+                  ) : (
                             <Copy className="h-4 w-4 text-slate-400" />
                           )}
                         </button>

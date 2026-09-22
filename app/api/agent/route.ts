@@ -6,6 +6,7 @@ import type {
 } from '@/types'
 import * as server from '@/server'
 import { withTenantContext } from '@/lib/request-context'
+import { hashApiKey } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 
 // ── Auth ──
@@ -16,23 +17,43 @@ async function validateApiKey(request: NextRequest): Promise<{ valid: boolean; t
   const token = authHeader.slice(7)
 
   try {
+    // Las keys se guardan hasheadas: comparar por hash.
     const apiKey = await prisma.apiKey.findUnique({
-      where: { key: token },
+      where: { key: hashApiKey(token) },
       select: { id: true, tenantId: true, isActive: true },
     })
 
-    if (!apiKey || !apiKey.isActive) return { valid: false }
+    if (apiKey && apiKey.isActive) {
+      touchApiKey(apiKey.id)
+      return { valid: true, tenantId: apiKey.tenantId }
+    }
 
-    // Actualizar último uso (fire & forget)
-    prisma.apiKey.update({
-      where: { id: apiKey.id },
-      data: { lastUsedAt: new Date() },
-    }).catch(() => {})
+    // Compatibilidad: migrar keys legacy guardadas en texto plano (una sola vez).
+    const legacy = await prisma.apiKey.findUnique({
+      where: { key: token },
+      select: { id: true, tenantId: true, isActive: true },
+    })
+    if (legacy && legacy.isActive) {
+      await prisma.apiKey.update({
+        where: { id: legacy.id },
+        data: { key: hashApiKey(token) },
+      }).catch(() => {})
+      touchApiKey(legacy.id)
+      return { valid: true, tenantId: legacy.tenantId }
+    }
 
-    return { valid: true, tenantId: apiKey.tenantId }
+    return { valid: false }
   } catch {
     return { valid: false }
   }
+}
+
+/** Actualizar último uso (fire & forget). */
+function touchApiKey(id: string) {
+  prisma.apiKey.update({
+    where: { id },
+    data: { lastUsedAt: new Date() },
+  }).catch(() => {})
 }
 
 // ── Tipos ──
@@ -40,7 +61,6 @@ async function validateApiKey(request: NextRequest): Promise<{ valid: boolean; t
 interface AgentRequest {
   action: string
   params?: Record<string, unknown>
-  tenantId?: string
 }
 
 interface AgentResponse {
@@ -442,7 +462,7 @@ export async function POST(request: NextRequest) {
     )
   }
 
-  const { action, params = {}, tenantId } = body
+  const { action, params = {} } = body
 
   if (!action || typeof action !== 'string') {
     return NextResponse.json(
@@ -465,8 +485,9 @@ export async function POST(request: NextRequest) {
     )
   }
 
-  // 4. Determinar tenantId: primero del body, si no, del API key
-  const targetTenantId = typeof tenantId === 'string' ? tenantId : auth.tenantId
+  // 4. Tenant SIEMPRE desde la API key. Por seguridad se ignora cualquier
+  // tenantId enviado en el body: una key solo opera sobre su propio tenant.
+  const targetTenantId = auth.tenantId
 
   if (!targetTenantId) {
     return NextResponse.json(

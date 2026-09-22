@@ -302,6 +302,20 @@ model ApiKey {
   @@index([tenantId])
 }
 
+// Contadores diarios para rate-limit persistente (sobrevive reinicios y
+// se comparte entre instancias). `key` es userId o '__global__'.
+model RateLimitCounter {
+  id        String   @id @default(cuid())
+  bucket    String
+  key       String
+  dayKey    String
+  count     Int      @default(0)
+  updatedAt DateTime @updatedAt
+
+  @@unique([bucket, key, dayKey])
+  @@index([bucket, dayKey])
+}
+
 // ═══════════════════════════════════════════
 //  MÓDULO VYMC (Reunión Vida y Ministerio)
 //  Tablas portadas del sistema VYMC con nombres

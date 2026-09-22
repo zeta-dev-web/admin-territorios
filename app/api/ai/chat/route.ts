@@ -13,7 +13,7 @@ import {
 } from "@/lib/ai/llm";
 import { checkRateLimit } from "@/lib/ai/rate-limit";
 
-const MAX_TOOL_ITERATIONS = 3;
+const MAX_TOOL_ITERATIONS = 5;
 const MAX_HISTORY_MESSAGES = 20;
 
 const chatRequestSchema = z.object({
@@ -45,7 +45,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const rateLimit = checkRateLimit("copilot", session.userId);
+    const rateLimit = await checkRateLimit("copilot", session.userId);
     if (!rateLimit.allowed) {
       return NextResponse.json(
         {

@@ -13,7 +13,9 @@ export type AiToolTerritoriosName =
   | "getTerritoryStatus"
   | "getAvailableTerritories"
   | "getTerritoriesStats"
-  | "getUnassignedTerritories";
+  | "getUnassignedTerritories"
+  | "getTerritoryPendingBlocks"
+  | "getActivePersonalAssignments";
 
 function daysBetween(from: Date, to: Date): number {
   return Math.floor((to.getTime() - from.getTime()) / MS_PER_DAY);
@@ -25,8 +27,23 @@ function daysBetween(from: Date, to: Date): number {
 
 export async function getTerritoryHistory(
   tenantId: string,
-  args: { territoryNumber: number }
+  args: { territoryNumber: number; desde?: string; hasta?: string }
 ) {
+  const desde = parseAiDate(args.desde, false);
+  const hasta = parseAiDate(args.hasta, true);
+
+  if (desde && hasta && desde > hasta) {
+    return {
+      found: false,
+      message: 'El parámetro "desde" no puede ser posterior a "hasta".',
+    };
+  }
+
+  const inRange = (d: Date): boolean => {
+    if (desde && d < desde) return false;
+    if (hasta && d > hasta) return false;
+    return true;
+  };
   const territory = await prisma.territory.findFirst({
     where: {
       tenantId,
@@ -80,11 +97,13 @@ export async function getTerritoryHistory(
 
   return {
     found: true,
+    desde: desde?.toISOString() ?? null,
+    hasta: hasta?.toISOString() ?? null,
     territory: {
       number: territory.number,
       description: territory.description,
       group: territory.group.name,
-      regularAssignments: assignments.map((assignment) => ({
+      regularAssignments: assignments.filter((a) => inRange(a.startDate)).map((assignment) => ({
         publisher: assignment.publisher
           ? `${assignment.publisher.firstName} ${assignment.publisher.lastName}`
           : "Sin conductor asignado",
@@ -98,7 +117,7 @@ export async function getTerritoryHistory(
         totalBlocks: assignment.blocks.map((block) => block.letter).sort(),
         dailyRecordsCount: assignment.dailyRecords.length,
       })),
-      personalAssignments: personalAssignments.map((pa) => ({
+        personalAssignments: personalAssignments.filter((pa) => inRange(pa.assignedDate)).map((pa) => ({
         publisher: pa.publisher
           ? `${pa.publisher.firstName} ${pa.publisher.lastName}`
           : "Sin publicador",
@@ -120,8 +139,24 @@ export async function getTerritoryHistory(
 
 export async function getPublisherTerritoryHistory(
   tenantId: string,
-  args: { publisherName: string }
+  args: { publisherName: string; desde?: string; hasta?: string }
 ) {
+  const desde = parseAiDate(args.desde, false);
+  const hasta = parseAiDate(args.hasta, true);
+
+  if (desde && hasta && desde > hasta) {
+    return {
+      found: false,
+      message: 'El parámetro "desde" no puede ser posterior a "hasta".',
+    };
+  }
+
+  const inRange = (d: Date): boolean => {
+    if (desde && d < desde) return false;
+    if (hasta && d > hasta) return false;
+    return true;
+  };
+
   const searchTerm = args.publisherName.trim();
   const words = searchTerm.split(/\s+/).filter(Boolean);
 
@@ -195,7 +230,9 @@ export async function getPublisherTerritoryHistory(
 
       return {
         fullName: `${publisher.firstName} ${publisher.lastName}`,
-        regularAssignments: regularAssignments.map((assignment) => ({
+        desde: desde?.toISOString() ?? null,
+        hasta: hasta?.toISOString() ?? null,
+        regularAssignments: regularAssignments.filter((a) => inRange(a.startDate)).map((assignment) => ({
           territoryNumber: assignment.territory.number,
           territoryDescription: assignment.territory.description,
           startDate: assignment.startDate.toISOString(),
@@ -207,7 +244,7 @@ export async function getPublisherTerritoryHistory(
           blocksWorked: assignment.blocks.length,
           dailyRecordsCount: assignment.dailyRecords.length,
         })),
-        personalAssignments: personalAssignments.map((pa) => ({
+      personalAssignments: personalAssignments.filter((pa) => inRange(pa.assignedDate)).map((pa) => ({
           territoryNumber: pa.territory.number,
           territoryDescription: pa.territory.description,
           assignedDate: pa.assignedDate.toISOString(),
@@ -218,7 +255,7 @@ export async function getPublisherTerritoryHistory(
             : daysBetween(pa.assignedDate, now),
           notes: pa.notes,
         })),
-        dailyRecords: dailyRecords.map((record) => ({
+        dailyRecords: dailyRecords.filter((r) => inRange(new Date(r.date))).map((record) => ({
           territoryNumber: record.assignment.territory.number,
           block: record.block.letter,
           date: record.date.toISOString(),
@@ -366,8 +403,13 @@ export async function getAvailableTerritories(
       },
       assignments: {
         where: { isCompleted: false },
-        orderBy: { startDate: "desc" },
+        orderBy: { startDate: 'desc' },
         take: 1,
+        include: {
+          publisher: {
+            select: { firstName: true, lastName: true },
+          },
+        },
       },
       personalAssignments: {
         where: { isActive: true },
@@ -406,6 +448,10 @@ export async function getAvailableTerritories(
         number: t.number,
         description: t.description,
         group: t.group.name,
+        conductor: assignment.publisher
+          ? `${assignment.publisher.firstName} ${assignment.publisher.lastName}`
+          : 'Sin conductor asignado',
+        startDate: assignment.startDate.toISOString(),
         daysAssigned: daysBetween(assignment.startDate, now),
       };
     });
@@ -606,6 +652,138 @@ export async function getUnassignedTerritories(
       number: t.number,
       description: t.description,
       group: t.group.name,
+    })),
+  };
+}
+
+// ============================================
+// Tool 7: Manzanas pendientes de un territorio
+// ============================================
+
+export async function getTerritoryPendingBlocks(
+  tenantId: string,
+  args: { territoryNumber: number }
+) {
+  const territory = await prisma.territory.findFirst({
+    where: { tenantId, number: args.territoryNumber },
+    include: {
+      group: { select: { name: true } },
+      blocks: { select: { id: true, letter: true }, orderBy: { letter: 'asc' } },
+    },
+  });
+
+  if (!territory) {
+    return {
+      found: false,
+      message: `No se encontró el territorio número ${args.territoryNumber}.`,
+    };
+  }
+
+  const currentAssignment = await prisma.assignment.findFirst({
+    where: { territoryId: territory.id, isCompleted: false },
+    orderBy: { startDate: 'desc' },
+    include: {
+      publisher: { select: { firstName: true, lastName: true } },
+      dailyRecords: { select: { blockId: true, date: true } },
+    },
+  });
+
+  if (!currentAssignment) {
+    return {
+      found: true,
+      hasActiveAssignment: false,
+      territory: { number: territory.number, group: territory.group.name },
+      message: `El territorio ${territory.number} no tiene asignación activa. No hay manzanas pendientes.`,
+    };
+  }
+
+  const workedByBlock = new Map<string, Date>();
+  for (const record of currentAssignment.dailyRecords) {
+    const prev = workedByBlock.get(record.blockId);
+    if (!prev || record.date > prev) workedByBlock.set(record.blockId, record.date);
+  }
+
+  const now = new Date();
+  const blocks = territory.blocks.map((block) => {
+    const lastWorked = workedByBlock.get(block.id) ?? null;
+    return {
+      letter: block.letter,
+      worked: lastWorked !== null,
+      lastWorkedDate: lastWorked?.toISOString() ?? null,
+      daysAgo: lastWorked ? daysBetween(lastWorked, now) : null,
+    };
+  });
+
+  return {
+    found: true,
+    hasActiveAssignment: true,
+    territory: {
+      number: territory.number,
+      group: territory.group.name,
+      conductor: currentAssignment.publisher
+        ? `${currentAssignment.publisher.firstName} ${currentAssignment.publisher.lastName}`
+        : 'Sin conductor asignado',
+      startDate: currentAssignment.startDate.toISOString(),
+    },
+    totalBlocks: blocks.length,
+    workedBlocks: blocks.filter((b) => b.worked).length,
+    pendingBlocks: blocks.filter((b) => !b.worked).map((b) => b.letter),
+    blocks,
+  };
+}
+
+// ============================================
+// Tool 8: Asignaciones personales activas
+// ============================================
+
+const MAX_PERSONAL_RESULTS = 200;
+
+export async function getActivePersonalAssignments(
+  tenantId: string,
+  args: { groupName?: string }
+) {
+  let groupFilter = {};
+  if (args.groupName) {
+    const group = await prisma.group.findFirst({
+      where: { tenantId, name: { contains: args.groupName, mode: 'insensitive' } },
+    });
+    if (!group) {
+      return {
+        found: false,
+        message: `No se encontró el grupo "${args.groupName}".`,
+      };
+    }
+    groupFilter = { territory: { groupId: group.id } };
+  }
+
+  const assignments = await prisma.personalAssignment.findMany({
+    where: { tenantId, isActive: true, ...groupFilter },
+    orderBy: { assignedDate: 'asc' },
+    take: MAX_PERSONAL_RESULTS + 1,
+    include: {
+      territory: { select: { number: true, description: true, group: { select: { name: true } } } },
+      publisher: { select: { firstName: true, lastName: true } },
+    },
+  });
+
+  const now = new Date();
+  const truncated = assignments.length > MAX_PERSONAL_RESULTS;
+  const shown = truncated ? assignments.slice(0, MAX_PERSONAL_RESULTS) : assignments;
+
+  return {
+    found: true,
+    total: truncated ? `más de ${MAX_PERSONAL_RESULTS}` : assignments.length,
+    truncated,
+    assignments: shown.map((pa) => ({
+      territoryNumber: pa.territory.number,
+      territoryDescription: pa.territory.description,
+      group: pa.territory.group.name,
+      publisher: pa.publisher
+        ? `${pa.publisher.firstName} ${pa.publisher.lastName}`
+        : 'Sin publicador',
+      assignedDate: pa.assignedDate.toISOString(),
+      daysActive: daysBetween(pa.assignedDate, now),
+      notes: pa.notes,
     })),
   };
 }

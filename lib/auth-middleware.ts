@@ -1,8 +1,12 @@
 import { jwtVerify } from 'jose'
 
-const SECRET_KEY = new TextEncoder().encode(
-  process.env.JWT_SECRET || 'tu-secreto-super-seguro-cambialo'
-)
+function getSecretKey(): Uint8Array {
+  const secret = process.env.JWT_SECRET
+  if (!secret || !secret.trim()) {
+    throw new Error('Falta configurar JWT_SECRET en las variables de entorno')
+  }
+  return new TextEncoder().encode(secret)
+}
 
 export interface SessionData {
   isAuthenticated: boolean
@@ -19,7 +23,7 @@ export interface SessionData {
  */
 export async function decrypt(token: string): Promise<SessionData | null> {
   try {
-    const { payload } = await jwtVerify(token, SECRET_KEY)
+    const { payload } = await jwtVerify(token, getSecretKey())
     return payload as unknown as SessionData
   } catch {
     return null

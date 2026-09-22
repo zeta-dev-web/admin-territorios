@@ -12,7 +12,8 @@ import {
   clearAdminBackup,
 } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
-import { hashPassword } from '@/lib/auth'
+import { hashPassword, hashApiKey } from '@/lib/auth'
+import { isLoginBlocked, registerFailedLogin, clearLoginAttempts } from '@/lib/login-throttle'
 import { redirect } from 'next/navigation'
 import { revalidatePath } from 'next/cache'
 import { sendWelcomeEmail, sendPasswordChangedEmail } from '@/lib/resend'
@@ -58,19 +59,27 @@ export async function login(formData: FormData) {
   }
 
   // Login normal
+  const { blocked } = isLoginBlocked(email)
+  if (blocked) {
+    return { success: false, message: 'Demasiados intentos. Esperá unos minutos e intentá de nuevo.' }
+  }
+
   try {
     const user = await prisma.user.findUnique({ where: { email } })
 
     if (!user) {
+      registerFailedLogin(email)
       return { success: false, message: 'Credenciales inválidas' }
     }
 
     const isValid = await comparePassword(password, user.password)
 
     if (!isValid) {
+      registerFailedLogin(email)
       return { success: false, message: 'Credenciales inválidas' }
     }
 
+    clearLoginAttempts(email)
     await createSession({
       id: user.id,
       email: user.email,
@@ -394,38 +403,50 @@ function generateApiKey(): string {
 
 /**
  * Obtiene o crea la API key del usuario autenticado.
+ * Por seguridad el valor en texto plano solo se devuelve al crearla o
+ * regenerarla: si ya existe una activa se avisa con `hasKey` (no se puede
+ * revelar porque en la DB solo se guarda el hash).
  */
 export async function getOrCreateApiKey() {
   try {
     const session = await getSession()
     if (!session?.isAuthenticated) {
-      return { success: false, data: null, message: 'No autorizado' }
+      return { success: false, data: null, hasKey: false, message: 'No autorizado' }
     }
 
     // Buscar si ya tiene una API key activa
-    let apiKey = await prisma.apiKey.findFirst({
+    const apiKey = await prisma.apiKey.findFirst({
       where: { userId: session.userId, isActive: true },
     })
 
-    // Si no tiene, crear una
-    if (!apiKey) {
-      const newKey = generateApiKey()
-      apiKey = await prisma.apiKey.create({
-        data: {
-          key: newKey,
-          userId: session.userId,
-          tenantId: session.tenantId,
-          name: 'default',
-        },
-      })
+    // Si ya tiene, no se puede revelar el valor (solo se guarda el hash)
+    if (apiKey) {
+      return {
+        success: true,
+        data: null,
+        hasKey: true,
+        message: 'Ya tenés una API key activa. Regenerala para ver el valor.',
+      }
     }
 
-    return { success: true, data: apiKey.key }
+    // Si no tiene, crear una
+    const newKey = generateApiKey()
+    await prisma.apiKey.create({
+      data: {
+        key: hashApiKey(newKey),
+        userId: session.userId,
+        tenantId: session.tenantId,
+        name: 'default',
+      },
+    })
+
+    return { success: true, data: newKey, hasKey: true }
   } catch (error) {
     console.error('Error al obtener API key:', error)
     return {
       success: false,
       data: null,
+      hasKey: false,
       message: error instanceof Error ? error.message : 'Error al obtener API key',
     }
   }
@@ -447,18 +468,18 @@ export async function regenerateApiKey() {
       data: { isActive: false },
     })
 
-    // Crear nueva key
+    // Crear nueva key (en la DB solo se guarda el hash)
     const newKey = generateApiKey()
-    const apiKey = await prisma.apiKey.create({
+    await prisma.apiKey.create({
       data: {
-        key: newKey,
+        key: hashApiKey(newKey),
         userId: session.userId,
         tenantId: session.tenantId,
         name: 'default',
       },
     })
 
-    return { success: true, data: apiKey.key }
+    return { success: true, data: newKey }
   } catch (error) {
     console.error('Error al regenerar API key:', error)
     return {

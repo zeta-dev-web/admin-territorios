@@ -1,11 +1,16 @@
 import { SignJWT, jwtVerify } from 'jose'
 import { cookies } from 'next/headers'
+import { createHash } from 'node:crypto'
 import bcrypt from 'bcryptjs'
 import { prisma } from './prisma'
 
-const SECRET_KEY = new TextEncoder().encode(
-  process.env.JWT_SECRET || 'tu-secreto-super-seguro-cambialo'
-)
+function getSecretKey(): Uint8Array {
+  const secret = process.env.JWT_SECRET
+  if (!secret || !secret.trim()) {
+    throw new Error('Falta configurar JWT_SECRET en las variables de entorno')
+  }
+  return new TextEncoder().encode(secret)
+}
 
 export interface SessionData {
   isAuthenticated: boolean
@@ -23,16 +28,27 @@ export async function encrypt(payload: SessionData): Promise<string> {
     .setProtectedHeader({ alg: 'HS256' })
     .setIssuedAt()
     .setExpirationTime('24h')
-    .sign(SECRET_KEY)
+    .sign(getSecretKey())
 }
 
 export async function decrypt(token: string): Promise<SessionData | null> {
   try {
-    const { payload } = await jwtVerify(token, SECRET_KEY)
+    const { payload } = await jwtVerify(token, getSecretKey())
     return payload as unknown as SessionData
   } catch {
     return null
   }
+}
+
+// ── API Keys ──
+
+/**
+ * Deriva el valor a guardar en la DB desde una API key en texto plano.
+ * En la DB solo se guarda el hash: si se filtra la base, las keys siguen
+ * siendo utilizables únicamente por quien tenga el valor original.
+ */
+export function hashApiKey(token: string): string {
+  return createHash('sha256').update(token, 'utf8').digest('hex')
 }
 
 // ── Session ──

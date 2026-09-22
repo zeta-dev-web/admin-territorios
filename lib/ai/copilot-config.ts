@@ -6,8 +6,10 @@ import {
   getWeekProgramDetails,
 } from "@/services/ai-tools.service";
 import {
+  getActivePersonalAssignments,
   getAvailableTerritories,
   getTerritoryHistory,
+  getTerritoryPendingBlocks,
   getTerritoryStatus,
   getTerritoriesStats,
   getPublisherTerritoryHistory,
@@ -106,7 +108,7 @@ const TERRITORIOS_TOOLS: ToolDefinition[] = [
     function: {
       name: "getTerritoryHistory",
       description:
-        "Obtiene el historial completo de un territorio específico: todas sus asignaciones regulares (conductores) y asignaciones personales, con fechas, duración y progreso de trabajo.",
+        "Obtiene el historial completo de un territorio específico: todas sus asignaciones regulares (conductores) y asignaciones personales, con fechas, duración y progreso de trabajo. Acepta fechas opcionales desde/hasta (YYYY-MM-DD) para filtrar por periodo.",
       parameters: {
         type: "object",
         properties: {
@@ -114,6 +116,16 @@ const TERRITORIOS_TOOLS: ToolDefinition[] = [
             type: "number",
             description:
               "Número del territorio a consultar (ej: 15, 23, 105).",
+          },
+          desde: {
+            type: ["string", "null"],
+            description:
+              "Fecha inicial del periodo en formato YYYY-MM-DD (opcional).",
+          },
+          hasta: {
+            type: ["string", "null"],
+            description:
+              "Fecha final del periodo en formato YYYY-MM-DD (opcional).",
           },
         },
         required: ["territoryNumber"],
@@ -125,7 +137,7 @@ const TERRITORIOS_TOOLS: ToolDefinition[] = [
     function: {
       name: "getPublisherTerritoryHistory",
       description:
-        "Lista el historial completo de territorios de un publicador: asignaciones como conductor, asignaciones personales y registros diarios de trabajo en manzanas.",
+        "Lista el historial completo de territorios de un publicador: asignaciones como conductor, asignaciones personales y registros diarios de trabajo en manzanas. Acepta fechas opcionales desde/hasta (YYYY-MM-DD) para filtrar por periodo.",
       parameters: {
         type: "object",
         properties: {
@@ -133,6 +145,16 @@ const TERRITORIOS_TOOLS: ToolDefinition[] = [
             type: "string",
             description:
               "Nombre o apellido (o ambos) del publicador a buscar.",
+          },
+          desde: {
+            type: ["string", "null"],
+            description:
+              "Fecha inicial del periodo en formato YYYY-MM-DD (opcional).",
+          },
+          hasta: {
+            type: ["string", "null"],
+            description:
+              "Fecha final del periodo en formato YYYY-MM-DD (opcional).",
           },
         },
         required: ["publisherName"],
@@ -192,6 +214,41 @@ const TERRITORIOS_TOOLS: ToolDefinition[] = [
   {
     type: "function",
     function: {
+      name: "getTerritoryPendingBlocks",
+      description:
+        "Devuelve qué manzanas le faltan trabajar a un territorio con asignación activa: lista cada manzana con su estado (trabajada o pendiente) y última fecha de trabajo.",
+      parameters: {
+        type: "object",
+        properties: {
+          territoryNumber: {
+            type: "number",
+            description: "Número del territorio a consultar (ej: 15, 23, 105).",
+          },
+        },
+        required: ["territoryNumber"],
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "getActivePersonalAssignments",
+      description:
+        "Lista todas las asignaciones personales activas: territorio, publicador, días activo y notas. Permite filtrar por grupo.",
+      parameters: {
+        type: "object",
+        properties: {
+          groupName: {
+            type: ["string", "null"],
+            description: "Nombre del grupo para filtrar (opcional).",
+          },
+        },
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
       name: "getUnassignedTerritories",
       description:
         "Lista los territorios que NO fueron asignados a nadie (ni a conductor ni en forma personal) en un periodo. Sin fechas devuelve los que nunca fueron asignados. Acepta fechas opcionales desde/hasta en formato YYYY-MM-DD.",
@@ -229,9 +286,13 @@ const toolArgsSchemas = {
   getCongregationStats: z.object({}).strict(),
   getTerritoryHistory: z.object({
     territoryNumber: z.number().int().min(1).max(9999),
+    desde: z.string().max(30).optional(),
+    hasta: z.string().max(30).optional(),
   }),
   getPublisherTerritoryHistory: z.object({
     publisherName: z.string().min(1).max(120),
+    desde: z.string().max(30).optional(),
+    hasta: z.string().max(30).optional(),
   }),
   getTerritoryStatus: z.object({
     territoryNumber: z.number().int().min(1).max(9999),
@@ -241,6 +302,12 @@ const toolArgsSchemas = {
     includePersonalAssignments: z.boolean().optional(),
   }),
   getTerritoriesStats: z.object({}).strict(),
+  getTerritoryPendingBlocks: z.object({
+    territoryNumber: z.number().int().min(1).max(9999),
+  }),
+  getActivePersonalAssignments: z.object({
+    groupName: z.string().max(100).optional(),
+  }),
   getUnassignedTerritories: z.object({
     desde: z.string().max(30).optional(),
     hasta: z.string().max(30).optional(),
@@ -251,10 +318,25 @@ export function getToolsForModule(module: CopilotModule): ToolDefinition[] {
   return module === "vymc" ? VYMC_TOOLS : TERRITORIOS_TOOLS;
 }
 
+const warnedPublicEnvKeys = new Set<string>();
+
+function warnPublicEnvFallback(key: string): void {
+  if (warnedPublicEnvKeys.has(key)) return;
+  warnedPublicEnvKeys.add(key);
+  // Las vars NEXT_PUBLIC_* se inlinan en el JS del cliente: no poner secretos
+  // ni prompts sensibles ahí. Preferir la variante de servidor (AI_*).
+  console.warn(
+    `[copiloto] Usando ${key} como fallback. Movela a su variante de servidor (AI_*) para que no quede expuesta en el bundle del cliente.`,
+  );
+}
+
 function readEnvWithFallback(...keys: string[]): string | undefined {
   for (const key of keys) {
     const value = process.env[key];
-    if (value && value.trim()) return value;
+    if (value && value.trim()) {
+      if (key.startsWith('NEXT_PUBLIC_')) warnPublicEnvFallback(key);
+      return value;
+    }
   }
   return undefined;
 }
@@ -341,6 +423,10 @@ export async function executeCopilotTool(
       return getAvailableTerritories(tenantId, validArgs as never);
     case "getTerritoriesStats":
       return getTerritoriesStats(tenantId);
+    case "getTerritoryPendingBlocks":
+      return getTerritoryPendingBlocks(tenantId, validArgs as never);
+    case "getActivePersonalAssignments":
+      return getActivePersonalAssignments(tenantId, validArgs as never);
     case "getUnassignedTerritories":
       return getUnassignedTerritories(tenantId, validArgs as never);
   }

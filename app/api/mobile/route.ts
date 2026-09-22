@@ -8,6 +8,7 @@ import {
   hashPassword,
 } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { isLoginBlocked, registerFailedLogin, clearLoginAttempts } from '@/lib/login-throttle'
 import { withTenantContext } from '@/lib/request-context'
 import { exportTerritoryHistoryPdf } from '@/server/territoryExport'
 
@@ -140,14 +141,24 @@ function publicUser(user: MobileUser) {
 async function login(params: Record<string, unknown>) {
   const email = typeof params.email === 'string' ? params.email.trim() : ''
   const password = typeof params.password === 'string' ? params.password : ''
+
+  if (isLoginBlocked(email).blocked) {
+    return json(
+      { success: false, action: 'login', message: 'Demasiados intentos. Esperá unos minutos e intentá de nuevo.' },
+      429,
+    )
+  }
+
   const result = await authenticateCredentials(email, password)
 
   if (!result.success) {
+    registerFailedLogin(email)
     return json(
       { success: false, action: 'login', message: result.message },
       401,
     )
   }
+  clearLoginAttempts(email)
 
   const userRecord = await prisma.user.findUnique({
     where: { id: result.user.id },

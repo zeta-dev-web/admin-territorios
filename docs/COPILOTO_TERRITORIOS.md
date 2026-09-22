@@ -68,6 +68,8 @@ Historial completo de un territorio.
 
 **Parámetros:**
 - `territoryNumber` (number): Número del territorio
+- `desde` (string YYYY-MM-DD, opcional): Fecha inicial del periodo
+- `hasta` (string YYYY-MM-DD, opcional): Fecha final del periodo
 
 **Retorna:**
 - Información del territorio (número, descripción, grupo)
@@ -82,6 +84,8 @@ Historial de territorios de un publicador.
 
 **Parámetros:**
 - `publisherName` (string): Nombre o apellido del publicador
+- `desde` (string YYYY-MM-DD, opcional): Fecha inicial del periodo
+- `hasta` (string YYYY-MM-DD, opcional): Fecha final del periodo
 
 **Retorna:**
 - Asignaciones como conductor
@@ -117,11 +121,12 @@ Lista de territorios disponibles y asignados.
 **Retorna:**
 - Total de territorios
 - Territorios disponibles para asignar
-- Territorios actualmente asignados
+- Territorios actualmente asignados (con conductor y fecha de inicio)
 
 **Ejemplo de consulta:**
 > "¿Qué territorios están disponibles?"
 > "Muéstrame los territorios disponibles del grupo Norte"
+> "¿Quién tiene asignado el territorio 12?"
 
 ### 5. getTerritoriesStats
 Estadísticas generales del sistema.
@@ -138,6 +143,43 @@ Ninguno
 
 **Ejemplo de consulta:**
 > "Dame estadísticas de territorios"
+
+### 6. getUnassignedTerritories
+Territorios que no fueron asignados a nadie (ni conductor ni personal) en un periodo. Sin fechas devuelve los que nunca fueron asignados.
+
+**Parámetros:**
+- `desde` (string YYYY-MM-DD, opcional): Fecha inicial del periodo
+- `hasta` (string YYYY-MM-DD, opcional): Fecha final del periodo
+
+**Ejemplo de consulta:**
+> "¿Qué territorios no se asignaron en 2024?"
+> "¿Cuáles nunca fueron asignados?"
+
+### 7. getTerritoryPendingBlocks
+Manzanas pendientes de un territorio con asignación activa.
+
+**Parámetros:**
+- `territoryNumber` (number): Número del territorio
+
+**Retorna:**
+- Conductor actual y fecha de inicio
+- Totales trabajadas/pendientes y lista de pendientes
+- Estado de cada manzana con última fecha de trabajo
+
+**Ejemplo de consulta:**
+> "¿Qué manzanas le faltan al territorio 5?"
+
+### 8. getActivePersonalAssignments
+Asignaciones personales activas.
+
+**Parámetros:**
+- `groupName` (string, opcional): Filtrar por grupo
+
+**Retorna:**
+- Territorio, publicador, días activo y notas de cada asignación
+
+**Ejemplo de consulta:**
+> "¿Quiénes tienen asignaciones personales activas?"
 
 ## Configuración
 
@@ -176,7 +218,7 @@ const isTerritoriosModule = pathname?.startsWith('/territorios')
 
 1. **Autenticación obligatoria**: El endpoint requiere sesión activa
 2. **Aislamiento multinquilino**: Todas las consultas filtran por `session.tenantId`
-3. **Lista blanca de herramientas**: Solo las 5 herramientas definidas pueden ejecutarse
+3. **Lista blanca de herramientas**: Solo las 8 herramientas definidas pueden ejecutarse
 4. **Validación estricta**: Esquemas Zod validan todos los parámetros
 5. **Solo lectura**: No se permite ninguna operación de escritura
 6. **Sin SQL arbitrario**: La IA no puede ejecutar consultas personalizadas
@@ -218,7 +260,7 @@ const isTerritoriosModule = pathname?.startsWith('/territorios')
 | **Ruta** | `/vymc/*` | `/territorios/*` |
 | **Color** | Azul (`#2C5282`) | Rojo (`#DC2626`) |
 | **Endpoint** | `POST /api/ai/chat` (`module: "vymc"`) | `POST /api/ai/chat` (`module: "territorios"`) |
-| **Herramientas** | 4 herramientas (publicadores, semanas, estadísticas) | 5 herramientas (territorios, asignaciones, estadísticas) |
+| **Herramientas** | 4 herramientas (publicadores, semanas, estadísticas) | 8 herramientas (territorios, asignaciones, estadísticas, periodos) |
 | **Prompt** | `AI_COPILOT_SYSTEM_PROMPT` | `AI_COPILOT_TERRITORIOS_SYSTEM_PROMPT` |
 
 ## Mantenimiento

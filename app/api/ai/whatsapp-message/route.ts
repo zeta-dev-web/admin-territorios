@@ -20,14 +20,25 @@ const messageParamsSchema = z.object({
   tone: z.enum(["FRATERNAL", "FORMAL", "REMINDER"]).optional(),
 });
 
+const warnedWhatsappEnvKeys = new Set<string>()
+
 function readToneInstructions(tone: string): string | undefined {
-  const newKey = `AI_WHATSAPP_PROMPT_${tone}`;
-  const legacyKey = `NEXT_PUBLIC_WHATSAPP_PROMPT_${tone}`;
+  const newKey = `AI_WHATSAPP_PROMPT_${tone}`
+  const legacyKey = `NEXT_PUBLIC_WHATSAPP_PROMPT_${tone}`
   for (const key of [newKey, legacyKey]) {
-    const value = process.env[key];
-    if (value && value.trim()) return value;
+    const value = process.env[key]
+    if (value && value.trim()) {
+      // NEXT_PUBLIC_* se inlna en el JS del cliente: preferir AI_*.
+      if (key.startsWith('NEXT_PUBLIC_') && !warnedWhatsappEnvKeys.has(key)) {
+        warnedWhatsappEnvKeys.add(key)
+        console.warn(
+          `[whatsapp-ai] Usando ${key} como fallback. Movela a ${newKey} para que no quede expuesta en el bundle del cliente.`,
+        )
+      }
+      return value
+    }
   }
-  return undefined;
+  return undefined
 }
 
 function buildPrompt(params: z.infer<typeof messageParamsSchema>): string {
@@ -100,7 +111,7 @@ export async function POST(request: NextRequest) {
     const params = parsed.data;
 
     try {
-      const rateLimit = checkRateLimit("whatsapp-ai", session.userId);
+      const rateLimit = await checkRateLimit("whatsapp-ai", session.userId);
       if (!rateLimit.allowed) {
         throw new Error("rate-limit");
       }
