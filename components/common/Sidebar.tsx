@@ -16,16 +16,13 @@ import {
   Map,
   Settings,
   BookOpen,
-  Home,
   CalendarDays,
-  MessageCircle,
   ChevronDown,
   Check,
 } from 'lucide-react'
 import { logout, getCurrentUserRole, getCurrentUserCongregation, getCurrentUserModules } from '@/server/auth'
 import { cn } from '@/lib/utils'
 import { BrandMark } from './BrandMark'
-import { ThemeToggle } from '@/components/theme/ThemeToggle'
 import type { ModuleCode } from '@/lib/module-access'
 
 interface SidebarProps {
@@ -51,7 +48,6 @@ const modules: Array<{
 ]
 
 const territoriosMenu: MenuItem[] = [
-  { label: 'Todos los módulos', icon: Home, href: '/inicio', exact: true },
   { label: 'Resumen', icon: LayoutDashboard, href: '/territorios', exact: true },
   { label: 'Territorios', icon: MapPin, href: '/territorios/lista' },
   { label: 'Mapas', icon: Map, href: '/territorios/mapas' },
@@ -62,11 +58,9 @@ const territoriosMenu: MenuItem[] = [
 ]
 
 const vymcMenu: MenuItem[] = [
-  { label: 'Todos los módulos', icon: Home, href: '/inicio', exact: true },
   { label: 'Resumen', icon: LayoutDashboard, href: '/vymc', exact: true },
   { label: 'Programas', icon: CalendarDays, href: '/vymc/programas' },
   { label: 'Publicadores', icon: Users, href: '/vymc/publicadores' },
-  { label: 'WhatsApp', icon: MessageCircle, href: '/vymc/whatsapp' },
 ]
 
 const menusByModule: Record<ModuleCode, MenuItem[]> = {
@@ -304,7 +298,6 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
               <span>Configuración</span>
             </Link>
             
-            <ThemeToggle />
             <button
               onClick={handleLogout}
               disabled={isLoggingOut}
