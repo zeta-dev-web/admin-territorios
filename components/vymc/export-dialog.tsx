@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useSession } from '@/lib/vymc-session';
 import toast from "react-hot-toast";
 import { CheckCircle2, ChevronDown, FileDown, Loader2 } from "lucide-react";
@@ -9,7 +9,6 @@ import {
   Dialog,
   DialogContent,
   DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
@@ -34,13 +33,13 @@ export function ExportWeekDialog({ open, onOpenChange, weeks }: ExportWeekDialog
   const [isExportingImages, setIsExportingImages] = useState(false);
   const [exportMonthFilter, setExportMonthFilter] = useState<string>("all");
 
-  // Reset the dialog state every time it is opened
-  useEffect(() => {
-    if (open) {
+  const handleOpenChange = (nextOpen: boolean) => {
+    if (!nextOpen) {
       setSelectedWeekIds(new Set());
       setExportMonthFilter("all");
     }
-  }, [open]);
+    onOpenChange(nextOpen);
+  };
 
   const handleExportPDF = async () => {
     if (selectedWeekIds.size === 0) return;
@@ -77,8 +76,7 @@ export function ExportWeekDialog({ open, onOpenChange, weeks }: ExportWeekDialog
       window.URL.revokeObjectURL(url);
       document.body.removeChild(a);
 
-      onOpenChange(false);
-      setSelectedWeekIds(new Set());
+      handleOpenChange(false);
       toast.success("PDF exportado correctamente");
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Error al generar PDF");
@@ -121,8 +119,7 @@ export function ExportWeekDialog({ open, onOpenChange, weeks }: ExportWeekDialog
       document.body.removeChild(a);
       window.setTimeout(() => window.URL.revokeObjectURL(url), 1000);
 
-      onOpenChange(false);
-      setSelectedWeekIds(new Set());
+      handleOpenChange(false);
       toast.success("Imágenes exportadas correctamente");
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Error al generar imágenes");
@@ -180,8 +177,8 @@ export function ExportWeekDialog({ open, onOpenChange, weeks }: ExportWeekDialog
     });
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[85vh] w-[calc(100%-2rem)] max-w-2xl overflow-y-auto p-4 sm:p-6">
+    <Dialog open={open} onOpenChange={handleOpenChange}>
+      <DialogContent className="max-h-[85vh] w-[calc(100vw-2rem)] max-w-2xl sm:max-w-2xl overflow-y-auto p-4 sm:p-6 lg:p-7">
         <DialogHeader>
           <DialogTitle className="text-card-foreground">Descargar Semanas</DialogTitle>
           <DialogDescription className="text-muted-foreground">
@@ -208,13 +205,13 @@ export function ExportWeekDialog({ open, onOpenChange, weeks }: ExportWeekDialog
           </div>
 
           {/* Select All / Deselect All */}
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
             <Button
               type="button"
               onClick={selectAllVisibleWeeks}
               variant="outline"
               size="sm"
-              className="text-xs"
+              className="w-full text-xs sm:w-auto"
             >
               Seleccionar todas
             </Button>
@@ -223,11 +220,11 @@ export function ExportWeekDialog({ open, onOpenChange, weeks }: ExportWeekDialog
               onClick={deselectAllWeeks}
               variant="outline"
               size="sm"
-              className="text-xs"
+              className="w-full text-xs sm:w-auto"
             >
               Deseleccionar todas
             </Button>
-            <div className="w-full text-xs text-muted-foreground sm:w-auto sm:ml-auto sm:text-sm">
+            <div className="text-xs text-muted-foreground sm:ml-auto sm:text-sm">
               {selectedWeekIds.size} {selectedWeekIds.size === 1 ? "semana seleccionada" : "semanas seleccionadas"}
             </div>
           </div>
@@ -268,16 +265,15 @@ export function ExportWeekDialog({ open, onOpenChange, weeks }: ExportWeekDialog
           </div>
         </div>
 
-        <DialogFooter className="flex gap-2">
+        <div className="flex flex-col-reverse gap-2 sm:flex-row sm:flex-wrap sm:justify-end">
           <Button
             type="button"
             variant="outline"
             onClick={() => {
-              onOpenChange(false);
-              setSelectedWeekIds(new Set());
+              handleOpenChange(false);
             }}
             disabled={isExportingPDF || isExportingImages}
-            className="border-border"
+            className="min-h-11 border-border justify-center sm:min-w-24"
           >
             Cancelar
           </Button>
@@ -285,7 +281,7 @@ export function ExportWeekDialog({ open, onOpenChange, weeks }: ExportWeekDialog
             onClick={handleExportImages}
             disabled={selectedWeekIds.size === 0 || isExportingPDF || isExportingImages}
             variant="outline"
-            className="border-primary text-primary hover:bg-primary hover:text-white"
+            className="min-h-11 border-primary text-primary hover:bg-primary hover:text-white justify-center"
           >
             {isExportingImages ? (
               <div className="flex items-center gap-2">
@@ -302,7 +298,7 @@ export function ExportWeekDialog({ open, onOpenChange, weeks }: ExportWeekDialog
           <Button
             onClick={handleExportPDF}
             disabled={selectedWeekIds.size === 0 || isExportingPDF || isExportingImages}
-            className="bg-primary hover:bg-primary/90 text-primary-foreground"
+            className="min-h-11 bg-primary hover:bg-primary/90 text-primary-foreground justify-center"
           >
             {isExportingPDF ? (
               <div className="flex items-center gap-2">
@@ -316,7 +312,7 @@ export function ExportWeekDialog({ open, onOpenChange, weeks }: ExportWeekDialog
               </>
             )}
           </Button>
-        </DialogFooter>
+        </div>
       </DialogContent>
     </Dialog>
   );
