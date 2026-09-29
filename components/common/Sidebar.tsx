@@ -16,6 +16,7 @@ import {
   Map,
   Settings,
   BookOpen,
+  LifeBuoy,
   CalendarDays,
   ChevronDown,
   Check,
@@ -284,6 +285,20 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
           <div className="p-4 border-t border-slate-200 dark:border-slate-800/50 space-y-1 overflow-y-auto">
             <AdminSection visible={isAdmin} onNavigate={handleNavigate} />
             
+            {/* Soporte */}
+            <Link
+              href="/contacto"
+              onClick={handleNavigate}
+              aria-current={pathname === '/contacto' ? 'page' : undefined}
+              className={cn(
+                'sidebar-nav-link flex min-h-11 items-center gap-3 rounded-lg border-l-2 px-3 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500',
+                pathname === '/contacto' && 'sidebar-nav-link-active'
+              )}
+            >
+              <LifeBuoy className="h-[18px] w-[18px]" aria-hidden="true" />
+              <span>Soporte</span>
+            </Link>
+
             {/* Configuración (para todos los usuarios) */}
             <Link
               href="/configuracion"

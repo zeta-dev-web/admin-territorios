@@ -93,6 +93,13 @@ export default function Footer() {
             >
               Términos y Condiciones
             </a>
+            <span className="footer-separator">•</span>
+            <a
+              href="/contacto"
+              className="footer-link transition-colors"
+            >
+              Contacto
+            </a>
           </div>
         </div>
       </div>
