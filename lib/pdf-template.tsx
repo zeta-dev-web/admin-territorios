@@ -257,8 +257,8 @@ const formatAssignments = (
   // Check for CONDUCTOR and READER first (Estudio bíblico)
   if (grouped["CONDUCTOR"] || grouped["READER"]) {
     if (grouped["CONDUCTOR"] && grouped["READER"]) {
-      role = "Conductor/Lector:";
-      names = `${grouped["CONDUCTOR"][0]}/${grouped["READER"][0]}`;
+      role = "Conductor / Lector:";
+      names = `${grouped["CONDUCTOR"][0]} / ${grouped["READER"][0]}`;
     } else if (grouped["CONDUCTOR"]) {
       role = "Conductor:";
       names = grouped["CONDUCTOR"][0];
@@ -270,18 +270,18 @@ const formatAssignments = (
   // (ASSIGNEE || STUDENT) + HELPER → "Estudiante/Ayudante:" only in BE_BETTER_TEACHERS
   else if ((grouped["ASSIGNEE"] || grouped["STUDENT"]) && grouped["HELPER"]) {
     if (sectionType === "BE_BETTER_TEACHERS") {
-      role = "Estudiante/Ayudante:";
+      role = "Estudiante / Ayudante:";
     } else {
       role = "";
     }
     const student = grouped["STUDENT"]?.[0] || grouped["ASSIGNEE"]?.[0] || "";
     const helper = grouped["HELPER"]?.[0] || "";
-    names = [student, helper].filter(Boolean).join("/");
+    names = [student, helper].filter(Boolean).join(" / ");
   }
   // Only HELPER
   else if (grouped["HELPER"]) {
     role = "Ayudante:";
-    names = grouped["HELPER"].join("/");
+    names = grouped["HELPER"].join(" / ");
   }
   // Only STUDENT
   else if (grouped["STUDENT"]) {
@@ -296,7 +296,7 @@ const formatAssignments = (
     } else {
       role = "";
     }
-    names = grouped["STUDENT"].join("/");
+    names = grouped["STUDENT"].join(" / ");
   }
   // Only ASSIGNEE
   else if (grouped["ASSIGNEE"]) {
@@ -311,7 +311,7 @@ const formatAssignments = (
     } else {
       role = "";
     }
-    names = grouped["ASSIGNEE"].join("/");
+    names = grouped["ASSIGNEE"].join(" / ");
   }
   
   return { role, names };
