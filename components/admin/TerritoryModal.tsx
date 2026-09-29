@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { Plus, X, Loader2, MapPin, Save } from 'lucide-react'
+import { Button } from '@/components/ui/button'
 import { createTerritory, updateTerritory, getAllGroups } from '@/server'
 import { useRouter } from 'next/navigation'
 
@@ -106,13 +107,15 @@ export function TerritoryModal({ isOpen, onClose, territory, groups }: Territory
               {isEditMode ? 'Editar Territorio' : 'Nuevo Territorio'}
             </h2>
           </div>
-          <button
+          <Button
             onClick={() => !isLoading && onClose()}
-            className="p-2 hover:bg-slate-800 rounded-lg transition-colors"
+            variant="ghost"
+            size="icon"
             disabled={isLoading}
+            aria-label="Cerrar modal"
           >
-            <X className="h-5 w-5 text-slate-400" />
-          </button>
+            <X className="h-5 w-5" />
+          </Button>
         </div>
 
         {/* Form */}
@@ -212,18 +215,20 @@ export function TerritoryModal({ isOpen, onClose, territory, groups }: Territory
 
           {/* Botones */}
           <div className="flex gap-3 pt-4">
-            <button
+            <Button
               type="button"
               onClick={onClose}
               disabled={isLoading}
-              className="flex-1 px-4 py-2 border border-slate-700 rounded-lg font-medium text-slate-300 hover:bg-slate-800 transition-colors disabled:opacity-50"
+              variant="outline"
+              className="flex-1"
             >
               Cancelar
-            </button>
-            <button
+            </Button>
+            <Button
               type="submit"
               disabled={isLoading}
-              className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-lg font-medium hover:from-red-600 hover:to-red-700 transition-all shadow-lg shadow-red-500/20 disabled:from-slate-700 disabled:to-slate-800"
+              variant="default"
+              className="flex-1 bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white shadow-lg shadow-red-500/20"
             >
               {isLoading ? (
                 <>
@@ -236,7 +241,7 @@ export function TerritoryModal({ isOpen, onClose, territory, groups }: Territory
                   <span>{isEditMode ? 'Guardar' : 'Crear'}</span>
                 </>
               )}
-            </button>
+            </Button>
           </div>
         </form>
       </div>

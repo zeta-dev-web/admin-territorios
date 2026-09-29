@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getCurrentTenantId } from '@/lib/tenant'
+import { authorizeModuleRequest } from '@/lib/module-access'
 import { prisma } from '@/lib/prisma'
 
 export const dynamic = 'force-dynamic'
@@ -11,7 +11,9 @@ function isNoAuth(e: unknown) {
 // GET /api/vymc/weeks?includeDetails=true&year=YYYY
 export async function GET(request: NextRequest) {
   try {
-    const tenantId = await getCurrentTenantId()
+    const access = await authorizeModuleRequest('VYMC')
+    if ('response' in access) return access.response
+    const { tenantId } = access
     const sp = new URL(request.url).searchParams
     const includeDetails = sp.get('includeDetails') === 'true'
     const year = sp.get('year')
@@ -46,7 +48,9 @@ export async function GET(request: NextRequest) {
 // POST /api/vymc/weeks
 export async function POST(request: NextRequest) {
   try {
-    const tenantId = await getCurrentTenantId()
+    const access = await authorizeModuleRequest('VYMC')
+    if ('response' in access) return access.response
+    const { tenantId } = access
     const b = await request.json()
 
     const errors: string[] = []

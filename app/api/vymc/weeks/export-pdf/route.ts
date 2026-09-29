@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { renderToBuffer } from "@react-pdf/renderer";
-import { getCurrentTenantId } from "@/lib/tenant";
+import { authorizeModuleRequest } from "@/lib/module-access";
 import { prisma } from "@/lib/prisma";
 import { generatePDFDocument } from "@/lib/pdf-template";
 
@@ -8,7 +8,9 @@ export const dynamic = "force-dynamic";
 
 export async function POST(request: NextRequest) {
   try {
-    const tenantId = await getCurrentTenantId();
+    const access = await authorizeModuleRequest('VYMC');
+    if ('response' in access) return access.response;
+    const { tenantId } = access;
     const body = await request.json();
     const { weekIds } = body;
 

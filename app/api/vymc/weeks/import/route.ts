@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getCurrentTenantId } from '@/lib/tenant'
+import { authorizeModuleRequest } from '@/lib/module-access'
 import { prisma } from '@/lib/prisma'
 
 export const dynamic = 'force-dynamic'
@@ -7,7 +7,9 @@ export const dynamic = 'force-dynamic'
 // POST /api/vymc/weeks/import - Guarda el programa scrapeado como semana completa
 export async function POST(request: NextRequest) {
   try {
-    const tenantId = await getCurrentTenantId()
+    const access = await authorizeModuleRequest('VYMC')
+    if ('response' in access) return access.response
+    const { tenantId } = access
     const b = await request.json()
 
     const validWeekTypes = ['REGULAR', 'REGIONAL_ASSEMBLY', 'CIRCUIT_ASSEMBLY', 'CIRCUIT_SUPERVISOR_VISIT']

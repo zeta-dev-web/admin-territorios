@@ -1,233 +1,303 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useSession } from '@/lib/vymc-session';
-import { Button } from "@/components/ui/button";
-import {
-  Users,
-  Calendar,
-  ArrowRight,
-  AlertTriangle,
-  CheckCircle2,
-  UserPlus,
-  Download,
-  ClipboardCheck,
-} from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { useCongregation } from "@/contexts/congregation-context";
-import { formatCongregationName } from "@/lib/format-congregation";
-import { formatDateRange } from "@/components/vymc/week-display-config";
-import type { DashboardStats } from "@/types/dashboard.types";
+import {
+  ArrowRight,
+  ClipboardList,
+  Users,
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
 
-function formatRelativeTime(iso: string): string {
-  const diffMs = Date.now() - new Date(iso).getTime();
-  const minutes = Math.floor(diffMs / 60000);
-  if (minutes < 1) return "hace instantes";
-  const hours = Math.floor(minutes / 60);
-  if (hours < 24) return `hace ${hours} h`;
-  const days = Math.floor(hours / 24);
-  if (days < 30) return `hace ${days} ${days === 1 ? "día" : "días"}`;
-  return new Date(iso).toLocaleDateString("es-ES", {
-    day: "numeric",
-    month: "short",
-  });
+type PendingAssignment = {
+  role: string;
+};
+
+type PendingItem = {
+  id: string;
+  title: string;
+  itemType: string;
+  order: number;
+  timeMinutes: number | null;
+  songNumber: number | null;
+  requiresStudentHelper: boolean;
+  assignments: PendingAssignment[];
+};
+
+type PendingSection = {
+  id: string;
+  sectionType: string;
+  order: number;
+  items: PendingItem[];
+};
+
+type PendingWeek = {
+  id: string;
+  weekNumber: number;
+  year: number;
+  startDate: string;
+  endDate: string;
+  biblicalReading: string | null;
+  presidentId: string | null;
+  openingPrayerId: string | null;
+  sections: PendingSection[];
+};
+
+type VymcPublisher = {
+  id: string;
+  firstName: string;
+  lastName: string;
+  group?: { name: string } | null;
+  isElder: boolean;
+  isMinisterialServant: boolean;
+  isPioneer: boolean;
+};
+
+/** Roles que debería tener un tema menos los ya cubiertos. */
+function countMissingRoles(
+  sectionType: string,
+  item: Pick<PendingItem, "itemType" | "title" | "requiresStudentHelper" | "assignments">
+): number {
+  const taken = new Set(item.assignments.map((a) => a.role));
+  let expected: string[];
+  if (sectionType === "BE_BETTER_TEACHERS") {
+    expected = item.itemType === "SPEECH" ? ["ASSIGNEE"] : ["ASSIGNEE", "HELPER"];
+  } else if (sectionType === "CHRISTIAN_LIFE") {
+    const lower = item.title.toLowerCase();
+    expected =
+      lower.includes("estudio bíblico") || lower.includes("estudio biblico")
+        ? ["CONDUCTOR", "READER"]
+        : ["ASSIGNEE"];
+  } else {
+    expected = ["ASSIGNEE"];
+  }
+  return expected.filter((r) => !taken.has(r)).length;
 }
 
-export default function DashboardPage() {
-  const { data: session } = useSession();
-  const { congregationName } = useCongregation();
-  const [stats, setStats] = useState<DashboardStats | null>(null);
+function isSkippedItem(sectionType: string, item: PendingItem): boolean {
+  if (item.songNumber && !item.timeMinutes) return true;
+  const lower = item.title.toLowerCase();
+  if (
+    lower.includes("palabras de introducción") ||
+    lower.includes("palabras de conclusión")
+  )
+    return true;
+  return sectionType === "PRESIDENT" || sectionType === "OPENING_PRAYER";
+}
+
+function countWeekPending(week: PendingWeek): number {
+  let count = 0;
+  if (!week.presidentId) count += 1;
+  if (!week.openingPrayerId) count += 1;
+  for (const section of week.sections) {
+    for (const item of section.items) {
+      if (isSkippedItem(section.sectionType, item)) continue;
+      count += countMissingRoles(section.sectionType, item);
+    }
+  }
+  return count;
+}
+
+function formatMonthTitle(date: Date): string {
+  const label = date.toLocaleDateString("es-ES", {
+    timeZone: "UTC",
+    month: "long",
+    year: "numeric",
+  });
+  return label.charAt(0).toUpperCase() + label.slice(1);
+}
+
+export default function VymcHomePage() {
+  const [weeks, setWeeks] = useState<PendingWeek[]>([]);
+  const [publishers, setPublishers] = useState<VymcPublisher[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     let cancelled = false;
-
-    fetch("/api/vymc/stats")
-      .then(async (res) => {
-        if (!res.ok) throw new Error("Error al cargar estadísticas");
-        return res.json();
-      })
-      .then((data) => {
-        if (!cancelled) setStats(data);
-      })
-      .catch((err) => {
+    (async () => {
+      try {
+        const [weeksRes, pubRes] = await Promise.all([
+          fetch("/api/vymc/weeks/pending"),
+          fetch("/api/vymc/publishers"),
+        ]);
+        if (weeksRes.ok && !cancelled) setWeeks(await weeksRes.json());
+        if (pubRes.ok && !cancelled) setPublishers(await pubRes.json());
+      } catch (err) {
         console.error(err);
-      });
-
+      } finally {
+        if (!cancelled) setIsLoading(false);
+      }
+    })();
     return () => {
       cancelled = true;
     };
   }, []);
 
-  const totals = stats?.totals;
-  const month = stats?.month;
-  const nextMeeting = stats?.nextMeeting;
-  const hasMissingParts =
-    nextMeeting && nextMeeting.assignedParts < nextMeeting.totalParts;
-  const missingCount = nextMeeting
-    ? nextMeeting.totalParts - nextMeeting.assignedParts
-    : 0;
+  const stats = useMemo(() => {
+    const now = new Date();
+    const currentKey = `${now.getUTCFullYear()}-${now.getUTCMonth()}`;
+    const nextDate = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 1));
+    const nextKey = `${nextDate.getUTCFullYear()}-${nextDate.getUTCMonth()}`;
+
+    let currentPending = 0;
+    let nextPending = 0;
+    let currentWeeks = 0;
+    let nextWeeks = 0;
+    for (const week of weeks) {
+      const d = new Date(week.startDate);
+      const key = `${d.getUTCFullYear()}-${d.getUTCMonth()}`;
+      if (key === currentKey) {
+        currentPending += countWeekPending(week);
+        currentWeeks += 1;
+      } else if (key === nextKey) {
+        nextPending += countWeekPending(week);
+        nextWeeks += 1;
+      }
+    }
+
+    const elders = publishers.filter((p) => p.isElder).length;
+    const servants = publishers.filter((p) => p.isMinisterialServant).length;
+    const pioneers = publishers.filter((p) => p.isPioneer).length;
+
+    return {
+      currentPending,
+      nextPending,
+      currentWeeks,
+      nextWeeks,
+      currentTitle: formatMonthTitle(now),
+      nextTitle: formatMonthTitle(nextDate),
+      totalPublishers: publishers.length,
+      elders,
+      servants,
+      pioneers,
+    };
+  }, [weeks, publishers]);
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <p className="text-muted-foreground text-sm">Cargando resumen...</p>
+      </div>
+    );
+  }
 
   return (
-    <div className="space-y-8">
-      {/* Welcome Section */}
-      <div className="bg-gradient-to-br from-[#1A365D] to-primary rounded-xl p-8 text-white">
-        <div className="flex items-start justify-between mb-6">
-          <div>
-            <p className="text-white/70 text-sm mb-2">Bienvenido de vuelta</p>
-            <h1 className="text-3xl font-semibold mb-1">
-              {session?.user.name}
-            </h1>
-            <p className="text-white/80">
-              {formatCongregationName(congregationName)}
-            </p>
-          </div>
-        </div>
+    <div className="space-y-6">
+      {/* Header */}
+      <h1 className="text-2xl font-semibold text-card-foreground">Resumen</h1>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-8">
-          <div className="bg-white/10 backdrop-blur-sm rounded-lg p-5 border border-white/20">
-            <div className="flex items-center justify-between mb-3">
-              <Users className="w-5 h-5 text-white/80" />
-              <span className="text-2xl font-semibold tabular-nums">
-                {totals ? totals.publishers : "—"}
-              </span>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Asignaciones pendientes */}
+        <div className="rounded-xl border border-border bg-card p-6 space-y-4">
+          <div className="flex items-center gap-3 mb-2">
+            <div className="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center">
+              <ClipboardList className="h-5 w-5 text-primary" />
             </div>
-            <p className="text-white/90 font-medium">Publicadores</p>
-            <p className="text-white/60 text-sm mt-0.5">
-              {totals
-                ? `${totals.elders} ancianos · ${totals.ministerialServants} siervos · ${totals.pioneers} precursores`
-                : "En el directorio"}
-            </p>
+            <div>
+              <h2 className="text-xl font-semibold text-card-foreground">
+                Asignaciones pendientes
+              </h2>
+              <p className="text-sm text-muted-foreground">Partes sin asignar</p>
+            </div>
           </div>
 
-          <div className="bg-white/10 backdrop-blur-sm rounded-lg p-5 border border-white/20">
-            <div className="flex items-center justify-between mb-3">
-              <Calendar className="w-5 h-5 text-white/80" />
-              <span className="text-2xl font-semibold tabular-nums">
-                {totals ? totals.weeks : "—"}
-              </span>
-            </div>
-            <p className="text-white/90 font-medium">Semanas</p>
-            <p className="text-white/60 text-sm mt-0.5">Programadas</p>
-          </div>
-
-          <div className="bg-white/10 backdrop-blur-sm rounded-lg p-5 border border-white/20">
-            <div className="flex items-center justify-between mb-3">
-              <ClipboardCheck className="w-5 h-5 text-white/80" />
-              <span className="text-2xl font-semibold tabular-nums">
-                {month ? `${month.completionPercentage}%` : "—"}
-              </span>
-            </div>
-            <p className="text-white/90 font-medium">Asignaciones</p>
-            <p className="text-white/60 text-sm mt-0.5 capitalize">
-              {month
-                ? `${month.assignedParts}/${month.totalParts} partes · ${month.label}`
-                : "Este mes"}
-            </p>
-          </div>
-        </div>
-      </div>
-
-      {/* Next Meeting Alert */}
-      {nextMeeting &&
-        (hasMissingParts ? (
-          <Link href={`/vymc/programas/${nextMeeting.weekId}`} className="block group">
-            <div className="rounded-xl border border-amber-300 bg-amber-50 p-5 flex flex-col sm:flex-row sm:items-center gap-4 hover:border-amber-400 transition-colors">
-              <div className="w-10 h-10 rounded-lg bg-amber-100 flex items-center justify-center shrink-0">
-                <AlertTriangle className="w-5 h-5 text-amber-600" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="font-medium text-amber-900">
-                  Reunión próxima con {missingCount}{" "}
-                  {missingCount === 1 ? "parte sin asignar" : "partes sin asignar"}
+          <div className="space-y-3">
+            <Link
+              href="/vymc/programas"
+              className="flex items-center justify-between p-4 rounded-lg border border-border hover:border-primary transition-colors"
+            >
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">
+                  Este mes · {stats.currentTitle}
                 </p>
-                <p className="text-sm text-amber-700 mt-0.5">
-                  {formatDateRange(nextMeeting.startDate, nextMeeting.endDate)} ·{" "}
-                  {nextMeeting.assignedParts}/{nextMeeting.totalParts} partes completadas
-                  {!nextMeeting.presidentAssigned && " · Falta presidente"}
-                  {!nextMeeting.openingPrayerAssigned && " · Falta oración inicial"}
+                <p className="text-xs text-muted-foreground/70">
+                  {stats.currentWeeks}{" "}
+                  {stats.currentWeeks === 1 ? "semana" : "semanas"} en el mes
                 </p>
               </div>
-              <Button
-                size="sm"
-                className="bg-[#D97706] hover:bg-amber-600 text-white shrink-0"
-              >
-                Completar programa
-                <ArrowRight className="w-4 h-4 ml-1.5" />
-              </Button>
-            </div>
-          </Link>
-        ) : (
-          <Link href={`/vymc/programas/${nextMeeting.weekId}`} className="block group">
-            <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-5 flex items-center gap-4 hover:border-emerald-300 transition-colors">
-              <div className="w-10 h-10 rounded-lg bg-emerald-100 flex items-center justify-center shrink-0">
-                <CheckCircle2 className="w-5 h-5 text-emerald-600" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="font-medium text-emerald-900">
-                  Próxima reunión completa
-                </p>
-                <p className="text-sm text-emerald-700 mt-0.5">
-                  {formatDateRange(nextMeeting.startDate, nextMeeting.endDate)} · Todas las
-                  partes tienen asignación
-                </p>
-              </div>
-            </div>
-          </Link>
-        ))}
-
-      {/* Navigation Cards */}
-      <div className="grid gap-6 md:grid-cols-2">
-        <div className="bg-card rounded-xl border-2 border-border p-6 hover:border-primary transition-all group">
-          <div className="flex items-start gap-4 mb-6">
-            <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center group-hover:bg-primary transition-colors">
-              <Users className="w-6 h-6 text-primary group-hover:text-white transition-colors" />
-            </div>
-            <div className="flex-1">
-              <h2 className="text-xl font-semibold text-card-foreground mb-1">Publicadores</h2>
-              <p className="text-muted-foreground text-sm">
-                Directorio de hermanos y hermanas
+              <p className="text-3xl font-bold text-amber-500 tabular-nums">
+                {stats.currentPending}
               </p>
-            </div>
-          </div>
+            </Link>
 
-          <p className="text-foreground/80 text-sm mb-5 leading-relaxed">
-            Gestiona el directorio completo: nombres, nombramientos, capacidades y disponibilidad para participar en las reuniones.
-          </p>
-
-          <Link href="/vymc/publicadores">
-            <Button className="w-full bg-primary hover:bg-primary/90 text-primary-foreground group/btn">
-              Ver publicadores
-              <ArrowRight className="w-4 h-4 ml-2 group-hover/btn:translate-x-1 transition-transform" />
-            </Button>
-          </Link>
-        </div>
-
-        <div className="bg-card rounded-xl border-2 border-border p-6 hover:border-accent transition-all group">
-          <div className="flex items-start gap-4 mb-6">
-            <div className="w-12 h-12 rounded-lg bg-accent/10 flex items-center justify-center group-hover:bg-accent transition-colors">
-              <Calendar className="w-6 h-6 text-accent group-hover:text-white transition-colors" />
-            </div>
-            <div className="flex-1">
-              <h2 className="text-xl font-semibold text-card-foreground mb-1">Programas semanales</h2>
-              <p className="text-muted-foreground text-sm">
-                Reuniones y asignaciones
+            <Link
+              href="/vymc/programas"
+              className="flex items-center justify-between p-4 rounded-lg border border-border hover:border-primary transition-colors"
+            >
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">
+                  Próximo mes · {stats.nextTitle}
+                </p>
+                <p className="text-xs text-muted-foreground/70">
+                  {stats.nextWeeks}{" "}
+                  {stats.nextWeeks === 1 ? "semana" : "semanas"} en el mes
+                </p>
+              </div>
+              <p className="text-3xl font-bold text-primary tabular-nums">
+                {stats.nextPending}
               </p>
-            </div>
+            </Link>
           </div>
-
-          <p className="text-foreground/80 text-sm mb-5 leading-relaxed">
-            Importa programas, asigna participaciones y organiza las reuniones de entre semana y fin de semana.
-          </p>
 
           <Link href="/vymc/programas">
-            <Button className="w-full bg-accent hover:bg-accent/90 text-accent-foreground group/btn">
+            <Button className="w-full">
               Ver programas
-              <ArrowRight className="w-4 h-4 ml-2 group-hover/btn:translate-x-1 transition-transform" />
+              <ArrowRight className="w-4 h-4" />
+            </Button>
+          </Link>
+        </div>
+
+        {/* Publicadores */}
+        <div className="rounded-xl border border-border bg-card p-6 space-y-4">
+          <div className="flex items-center gap-3 mb-2">
+            <div className="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center">
+              <Users className="h-5 w-5 text-primary" />
+            </div>
+            <div>
+              <h2 className="text-xl font-semibold text-card-foreground">
+                Publicadores
+              </h2>
+              <p className="text-sm text-muted-foreground">Directorio</p>
+            </div>
+          </div>
+
+          <div className="space-y-3">
+            <div className="flex items-center justify-between p-4 rounded-lg border border-border">
+              <p className="text-sm font-medium text-muted-foreground">Total</p>
+              <p className="text-3xl font-bold text-primary tabular-nums">
+                {stats.totalPublishers}
+              </p>
+            </div>
+            <div className="grid grid-cols-3 gap-3">
+              <div className="p-4 rounded-lg border border-border text-center">
+                <p className="text-2xl font-bold text-card-foreground tabular-nums">
+                  {stats.elders}
+                </p>
+                <p className="text-xs text-muted-foreground mt-1">Ancianos</p>
+              </div>
+              <div className="p-4 rounded-lg border border-border text-center">
+                <p className="text-2xl font-bold text-card-foreground tabular-nums">
+                  {stats.servants}
+                </p>
+                <p className="text-xs text-muted-foreground mt-1">Siervos ministeriales</p>
+              </div>
+              <div className="p-4 rounded-lg border border-border text-center">
+                <p className="text-2xl font-bold text-card-foreground tabular-nums">
+                  {stats.pioneers}
+                </p>
+                <p className="text-xs text-muted-foreground mt-1">Precursores regulares</p>
+              </div>
+            </div>
+          </div>
+
+          <Link href="/vymc/publicadores">
+            <Button variant="outline" className="w-full">
+              Ver publicadores
+              <ArrowRight className="w-4 h-4" />
             </Button>
           </Link>
         </div>
       </div>
-
     </div>
   );
 }

@@ -57,8 +57,6 @@ export function WhatsAppShareDialog({
   const [isGenerating, setIsGenerating] = useState(false);
   const [isSavingPhone, setIsSavingPhone] = useState(false);
   const [copied, setCopied] = useState(false);
-  const [directMode, setDirectMode] = useState(false);
-  const [isSendingDirect, setIsSendingDirect] = useState(false);
 
   // Inicializar estado cuando se abre con nuevos datos (reset intencional del diálogo)
   useEffect(() => {
@@ -71,23 +69,6 @@ export function WhatsAppShareDialog({
       });
       setMessage(initialMsg);
       setTone("FRATERNAL");
-
-      // Detectar si hay sesión activa de Evolution API para envío directo
-      const checkDirectMode = async () => {
-        try {
-          const res = await fetch("/api/whatsapp/connection");
-          if (!res.ok) return;
-          const conn = await res.json();
-          if (conn.state === "open") {
-            setDirectMode(true);
-            return;
-          }
-        } catch {
-          // Sin Evolution API disponible
-        }
-        setDirectMode(false);
-      };
-      void checkDirectMode();
     }
   }, [data, isOpen]);
 
@@ -156,40 +137,11 @@ export function WhatsAppShareDialog({
     }
   };
 
-  const handleSendDirect = async () => {
-    if (!phone.trim()) {
-      toast.error("Cargá un número de teléfono para el envío directo");
-      return;
-    }
-    setIsSendingDirect(true);
-    try {
-      if (phone && phone !== data.phone && data.publisherId) {
-        await handleSavePhone();
-      }
-      const res = await fetch("/api/whatsapp/send", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          phone,
-          message,
-          recipientLabel: `${data.publisherName} (${data.roleLabel})`,
-        }),
-      });
-      const result = await res.json();
-      if (!res.ok) throw new Error(result.error || "Error al encolar el mensaje");
-      toast.success("Mensaje en cola. Se enviará con pausa antiban 🛡️");
-      onClose();
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Error al enviar");
-    } finally {
-      setIsSendingDirect(false);
-    }
-  };
-
   const handleSendWhatsApp = async () => {
     if (phone && phone !== data.phone && data.publisherId) {
       await handleSavePhone();
     }
+    // Abre WhatsApp en el dispositivo que se está usando (wa.me)
     const url = createWhatsAppUrl(phone, message);
     window.open(url, "_blank");
     onClose();
@@ -197,7 +149,7 @@ export function WhatsAppShareDialog({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-w-lg">
+      <DialogContent className="max-w-lg w-[calc(100%-2rem)] p-4 sm:p-6">
         <DialogHeader>
           <div className="flex items-center gap-2">
             <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-emerald-100 text-emerald-700">
@@ -223,14 +175,16 @@ export function WhatsAppShareDialog({
                 Número de WhatsApp:
               </Label>
               {data.publisherId && phone !== data.phone && (
-                <button
+                <Button
                   type="button"
-                  onClick={handleSavePhone}
+                  variant="link"
+                  size="sm"
+                  onClick={() => void handleSavePhone()}
                   disabled={isSavingPhone}
-                  className="text-[11px] font-medium text-primary hover:underline"
+                  className="h-auto px-0 text-[11px]"
                 >
                   {isSavingPhone ? "Guardando..." : "Guardar en directorio"}
-                </button>
+                </Button>
               )}
             </div>
             <Input
@@ -241,20 +195,15 @@ export function WhatsAppShareDialog({
               placeholder="Ej: +54 9 381 123-4567"
               className="border-border focus:border-emerald-500 focus:ring-emerald-500 text-sm"
             />
-            {!phone && !directMode && (
+            {!phone && (
               <p className="text-[11px] text-amber-600 font-medium">
                 ⚠️ Sin teléfono: Al enviar, se abrirá WhatsApp para elegir el contacto.
-              </p>
-            )}
-            {directMode && (
-              <p className="text-[11px] text-emerald-600 font-medium">
-                🟢 Envío directo activo (Evolution API conectada)
               </p>
             )}
           </div>
 
           {/* Opciones de Tono y Botón de IA */}
-          <div className="flex items-center justify-between gap-2 pt-1 border-t border-border">
+          <div className="flex flex-col gap-2 pt-2 border-t border-border sm:flex-row sm:items-center sm:justify-between sm:pt-1">
             <div className="flex items-center gap-2 flex-1">
               <Label className="text-xs font-medium text-foreground/80 whitespace-nowrap">
                 Estilo de redacción:
@@ -277,7 +226,7 @@ export function WhatsAppShareDialog({
               size="sm"
               onClick={() => handleGenerateAiMessage(tone)}
               disabled={isGenerating}
-              className="h-8 gap-1.5 border-purple-200 bg-purple-50 text-purple-700 hover:bg-purple-100 hover:text-purple-800 text-xs font-medium"
+              className="h-8 gap-1.5 border-purple-200 bg-purple-50 text-purple-700 hover:bg-purple-100 hover:text-purple-800 text-xs font-medium w-full justify-center sm:w-auto"
             >
               {isGenerating ? (
                 <>
@@ -299,14 +248,16 @@ export function WhatsAppShareDialog({
               <Label htmlFor="wa-message" className="text-xs font-medium text-foreground">
                 Vista previa del mensaje (editable):
               </Label>
-              <button
+              <Button
                 type="button"
+                variant="ghost"
+                size="sm"
                 onClick={handleCopy}
-                className="inline-flex items-center gap-1 text-[11px] text-muted-foreground hover:text-primary"
+                className="h-auto px-1 py-0.5 text-[11px]"
               >
                 {copied ? <Check className="w-3 h-3 text-emerald-600" /> : <Copy className="w-3 h-3" />}
                 {copied ? "Copiado" : "Copiar"}
-              </button>
+              </Button>
             </div>
             <textarea
               id="wa-message"
@@ -323,47 +274,19 @@ export function WhatsAppShareDialog({
             type="button"
             variant="outline"
             onClick={onClose}
-            className="border-border"
+            className="border-border justify-center"
           >
             Cancelar
           </Button>
-          {directMode ? (
-            <>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={handleSendWhatsApp}
-                disabled={isSendingDirect}
-                className="border-border text-muted-foreground"
-                title="Abrir en WhatsApp Web/App"
-              >
-                <Send className="w-4 h-4" />
-                wa.me
-              </Button>
-              <Button
-                type="button"
-                onClick={() => void handleSendDirect()}
-                disabled={isSendingDirect || !phone.trim()}
-                className="bg-emerald-600 hover:bg-emerald-700 text-white font-medium gap-2"
-              >
-                {isSendingDirect ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                ) : (
-                  <Send className="w-4 h-4" />
-                )}
-                Enviar directo
-              </Button>
-            </>
-          ) : (
-            <Button
-              type="button"
-              onClick={handleSendWhatsApp}
-              className="bg-emerald-600 hover:bg-emerald-700 text-white font-medium gap-2"
-            >
-              <Send className="w-4 h-4" />
-              Enviar por WhatsApp
-            </Button>
-          )}
+          <Button
+            type="button"
+            onClick={handleSendWhatsApp}
+            className="bg-emerald-600 hover:bg-emerald-700 text-white font-medium gap-2 justify-center"
+            title="Abrir en WhatsApp del dispositivo"
+          >
+            <Send className="w-4 h-4" />
+            Enviar por WhatsApp
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

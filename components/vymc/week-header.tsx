@@ -26,8 +26,8 @@ export function WeekHeader({
   onAutoAssign,
 }: WeekHeaderProps) {
   return (
-    <div className="bg-gradient-to-br from-[#1A365D] to-primary rounded-xl p-6 text-white">
-      <h1 className="text-2xl font-semibold">{formatDateRange(startDate, endDate)}</h1>
+    <div className="bg-gradient-to-br from-[#1A365D] to-primary -mx-4 rounded-none p-6 text-white sm:mx-0 sm:rounded-xl">
+      <h1 className="text-xl font-semibold sm:text-2xl">{formatDateRange(startDate, endDate)}</h1>
       {weekType !== "REGULAR" && <p className="mt-1 text-sm font-semibold uppercase tracking-wide text-amber-200">{WEEK_TYPE_LABELS[weekType]}</p>}
       <Button
         onClick={onAutoAssign}

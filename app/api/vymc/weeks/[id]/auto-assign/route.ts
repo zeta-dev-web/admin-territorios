@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getCurrentTenantId } from '@/lib/tenant'
+import { authorizeModuleRequest } from '@/lib/module-access'
 import { prisma } from '@/lib/prisma'
 import type { AssignmentRole } from '@prisma/client'
 import { canAssignPublisher } from '@/lib/assignment-eligibility'
@@ -11,7 +11,9 @@ export const dynamic = 'force-dynamic'
 // { preview:true } → borrador | { assignments:[...] } → aplica selección | {} → todo
 export async function POST(request: NextRequest, ctx: { params: Promise<{ id: string }> }) {
   try {
-    const tenantId = await getCurrentTenantId()
+    const access = await authorizeModuleRequest('VYMC')
+    if ('response' in access) return access.response
+    const { tenantId } = access
     const { id } = await ctx.params
 
     let body: { preview?: boolean; assignments?: Array<Record<string, unknown>> } = {}

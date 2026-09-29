@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getCurrentTenantId } from '@/lib/tenant'
+import { authorizeModuleRequest } from '@/lib/module-access'
 import { scrapeWeekProgram } from '@/modules/scraper/wol-scraper'
 
 export const runtime = 'nodejs'
@@ -8,7 +8,8 @@ export const dynamic = 'force-dynamic'
 // POST /api/vymc/scraper/preview - Vista previa del programa desde WOL
 export async function POST(request: NextRequest) {
   try {
-    await getCurrentTenantId()
+    const access = await authorizeModuleRequest('VYMC')
+    if ('response' in access) return access.response
     const { weekNumber, year } = await request.json()
     if (!weekNumber || !year) {
       return NextResponse.json({ error: 'weekNumber y year son requeridos' }, { status: 400 })

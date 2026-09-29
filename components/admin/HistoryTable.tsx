@@ -3,7 +3,7 @@
 import { useState, useMemo, useEffect } from 'react'
 import { 
   MapPin, UserCircle, Calendar, Clock, CheckCircle2, 
-  Search, Filter, Trash2, X,
+  Search, Filter, Trash2, X, ChevronDown, SlidersHorizontal,
   User, UserCog, Edit2, Loader2
 } from 'lucide-react'
 import { formatDistanceToNow } from 'date-fns'
@@ -13,6 +13,7 @@ import { deleteHistoryRecord, updateAssignment, updatePersonalAssignment, getAll
 import { useRouter } from 'next/navigation'
 import { Table } from '@/components/common/Table'
 import { ConfirmDialog } from '@/components/common/ConfirmDialog'
+import { Button } from '@/components/ui/button'
 
 interface UnifiedHistoryRecord {
   id: string
@@ -40,6 +41,13 @@ export function HistoryTable({ assignments }: HistoryTableProps) {
   const [selectedYear, setSelectedYear] = useState<string>('all')
   const [selectedMonth, setSelectedMonth] = useState<string>('all')
   const [selectedType, setSelectedType] = useState<string>('all')
+  // Filtros colapsables en mobile
+  const [showFilters, setShowFilters] = useState(false)
+  const activeFilterCount =
+    (searchTerm !== '' ? 1 : 0) +
+    (selectedType !== 'all' ? 1 : 0) +
+    (selectedYear !== 'all' ? 1 : 0) +
+    (selectedMonth !== 'all' ? 1 : 0)
   const [deleteConfirm, setDeleteConfirm] = useState<{ id: string; type: 'CONDUCTOR' | 'PERSONAL'; label: string } | null>(null)
   const [deleting, setDeleting] = useState(false)
   const [editModal, setEditModal] = useState<UnifiedHistoryRecord | null>(null)
@@ -213,6 +221,22 @@ export function HistoryTable({ assignments }: HistoryTableProps) {
       <div>
       {/* Filtros */}
       <div className="p-4 border-b border-slate-800 space-y-4">
+        <Button
+          variant="ghost"
+          onClick={() => setShowFilters((v) => !v)}
+          aria-expanded={showFilters}
+          className="md:hidden w-full font-semibold text-white hover:text-white"
+        >
+          <SlidersHorizontal className="h-4 w-4 text-slate-400" />
+          Filtros
+          {activeFilterCount > 0 && (
+            <span className="inline-flex items-center justify-center min-w-5 h-5 px-1 rounded-full text-[11px] font-semibold bg-green-500 text-white">
+              {activeFilterCount}
+            </span>
+          )}
+          <ChevronDown className={`h-4 w-4 ml-auto text-slate-400 transition-transform ${showFilters ? 'rotate-180' : ''}`} />
+        </Button>
+        <div className={`${showFilters ? 'block' : 'hidden'} md:block space-y-4`}>
         <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
           {/* Búsqueda */}
           <div className="relative">
@@ -280,18 +304,20 @@ export function HistoryTable({ assignments }: HistoryTableProps) {
 
         {/* Botón limpiar filtros */}
         {(searchTerm || selectedYear !== 'all' || selectedMonth !== 'all' || selectedType !== 'all') && (
-          <button
+          <Button
+            variant="outline"
+            size="sm"
             onClick={() => {
               setSearchTerm('')
               setSelectedYear('all')
               setSelectedMonth('all')
               setSelectedType('all')
             }}
-            className="text-sm text-blue-400 hover:text-blue-300 transition-colors"
           >
             Limpiar filtros
-          </button>
+          </Button>
         )}
+        </div>
       </div>
 
       {/* Tabla */}
@@ -429,14 +455,18 @@ export function HistoryTable({ assignments }: HistoryTableProps) {
 
                 <td className="px-6 py-4 text-right">
                   <div className="flex items-center gap-2 justify-end">
-                    <button
+                    <Button
+                      variant="ghost"
+                      size="icon"
                       onClick={() => handleEdit(assignment)}
-                      className="p-2 text-slate-500 hover:text-blue-400 hover:bg-blue-500/10 rounded-lg transition-all"
                       title="Editar asignación"
+                      aria-label="Editar asignación"
                     >
                       <Edit2 className="h-4 w-4" />
-                    </button>
-                    <button
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
                       onClick={() =>
                         setDeleteConfirm({
                           id: assignment.id,
@@ -444,11 +474,12 @@ export function HistoryTable({ assignments }: HistoryTableProps) {
                           label: `Territorio ${assignment.territoryNumber} - ${assignment.assigneeName}`,
                         })
                       }
-                      className="p-2 text-slate-500 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-all"
+                      className="hover:text-destructive"
                       title="Eliminar del historial"
+                      aria-label="Eliminar del historial"
                     >
                       <Trash2 className="h-4 w-4" />
-                    </button>
+                    </Button>
                   </div>
                 </td>
               </tr>
@@ -488,13 +519,15 @@ export function HistoryTable({ assignments }: HistoryTableProps) {
                   Territorio {editModal.territoryNumber} - {editModal.type === 'CONDUCTOR' ? 'Conductor' : 'Personal'}
                 </p>
               </div>
-              <button
+              <Button
+                variant="ghost"
+                size="icon"
                 onClick={() => !saving && setEditModal(null)}
                 disabled={saving}
-                className="p-2 hover:bg-slate-800 rounded-lg transition-colors disabled:opacity-50"
+                aria-label="Cerrar"
               >
                 <X className="h-5 w-5 text-slate-400" />
-              </button>
+              </Button>
             </div>
 
             <div className="space-y-4">
@@ -558,17 +591,18 @@ export function HistoryTable({ assignments }: HistoryTableProps) {
               </div>
 
               <div className="flex gap-3 pt-4">
-                <button
+                <Button
+                  variant="outline"
                   onClick={() => setEditModal(null)}
                   disabled={saving}
-                  className="flex-1 px-4 py-2 border border-slate-700 rounded-lg font-medium text-slate-300 hover:bg-slate-800 transition-colors disabled:opacity-50"
+                  className="flex-1"
                 >
                   Cancelar
-                </button>
-                <button
+                </Button>
+                <Button
                   onClick={handleSaveEdit}
                   disabled={saving}
-                  className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg font-medium hover:from-blue-600 hover:to-blue-700 transition-all shadow-lg shadow-blue-500/20 disabled:from-slate-700 disabled:to-slate-800"
+                  className="flex-1 bg-gradient-to-r from-blue-500 to-blue-600 shadow-lg shadow-blue-500/20 hover:from-blue-600 hover:to-blue-700"
                 >
                   {saving ? (
                     <>
@@ -581,7 +615,7 @@ export function HistoryTable({ assignments }: HistoryTableProps) {
                       <span>Guardar Cambios</span>
                     </>
                   )}
-                </button>
+                </Button>
               </div>
             </div>
           </div>

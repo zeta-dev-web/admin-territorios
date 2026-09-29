@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
 import { renderToBuffer } from "@react-pdf/renderer";
-import { getCurrentTenantId } from "@/lib/tenant";
+import { authorizeModuleRequest } from "@/lib/module-access";
 import { prisma } from "@/lib/prisma";
 import { generatePDFDocument } from "@/lib/pdf-template";
 import JSZip from "jszip";
@@ -12,6 +12,8 @@ export const dynamic = "force-dynamic";
 
 class NodeCanvasFactory {
   create(width: number, height: number) {
+    // Load native canvas lazily; this Route Handler runs on Node.js only.
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
     const canvas = require("@napi-rs/canvas").createCanvas(width, height);
     return { canvas, context: canvas.getContext("2d") };
   }
@@ -29,7 +31,9 @@ class NodeCanvasFactory {
 
 export async function POST(request: NextRequest) {
   try {
-    const tenantId = await getCurrentTenantId();
+    const access = await authorizeModuleRequest('VYMC');
+    if ('response' in access) return access.response;
+    const { tenantId } = access;
     const body = await request.json();
     const { weekIds } = body;
 

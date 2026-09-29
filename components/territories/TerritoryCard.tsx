@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { User, Calendar, TrendingUp, ChevronLeft, ChevronRight } from 'lucide-react'
+import { Button } from '@/components/ui/button'
 import { TerritoryProgress } from '@/types'
 import { BlockGrid } from './BlockGrid'
 import { formatDateShort } from '@/lib/utils'
@@ -102,23 +103,29 @@ export function TerritoryCard({ territories }: TerritoryCardProps) {
         {/* Navegación y contador */}
         {territories.length > 1 && (
           <div className="px-4 py-3 bg-slate-900 border-t border-slate-800 flex items-center justify-between gap-3">
-            <button
+            <Button
               onClick={handlePrevious}
-              className="flex items-center justify-center w-10 h-10 bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white rounded-full shadow-lg shadow-red-500/30 border-2 border-red-400 transition-all hover:scale-110"
+              variant="default"
+              size="icon"
+              className="h-11 w-11 rounded-full bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white shadow-lg shadow-red-500/30 border-2 border-red-400"
+              aria-label="Territorio anterior"
             >
               <ChevronLeft className="h-5 w-5" />
-            </button>
+            </Button>
 
             <span className="text-sm text-slate-400 font-medium">
               {currentIndex + 1} de {territories.length}
             </span>
 
-            <button
+            <Button
               onClick={handleNext}
-              className="flex items-center justify-center w-10 h-10 bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white rounded-full shadow-lg shadow-red-500/30 border-2 border-red-400 transition-all hover:scale-110"
+              variant="default"
+              size="icon"
+              className="h-11 w-11 rounded-full bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white shadow-lg shadow-red-500/30 border-2 border-red-400"
+              aria-label="Territorio siguiente"
             >
               <ChevronRight className="h-5 w-5" />
-            </button>
+            </Button>
           </div>
         )}
       </div>

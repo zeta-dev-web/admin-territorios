@@ -266,12 +266,14 @@ export function BulkSendDialog({ open, onOpenChange, years }: BulkSendDialogProp
                         disabled={!hasPhone}
                         className="h-4 w-4 accent-emerald-600 cursor-pointer disabled:cursor-not-allowed"
                       />
-                      <button
+                      <Button
                         type="button"
+                        variant="ghost"
                         onClick={() =>
                           setExpandedId(isExpanded ? null : recipient.publisherId)
                         }
-                        className="flex min-w-0 flex-1 items-center gap-2 text-left"
+                        aria-expanded={isExpanded}
+                        className="h-auto min-w-0 flex-1 justify-start p-0 font-normal hover:bg-transparent"
                       >
                         {isExpanded ? (
                           <ChevronDown className="h-3.5 w-3.5 shrink-0 text-muted-foreground/70" />
@@ -294,7 +296,7 @@ export function BulkSendDialog({ open, onOpenChange, years }: BulkSendDialogProp
                         <span className="ml-auto shrink-0 text-xs text-muted-foreground">
                           {recipient.assignmentsCount} asignacion{recipient.assignmentsCount === 1 ? "" : "es"}
                         </span>
-                      </button>
+                      </Button>
                     </div>
 
                     {isExpanded && (

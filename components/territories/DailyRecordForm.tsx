@@ -5,6 +5,7 @@ import { BlockStatus } from '@/types'
 import { createDailyRecord } from '@/server'
 import { useRouter } from 'next/navigation'
 import { CheckCircle2, Loader2 } from 'lucide-react'
+import { Button } from '@/components/ui/button'
 
 interface DailyRecordFormProps {
   assignmentId: string
@@ -167,10 +168,11 @@ export function DailyRecordForm({
       </div>
 
       {/* Botón de envío */}
-      <button
+      <Button
         type="submit"
         disabled={isSubmitting}
-        className="w-full bg-gradient-to-r from-red-500 to-red-600 text-white py-3 px-4 rounded-lg font-medium hover:from-red-600 hover:to-red-700 active:from-red-700 active:to-red-800 disabled:from-slate-700 disabled:to-slate-800 disabled:cursor-not-allowed transition-all shadow-lg shadow-red-500/20 flex items-center justify-center gap-2"
+        variant="default"
+        className="w-full bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white shadow-lg shadow-red-500/20 py-3"
       >
         {isSubmitting ? (
           <>
@@ -183,7 +185,7 @@ export function DailyRecordForm({
             <span>Registrar Trabajo</span>
           </>
         )}
-      </button>
+      </Button>
     </form>
   )
 }

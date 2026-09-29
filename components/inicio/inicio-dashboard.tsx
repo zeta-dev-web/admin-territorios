@@ -18,11 +18,13 @@ import { ThemeToggle } from '@/components/theme/ThemeToggle'
 import Footer from '@/components/layout/Footer'
 import { logout } from '@/server/auth'
 import type { SiteMessage, SiteMessageType } from '@/lib/site-messages'
+import type { ModuleCode } from '@/lib/module-access'
 
 interface InicioDashboardProps {
   userName: string
   congregationName: string
   messages: SiteMessage[]
+  allowedModules: ModuleCode[]
 }
 
 const MODULE_CARDS = [
@@ -84,11 +86,9 @@ export function InicioDashboard({
   userName,
   congregationName,
   messages,
+  allowedModules,
 }: InicioDashboardProps) {
   const firstName = userName.split('@')[0]
-  // Ambos sistemas se muestran siempre como opciones de entrada.
-  const cards = MODULE_CARDS
-
   const handleMove = useCallback((event: React.MouseEvent<HTMLElement>) => {
     const el = event.currentTarget
     const rect = el.getBoundingClientRect()
@@ -168,16 +168,11 @@ export function InicioDashboard({
 
         {/* Tarjetas de módulos */}
         <section className="mt-10 grid gap-5 md:grid-cols-2">
-          {cards.map((card, index) => {
+          {MODULE_CARDS.map((card, index) => {
             const Icon = card.icon
-            return (
-              <Link
-                key={card.module}
-                href={card.href}
-                onMouseMove={handleMove}
-                style={{ animationDelay: `${120 + index * 90}ms` }}
-                className={`inicio-card group relative overflow-hidden rounded-3xl border border-white/10 bg-[#0F1729] p-7 shadow-2xl shadow-black/25 transition-all duration-300 hover:-translate-y-1.5 focus-visible:outline-none focus-visible:ring-2 ${card.hoverBorder} ${card.hoverShadow} ${card.focusRing}`}
-              >
+            const hasAccess = allowedModules.includes(card.module)
+            const content = (
+              <>
                 {/* Glow que sigue al mouse */}
                 <div
                   aria-hidden
@@ -191,26 +186,44 @@ export function InicioDashboard({
                   <div
                     className={`mb-6 flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br ${card.tile} shadow-lg transition-transform duration-300 group-hover:-rotate-3 group-hover:scale-110`}
                   >
-                    <Icon
-                      className="h-7 w-7 text-white"
-                      strokeWidth={2}
-                      fill={card.module === 'TERRITORIES' ? 'none' : 'none'}
-                    />
+                    <Icon className="h-7 w-7 text-white" strokeWidth={2} />
                   </div>
 
                   <h2 className="text-2xl font-bold tracking-tight">{card.title}</h2>
-                  <p className="mt-2 text-sm leading-6 text-slate-400">
-                    {card.description}
-                  </p>
+                  <p className="mt-2 text-sm leading-6 text-slate-400">{card.description}</p>
 
-                  <span
-                    className={`mt-6 inline-flex items-center gap-2 text-sm font-bold ${card.accentText}`}
-                  >
-                    {card.cta}
-                    <ArrowRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-1.5" />
-                  </span>
+                  {hasAccess ? (
+                    <span className={`mt-6 inline-flex items-center gap-2 text-sm font-bold ${card.accentText}`}>
+                      {card.cta}
+                      <ArrowRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-1.5" />
+                    </span>
+                  ) : (
+                    <span className="mt-6 inline-flex items-center rounded-full border border-slate-700 px-3 py-1 text-xs font-semibold text-slate-400">
+                      Sin acceso
+                    </span>
+                  )}
                 </div>
+              </>
+            )
+
+            return hasAccess ? (
+              <Link
+                key={card.module}
+                href={card.href}
+                onMouseMove={handleMove}
+                style={{ animationDelay: `${120 + index * 90}ms` }}
+                className={`inicio-card group relative overflow-hidden rounded-3xl border border-white/10 bg-[#0F1729] p-7 shadow-2xl shadow-black/25 transition-all duration-300 hover:-translate-y-1.5 focus-visible:outline-none focus-visible:ring-2 ${card.hoverBorder} ${card.hoverShadow} ${card.focusRing}`}
+              >
+                {content}
               </Link>
+            ) : (
+              <article
+                key={card.module}
+                style={{ animationDelay: `${120 + index * 90}ms` }}
+                className="inicio-card relative cursor-not-allowed overflow-hidden rounded-3xl border border-white/10 bg-[#0F1729]/70 p-7 opacity-75 shadow-xl shadow-black/15"
+              >
+                {content}
+              </article>
             )
           })}
         </section>

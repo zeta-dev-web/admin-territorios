@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useMemo } from 'react'
 import { Plus, X, Loader2, MapPin, Search, Check } from 'lucide-react'
+import { Button } from '@/components/ui/button'
 import { createAssignment, getAllDriversForSelect, getAllTerritoriesForSelect } from '@/server'
 import { useRouter } from 'next/navigation'
 
@@ -110,13 +111,13 @@ export function CreateAssignmentModal() {
 
   return (
     <>
-      <button
+      <Button
         onClick={() => setIsOpen(true)}
-        className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg hover:from-blue-600 hover:to-blue-700 transition-all shadow-lg shadow-blue-500/20 font-medium"
+        className="bg-gradient-to-r from-blue-500 to-blue-600 shadow-lg shadow-blue-500/20 hover:from-blue-600 hover:to-blue-700"
       >
         <Plus className="h-5 w-5" />
         <span className="hidden sm:inline">Nueva Asignación</span>
-      </button>
+      </Button>
 
       {isOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-in">
@@ -140,13 +141,15 @@ export function CreateAssignmentModal() {
                   </p>
                 </div>
               </div>
-              <button
+              <Button
+                variant="ghost"
+                size="icon"
                 onClick={() => !isLoading && setIsOpen(false)}
-                className="p-2 hover:bg-slate-800 rounded-lg transition-colors"
                 disabled={isLoading}
+                aria-label="Cerrar"
               >
                 <X className="h-5 w-5 text-slate-400" />
-              </button>
+              </Button>
             </div>
 
             <form onSubmit={handleSubmit} className="p-6 space-y-4">
@@ -188,16 +191,19 @@ export function CreateAssignmentModal() {
                         Territorio {selectedTerritory.number}
                         {selectedTerritory.description && ` - ${selectedTerritory.description}`}
                       </span>
-                      <button
+                      <Button
+                        variant="ghost"
+                        size="icon"
                         type="button"
                         onClick={() => {
                           setSelectedTerritoryId('')
                           setTerritorySearch('')
                         }}
-                        className="ml-auto p-1 hover:bg-slate-800 rounded"
+                        className="ml-auto h-6 w-6"
+                        aria-label="Quitar territorio seleccionado"
                       >
                         <X className="h-3 w-3" />
-                      </button>
+                      </Button>
                     </div>
                   )}
 
@@ -248,16 +254,19 @@ export function CreateAssignmentModal() {
                       <span className="text-sm text-blue-400">
                         {selectedDriver.name}{selectedDriver.group ? ` - ${selectedDriver.group.name}` : ''}
                       </span>
-                      <button
+                      <Button
+                        variant="ghost"
+                        size="icon"
                         type="button"
                         onClick={() => {
                           setSelectedDriverId('')
                           setDriverSearch('')
                         }}
-                        className="ml-auto p-1 hover:bg-slate-800 rounded"
+                        className="ml-auto h-6 w-6"
+                        aria-label="Quitar conductor seleccionado"
                       >
                         <X className="h-3 w-3" />
-                      </button>
+                      </Button>
                     </div>
                   )}
 
@@ -298,18 +307,19 @@ export function CreateAssignmentModal() {
               </div>
 
               <div className="flex gap-3 pt-4">
-                <button
+                <Button
+                  variant="outline"
                   type="button"
                   onClick={() => setIsOpen(false)}
                   disabled={isLoading}
-                  className="flex-1 px-4 py-2 border border-slate-700 rounded-lg font-medium text-slate-300 hover:bg-slate-800 transition-colors disabled:opacity-50"
+                  className="flex-1"
                 >
                   Cancelar
-                </button>
-                <button
+                </Button>
+                <Button
                   type="submit"
                   disabled={isLoading}
-                  className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg font-medium hover:from-blue-600 hover:to-blue-700 transition-all shadow-lg shadow-blue-500/20 disabled:from-slate-700 disabled:to-slate-800"
+                  className="flex-1 bg-gradient-to-r from-blue-500 to-blue-600 shadow-lg shadow-blue-500/20 hover:from-blue-600 hover:to-blue-700"
                 >
                   {isLoading ? (
                     <>
@@ -322,7 +332,7 @@ export function CreateAssignmentModal() {
                       <span>Asignar</span>
                     </>
                   )}
-                </button>
+                </Button>
               </div>
             </form>
           </div>

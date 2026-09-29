@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getCurrentTenantId } from '@/lib/tenant'
+import { authorizeModuleRequest } from '@/lib/module-access'
 import { prisma } from '@/lib/prisma'
 
 export const dynamic = 'force-dynamic'
@@ -7,7 +7,9 @@ export const dynamic = 'force-dynamic'
 // POST /api/vymc/weeks/[id]/sections - Crea sección placeholder con su item
 export async function POST(request: NextRequest, ctx: { params: Promise<{ id: string }> }) {
   try {
-    const tenantId = await getCurrentTenantId()
+    const access = await authorizeModuleRequest('VYMC')
+    if ('response' in access) return access.response
+    const { tenantId } = access
     const { id } = await ctx.params
     const body = await request.json()
 

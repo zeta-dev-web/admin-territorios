@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react'
 import { FileDown, X, Calendar, MapPin, Loader2, ArrowRight, ChevronLeft, ChevronRight } from 'lucide-react'
+import { Button } from '@/components/ui/button'
 import { exportTerritoryHistoryPdf } from '@/server/territoryExport'
 import toast from 'react-hot-toast'
 import type { TerritoryRange } from '@/types'
@@ -284,13 +285,15 @@ export function ExportRangeModal({
               <p className="text-sm text-slate-400">Formato S-13-S · Registro de asignación de territorio</p>
             </div>
           </div>
-          <button
+          <Button
+            variant="ghost"
+            size="icon"
             onClick={() => !isGenerating && onClose()}
             disabled={isGenerating}
-            className="p-2 hover:bg-slate-800 rounded-lg transition-colors disabled:opacity-50"
+            aria-label="Cerrar"
           >
             <X className="h-5 w-5 text-slate-400" />
-          </button>
+          </Button>
         </div>
 
         {/* Selectores de período */}
@@ -343,13 +346,15 @@ export function ExportRangeModal({
               <MapPin className="h-4 w-4 inline mr-1.5" />
               Rangos de Territorios
             </label>
-            <button
+            <Button
+              variant="link"
+              size="sm"
               onClick={handleSelectAll}
               disabled={isGenerating}
-              className="text-xs text-blue-400 hover:text-blue-300 transition-colors disabled:opacity-50"
+              className="h-auto px-0"
             >
               {selectedRanges.length === availableRanges.length ? 'Deseleccionar todos' : 'Seleccionar todos'}
-            </button>
+            </Button>
           </div>
 
           <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
@@ -420,17 +425,18 @@ export function ExportRangeModal({
 
         {/* Botones de acción */}
         <div className="flex gap-3">
-          <button
+          <Button
+            variant="outline"
             onClick={onClose}
             disabled={isGenerating}
-            className="flex-1 px-4 py-2.5 border border-slate-700 rounded-lg font-medium text-slate-300 hover:bg-slate-800 transition-colors disabled:opacity-50"
+            className="flex-1"
           >
             Cancelar
-          </button>
-          <button
+          </Button>
+          <Button
             onClick={handleGenerate}
             disabled={!selectedFrom || !selectedTo || selectedRanges.length === 0 || isGenerating}
-            className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-lg font-medium hover:from-green-600 hover:to-emerald-700 transition-all shadow-lg shadow-green-500/20 disabled:from-slate-700 disabled:to-slate-800 disabled:shadow-none disabled:cursor-not-allowed"
+            className="flex-1 bg-gradient-to-r from-green-500 to-emerald-600 shadow-lg shadow-green-500/20 hover:from-green-600 hover:to-emerald-700"
           >
             {isGenerating ? (
               <>
@@ -447,7 +453,7 @@ export function ExportRangeModal({
                 </span>
               </>
             )}
-          </button>
+          </Button>
         </div>
       </div>
     </div>

@@ -1,9 +1,9 @@
 'use client'
 
 import { useState, ReactNode } from 'react'
-import { usePathname } from 'next/navigation'
 import { Menu } from 'lucide-react'
 import { Sidebar } from '@/components/common/Sidebar'
+import { ThemeToggle } from '@/components/theme/ThemeToggle'
 import { ImpersonationBanner } from '@/components/common/ImpersonationBanner'
 import Footer from '@/components/layout/Footer'
 import { CopilotChat } from '@/components/ai/copilot-chat'
@@ -14,7 +14,6 @@ interface AppLayoutVymcProps {
 
 export function AppLayoutVymc({ children }: AppLayoutVymcProps) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
-  const pathname = usePathname()
 
   return (
     <div className="flex h-screen overflow-hidden" style={{ background: 'var(--app-bg)' }}>
@@ -24,7 +23,7 @@ export function AppLayoutVymc({ children }: AppLayoutVymcProps) {
       {/* Contenido principal */}
       <div 
         className={`flex-1 flex flex-col overflow-hidden transition-all duration-300 ${
-          isSidebarOpen ? 'ml-72' : 'ml-0'
+          isSidebarOpen ? 'lg:ml-72' : 'ml-0'
         }`}
       >
         {/* Header Premium VYMC */}
@@ -36,21 +35,21 @@ export function AppLayoutVymc({ children }: AppLayoutVymcProps) {
                 {/* Botón de menú */}
                 <button
                   onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-                  className="flex items-center justify-center w-10 h-10 -ml-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                  className="flex items-center justify-center w-10 h-10 -ml-3 mr-4 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
                   aria-label="Menú"
                 >
                   <Menu className="h-5 w-5 text-blue-600 dark:text-blue-400" />
                 </button>
 
                 {/* Contenido del header */}
-                <div className="flex items-center gap-3 flex-1 justify-center md:justify-start">
+                <div className="flex min-w-0 items-center gap-3 flex-1 justify-center md:justify-start">
                   <div className="vymc-header-icon flex h-12 w-12 items-center justify-center rounded-xl">
                     <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                     </svg>
                   </div>
-                  <div>
-                    <h1 className="vymc-header-title text-xl font-bold">
+                  <div className="min-w-0">
+                    <h1 className="vymc-header-title text-base sm:text-xl font-bold whitespace-nowrap truncate">
                       Vida y Ministerio Cristiano
                     </h1>
                     <p className="vymc-header-subtitle text-xs hidden sm:block">
@@ -59,8 +58,8 @@ export function AppLayoutVymc({ children }: AppLayoutVymcProps) {
                   </div>
                 </div>
 
-                {/* Espaciador derecho */}
-                <div className="w-10" />
+                {/* Toggle de tema a la derecha */}
+                <ThemeToggle className="theme-toggle--compact" />
               </div>
             </div>
           </div>

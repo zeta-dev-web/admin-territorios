@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { X, CheckCircle2, Circle, Loader2 } from 'lucide-react'
+import { Button } from '@/components/ui/button'
 import { createDailyRecord } from '@/server'
 import { useRouter } from 'next/navigation'
 import toast from 'react-hot-toast'
@@ -99,12 +100,15 @@ export function QuickBlockRegistration({
                 Territorio {territoryNumber} - {driverName}
               </p>
             </div>
-            <button
+            <Button
               onClick={onClose}
-              className="text-white/80 hover:text-white transition-colors"
+              variant="ghost"
+              size="icon"
+              className="text-white/80 hover:text-white hover:bg-white/10"
+              aria-label="Cerrar"
             >
               <X className="h-6 w-6" />
-            </button>
+            </Button>
           </div>
         </div>
 
@@ -214,19 +218,21 @@ export function QuickBlockRegistration({
         {/* Footer */}
         {pendingBlocks.length > 0 && (
           <div className="border-t border-slate-800 p-4 bg-slate-900/50 flex gap-3">
-            <button
+            <Button
               type="button"
               onClick={onClose}
               disabled={isSubmitting}
-              className="flex-1 px-4 py-2 bg-slate-700 text-slate-200 rounded-lg hover:bg-slate-600 transition-colors disabled:opacity-50 font-medium"
+              variant="outline"
+              className="flex-1"
             >
               Cancelar
-            </button>
-            <button
+            </Button>
+            <Button
               type="button"
               onClick={handleSubmit}
               disabled={isSubmitting || selectedBlocks.length === 0}
-              className="flex-1 px-4 py-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg hover:from-blue-600 hover:to-blue-700 transition-all disabled:from-slate-700 disabled:to-slate-800 disabled:cursor-not-allowed font-medium flex items-center justify-center gap-2 shadow-lg shadow-blue-500/20"
+              variant="default"
+              className="flex-1 bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white shadow-lg shadow-red-500/20"
             >
               {isSubmitting ? (
                 <>
@@ -239,7 +245,7 @@ export function QuickBlockRegistration({
                   <span>Registrar ({selectedBlocks.length})</span>
                 </>
               )}
-            </button>
+            </Button>
           </div>
         )}
       </div>

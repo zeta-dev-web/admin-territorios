@@ -33,12 +33,21 @@ export interface TerritoryFrequency {
   completedAssignments: number
 }
 
+export interface TerritoryCompletion {
+  territoryId: string
+  territoryNumber: number
+  /** Fecha de finalización (endDate). Puede ser null en datos legados. */
+  completedAt: Date | null
+}
+
 export interface DashboardMetrics {
   activeTerritoriesProgress: TerritoryProgress[]
   atrasados: AtrasadoTerritory[]
   /** Todos los territorios libres con su última fecha (sin umbral), para filtrar en el cliente. */
   atrasadosCandidates: AtrasadoTerritory[]
   territoryFrequency: TerritoryFrequency[]
+  /** Trabajos completados con fecha, para filtrar "más trabajados" por periodo en el cliente. */
+  territoryCompletions: TerritoryCompletion[]
 }
 
 // Inputs para Server Actions

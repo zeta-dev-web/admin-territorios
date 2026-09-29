@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getCurrentTenantId } from '@/lib/tenant'
+import { authorizeModuleRequest } from '@/lib/module-access'
 import { prisma } from '@/lib/prisma'
 import { PUBLISHER_SELECT } from '@/lib/vymc/publisher-select'
 
@@ -8,7 +8,9 @@ export const dynamic = 'force-dynamic'
 // GET /api/vymc/publishers - Directorio completo de la congregación
 export async function GET() {
   try {
-    const tenantId = await getCurrentTenantId()
+    const access = await authorizeModuleRequest('VYMC')
+    if ('response' in access) return access.response
+    const { tenantId } = access
     const publishers = await prisma.publisher.findMany({
       where: { tenantId },
       select: PUBLISHER_SELECT,
@@ -50,7 +52,9 @@ function validate(body: Record<string, unknown>) {
 // POST /api/vymc/publishers
 export async function POST(request: NextRequest) {
   try {
-    const tenantId = await getCurrentTenantId()
+    const access = await authorizeModuleRequest('VYMC')
+    if ('response' in access) return access.response
+    const { tenantId } = access
     const body = await request.json()
     const { errors, data } = validate(body)
     if (errors.length) return NextResponse.json({ error: errors.join('. ') }, { status: 400 })

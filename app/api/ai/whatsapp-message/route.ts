@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { getSession } from "@/lib/auth";
+import { authorizeModuleRequest } from "@/lib/module-access";
 import { chatCompletion } from "@/lib/ai/llm";
 import { checkRateLimit } from "@/lib/ai/rate-limit";
 import { generateTemplateMessage } from "@/lib/ai/whatsapp-ai";
@@ -94,6 +95,8 @@ Instrucciones de formato y estilo:
 
 export async function POST(request: NextRequest) {
   try {
+    const access = await authorizeModuleRequest('VYMC');
+    if ('response' in access) return access.response;
     const session = await getSession();
     if (!session?.isAuthenticated || !session.tenantId) {
       return NextResponse.json({ error: "No autorizado" }, { status: 401 });

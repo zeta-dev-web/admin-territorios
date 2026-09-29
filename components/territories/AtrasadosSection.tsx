@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from 'react'
 import { Clock } from 'lucide-react'
+import { Button } from '@/components/ui/button'
 import { AtrasadoTerritory } from '@/types'
 import { AtrasadosList } from '@/components/territories/AtrasadosList'
 
@@ -100,32 +101,36 @@ export function AtrasadosSection({ territories }: AtrasadosSectionProps) {
       {/* Filtro rápido: botones en mobile */}
       <div className="grid grid-cols-4 gap-2 mb-3 sm:hidden" role="group" aria-label="Filtrar atrasados">
         {QUICK_OPTIONS.map((days) => (
-          <button
+          <Button
             key={days}
             type="button"
             onClick={() => setMode(days)}
             aria-pressed={mode === days}
-            className={`px-2 py-2 text-sm font-medium rounded-lg border transition-colors ${
+            variant="outline"
+            size="sm"
+            className={
               mode === days
-                ? 'bg-orange-500/20 border-orange-500 text-orange-300 font-semibold'
-                : 'bg-slate-800/50 border-slate-700 text-slate-300'
-            }`}
+                ? 'w-full border-orange-500 bg-orange-500/20 text-orange-300 font-semibold hover:bg-orange-500/25 hover:text-orange-200'
+                : 'w-full'
+            }
           >
             {QUICK_LABELS[days]}
-          </button>
+          </Button>
         ))}
-        <button
+        <Button
           type="button"
           onClick={() => setMode('custom')}
           aria-pressed={mode === 'custom'}
-          className={`px-2 py-2 text-sm font-medium rounded-lg border transition-colors ${
+          variant="outline"
+          size="sm"
+          className={
             mode === 'custom'
-              ? 'bg-orange-500/20 border-orange-500 text-orange-400'
-              : 'bg-slate-800/50 border-slate-700 text-slate-300'
-          }`}
+              ? 'w-full border-orange-500 bg-orange-500/20 text-orange-400 hover:bg-orange-500/25'
+              : 'w-full'
+          }
         >
           Otro
-        </button>
+        </Button>
       </div>
 
       {/* Filtro rápido: select en desktop */}

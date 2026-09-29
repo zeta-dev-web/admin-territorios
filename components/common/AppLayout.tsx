@@ -37,7 +37,7 @@ export function AppLayout({ children, title, showBack = false, customHeader }: A
       {/* Contenido principal */}
       <div 
         className={`flex-1 flex flex-col overflow-hidden transition-all duration-300 ${
-          isSidebarOpen ? 'ml-72' : 'ml-0'
+          isSidebarOpen ? 'lg:ml-72' : 'ml-0'
         }`}
       >
         {/* Header - Custom o default */}

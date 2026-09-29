@@ -14,6 +14,7 @@ import type { UnifiedAssignment, UnifiedAssignmentType } from '@/server/unifiedA
 import { QuickBlockRegistration } from './QuickBlockRegistration'
 import type { BlockStatus } from '@/types'
 import { Table } from '@/components/common/Table'
+import { Button } from '@/components/ui/button'
 import { ViewBlocksModal } from './ViewBlocksModal'
 import { DeleteActiveAssignmentModal, EditActiveAssignmentModal } from './EditActiveAssignmentModal'
 
@@ -269,7 +270,9 @@ export function UnifiedAssignmentsTable({ assignments, showHistory = false }: Pr
                         <>
                           {/* Ver manzanas (solo conductores) */}
                           {assignment.type === 'CONDUCTOR' && (
-                            <button
+                            <Button
+                              variant="soft"
+                              size="sm"
                               onClick={async () => {
                                 const result = await getAssignmentBlocks(assignment.id)
                                 if (result.success && result.data) {
@@ -282,26 +285,30 @@ export function UnifiedAssignmentsTable({ assignments, showHistory = false }: Pr
                                   toast.error(result.message || 'Error al cargar manzanas')
                                 }
                               }}
-                              className="flex items-center gap-1.5 px-3 py-1.5 bg-green-500/10 text-green-400 rounded-lg hover:bg-green-500/20 transition-colors text-sm font-medium border border-green-500/30"
+                              className="border border-green-500/30 bg-green-500/10 text-green-400 hover:bg-green-500/20"
                               title="Ver estado de manzanas"
                             >
                               <Eye className="h-4 w-4" />
                               <span className="hidden sm:inline">Ver</span>
-                            </button>
+                            </Button>
                           )}
 
-                          <button
+                          <Button
+                            variant="soft"
+                            size="sm"
                             onClick={() => setEditingAssignment(assignment)}
-                            className="flex items-center gap-1.5 rounded-lg border border-cyan-500/30 bg-cyan-500/10 px-3 py-1.5 text-sm font-medium text-cyan-300 transition-colors hover:bg-cyan-500/20"
+                            className="border border-cyan-500/30 bg-cyan-500/10 text-cyan-300 hover:bg-cyan-500/20"
                             title="Editar asignación"
                           >
                             <Pencil className="h-4 w-4" />
                             <span className="hidden sm:inline">Editar</span>
-                          </button>
+                          </Button>
 
                           {/* Registrar manzanas (solo conductores) */}
                           {assignment.type === 'CONDUCTOR' && (
-                            <button
+                            <Button
+                              variant="soft"
+                              size="sm"
                               onClick={async () => {
                                 const result = await getAssignmentBlocks(assignment.id)
                                 if (result.success && result.data) {
@@ -317,23 +324,25 @@ export function UnifiedAssignmentsTable({ assignments, showHistory = false }: Pr
                                   toast.error(result.message || 'Error al cargar manzanas')
                                 }
                               }}
-                              className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-500/10 text-blue-400 rounded-lg hover:bg-blue-500/20 transition-colors text-sm font-medium border border-blue-500/30"
+                              className="border border-blue-500/30 bg-blue-500/10 text-blue-400 hover:bg-blue-500/20"
                               title="Registrar manzanas trabajadas"
                             >
                               <Grid3x3 className="h-4 w-4" />
                               <span className="hidden sm:inline">Registrar</span>
-                            </button>
+                            </Button>
                           )}
 
                           {/* Devolver */}
-                          <button
+                          <Button
+                            variant="soft"
+                            size="sm"
                             onClick={() => openReturnModal(assignment)}
                             disabled={returningId === assignment.id}
-                            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-colors text-sm font-medium border disabled:opacity-50 disabled:cursor-not-allowed ${
+                            className={
                               assignment.type === 'CONDUCTOR'
-                                ? 'bg-orange-500/10 text-orange-400 border-orange-500/30 hover:bg-orange-500/20'
-                                : 'bg-blue-500/10 text-blue-400 border-blue-500/30 hover:bg-blue-500/20'
-                            }`}
+                                ? 'border border-orange-500/30 bg-orange-500/10 text-orange-400 hover:bg-orange-500/20'
+                                : 'border border-blue-500/30 bg-blue-500/10 text-blue-400 hover:bg-blue-500/20'
+                            }
                             title={assignment.type === 'CONDUCTOR' ? 'Devolver territorio (aunque falten manzanas)' : 'Devolver territorio personal'}
                           >
                             {returningId === assignment.id ? (
@@ -342,16 +351,18 @@ export function UnifiedAssignmentsTable({ assignments, showHistory = false }: Pr
                               <ArrowLeftRight className="h-4 w-4" />
                             )}
                             <span className="hidden sm:inline">Devolver</span>
-                          </button>
+                          </Button>
 
-                          <button
+                          <Button
+                            variant="soft"
+                            size="sm"
                             onClick={() => setDeletingAssignment(assignment)}
-                            className="flex items-center gap-1.5 rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-1.5 text-sm font-medium text-red-300 transition-colors hover:bg-red-500/20"
+                            className="border border-red-500/30 bg-red-500/10 text-red-300 hover:bg-red-500/20"
                             title="Eliminar asignación"
                           >
                             <Trash2 className="h-4 w-4" />
                             <span className="hidden sm:inline">Eliminar</span>
-                          </button>
+                          </Button>
                         </>
                       )}
                     </div>
@@ -369,12 +380,14 @@ export function UnifiedAssignmentsTable({ assignments, showHistory = false }: Pr
           <div className="relative bg-[#0F1729] rounded-2xl shadow-2xl border border-slate-800 max-w-md w-full p-6">
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-xl font-bold text-white">Devolver Territorio</h2>
-              <button
+              <Button
+                variant="ghost"
+                size="icon"
                 onClick={() => setReturnModal(null)}
-                className="p-2 hover:bg-slate-800 rounded-lg transition-colors"
+                aria-label="Cerrar"
               >
                 <X className="h-5 w-5 text-slate-400" />
-              </button>
+              </Button>
             </div>
 
             <div className="space-y-4">
@@ -413,19 +426,20 @@ export function UnifiedAssignmentsTable({ assignments, showHistory = false }: Pr
               </div>
 
               <div className="flex gap-3 pt-2">
-                <button
+                <Button
+                  variant="outline"
                   onClick={() => setReturnModal(null)}
-                  className="flex-1 px-4 py-2 border border-slate-700 rounded-lg font-medium text-slate-300 hover:bg-slate-800 transition-colors"
+                  className="flex-1"
                 >
                   Cancelar
-                </button>
-                <button
+                </Button>
+                <Button
                   onClick={handleReturnWithDate}
-                  className="flex-1 px-4 py-2 bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-lg font-medium hover:from-orange-600 hover:to-orange-700 transition-all shadow-lg shadow-orange-500/20 flex items-center justify-center gap-2"
+                  className="flex-1 bg-gradient-to-r from-orange-500 to-orange-600 shadow-lg shadow-orange-500/20 hover:from-orange-600 hover:to-orange-700"
                 >
                   <ArrowLeftRight className="h-4 w-4" />
                   Confirmar Devolución
-                </button>
+                </Button>
               </div>
             </div>
           </div>

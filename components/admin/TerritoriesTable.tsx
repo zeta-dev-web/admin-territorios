@@ -5,6 +5,7 @@ import { MapPin, Package, Edit, Trash2, User, Clock, AlertTriangle } from 'lucid
 import { useRouter } from 'next/navigation'
 import toast from 'react-hot-toast'
 import { Table } from '@/components/common/Table'
+import { Button } from '@/components/ui/button'
 import { ConfirmDialog } from '@/components/common/ConfirmDialog'
 import { deleteTerritory } from '@/server'
 
@@ -224,22 +225,27 @@ export function TerritoriesTable({ territories, onEdit }: TerritoriesTableProps)
                 <td className="px-6 py-4">
                   <div className="flex items-center justify-end gap-2">
                     {onEdit && (
-                      <button
+                      <Button
                         onClick={() => onEdit(territory)}
-                        className="p-2 hover:bg-slate-800 rounded-lg transition-colors group"
+                        variant="ghost"
+                        size="icon"
                         title="Editar territorio"
+                        aria-label="Editar territorio"
                       >
-                        <Edit className="h-4 w-4 text-slate-400 group-hover:text-blue-400" />
-                      </button>
+                        <Edit className="h-4 w-4" />
+                      </Button>
                     )}
-                    <button
+                    <Button
                       onClick={() => setConfirmDelete({ id: territory.id, number: territory.number })}
                       disabled={deletingId === territory.id}
-                      className="p-2 hover:bg-slate-800 rounded-lg transition-colors group disabled:opacity-50 disabled:cursor-not-allowed"
+                      variant="ghost"
+                      size="icon"
+                      className="hover:text-destructive"
                       title="Eliminar territorio"
+                      aria-label="Eliminar territorio"
                     >
-                      <Trash2 className="h-4 w-4 text-slate-400 group-hover:text-red-400" />
-                    </button>
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
                   </div>
                 </td>
               </tr>

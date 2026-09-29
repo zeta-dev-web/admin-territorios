@@ -1,7 +1,8 @@
 'use client'
 
 import { useState, useMemo } from 'react'
-import { ClipboardList, Search, X } from 'lucide-react'
+import { ClipboardList, Search, X, ChevronDown, SlidersHorizontal } from 'lucide-react'
+import { Button } from '@/components/ui/button'
 import { UnifiedAssignmentsTable } from './UnifiedAssignmentsTable'
 import { CreateAssignmentModal } from './CreateAssignmentModal'
 import { CreatePersonalAssignmentModal } from './CreatePersonalAssignmentModal'
@@ -47,6 +48,8 @@ export function AssignmentsPageClient({
   const [selectedType, setSelectedType] = useState<'all' | 'CONDUCTOR' | 'PERSONAL'>('all')
   const [currentPage, setCurrentPage] = useState(1)
   const pageSize = 10
+  // Filtros colapsables en mobile
+  const [showFilters, setShowFilters] = useState(false)
 
   // Extraer grupos únicos de las asignaciones
   const groups = useMemo(() => {
@@ -105,9 +108,14 @@ export function AssignmentsPageClient({
 
   const hasActiveFilters = searchTerm !== '' || selectedGroup !== 'all' || selectedType !== 'all'
 
+  const activeFilterCount =
+    (searchTerm !== '' ? 1 : 0) +
+    (selectedGroup !== 'all' ? 1 : 0) +
+    (selectedType !== 'all' ? 1 : 0)
+
   return (
     <>
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-3 flex-wrap">
         <div className="flex items-center gap-3">
           <div className="w-12 h-12 bg-purple-500/10 rounded-xl flex items-center justify-center">
             <ClipboardList className="h-6 w-6 text-purple-500" />
@@ -119,7 +127,7 @@ export function AssignmentsPageClient({
             </p>
           </div>
         </div>
-        <div className="flex gap-3">
+        <div className="flex gap-3 flex-wrap">
           <CreateAssignmentModal />
           <CreatePersonalAssignmentModal />
         </div>
@@ -148,18 +156,37 @@ export function AssignmentsPageClient({
       {/* Filtros */}
       <div className="bg-[#0F1729] rounded-xl border border-slate-800 p-4">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-sm font-semibold text-white">Filtros</h3>
+          <h3 className="hidden md:block text-sm font-semibold text-white">Filtros</h3>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setShowFilters((v) => !v)}
+            aria-expanded={showFilters}
+            className="md:hidden font-semibold text-white hover:text-white"
+          >
+            <SlidersHorizontal className="h-4 w-4 text-slate-400" />
+            Filtros
+            {activeFilterCount > 0 && (
+              <span className="inline-flex items-center justify-center min-w-5 h-5 px-1 rounded-full text-[11px] font-semibold bg-purple-500 text-white">
+                {activeFilterCount}
+              </span>
+            )}
+            <ChevronDown className={`h-4 w-4 text-slate-400 transition-transform ${showFilters ? 'rotate-180' : ''}`} />
+          </Button>
           {hasActiveFilters && (
-            <button
+            <Button
+              variant="outline"
+              size="sm"
               onClick={clearFilters}
-              className="flex items-center gap-1.5 px-3 py-1.5 text-sm bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-lg transition-colors"
+              className="gap-1.5"
             >
               <X className="h-4 w-4" />
               Limpiar filtros
-            </button>
+            </Button>
           )}
         </div>
 
+        <div className={`${showFilters ? 'block' : 'hidden'} md:block`}>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {/* Buscador */}
           <div>
@@ -222,13 +249,14 @@ export function AssignmentsPageClient({
             </p>
           </div>
         )}
+        </div>
       </div>
 
       {/* Table */}
       <div className="bg-[#0F1729] rounded-xl border border-slate-800">
         <div className="p-4 border-b border-slate-800 flex items-center justify-between">
           <h2 className="text-lg font-bold text-white">Todas las Asignaciones</h2>
-          <div className="flex gap-3 text-xs text-slate-400">
+          <div className="hidden sm:flex gap-3 text-xs text-slate-400">
             <span className="flex items-center gap-1">
               <span className="w-2 h-2 rounded-full bg-blue-500" />
               Conductor

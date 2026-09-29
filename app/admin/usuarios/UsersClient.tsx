@@ -1,11 +1,12 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { getUsers, createUser, deleteUser, resetPassword } from '@/server'
-import { Loader2, Trash2, UserPlus, Shield, User as UserIcon, Mail, Lock, X, RefreshCw, Copy, Check } from 'lucide-react'
+import { getUsers, createUser, deleteUser, resetPassword, updateUserModules } from '@/server'
+import { Loader2, Trash2, UserPlus, Shield, User as UserIcon, Mail, Lock, X, RefreshCw, Copy, Check, MapPin, CalendarDays } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { Table } from '@/components/common/Table'
 import { ConfirmDialog } from '@/components/common/ConfirmDialog'
+import type { ModuleCode } from '@/lib/module-access'
 
 interface User {
   id: string
@@ -13,7 +14,14 @@ interface User {
   name: string | null
   role: string
   createdAt: Date
+  modules: ModuleCode[]
+  isCurrentUser: boolean
 }
+
+const moduleOptions: Array<{ id: ModuleCode; label: string; icon: typeof MapPin }> = [
+  { id: 'TERRITORIES', label: 'Territorios', icon: MapPin },
+  { id: 'VYMC', label: 'VYMC', icon: CalendarDays },
+]
 
 interface UsersClientProps {
   headerOnly?: boolean
@@ -44,6 +52,7 @@ export function UsersClient({ headerOnly }: UsersClientProps = {}) {
   const [resetUserId, setResetUserId] = useState<string | null>(null)
   const [resetUserEmail, setResetUserEmail] = useState('')
   const [confirmDelete, setConfirmDelete] = useState<{ id: string; email: string } | null>(null)
+  const [savingModulesFor, setSavingModulesFor] = useState<string | null>(null)
 
   const loadUsers = useCallback(async () => {
     setLoading(true)
@@ -55,10 +64,23 @@ export function UsersClient({ headerOnly }: UsersClientProps = {}) {
   }, [])
 
   useEffect(() => {
-    if (!headerOnly) {
-      loadUsers()
+    if (headerOnly) return
+
+    let isActive = true
+    getUsers()
+      .then((result) => {
+        if (!isActive) return
+        if (result.success) setUsers(result.data)
+        setLoading(false)
+      })
+      .catch(() => {
+        if (isActive) setLoading(false)
+      })
+
+    return () => {
+      isActive = false
     }
-  }, [loadUsers, headerOnly])
+  }, [headerOnly])
 
   function handleGeneratePassword() {
     const pw = generateSecurePassword()
@@ -130,6 +152,39 @@ export function UsersClient({ headerOnly }: UsersClientProps = {}) {
       toast.error(result.message || 'Error al resetear contraseña')
     }
     setResettingId(null)
+  }
+
+  async function handleModuleAccessChange(user: User, module: ModuleCode, enabled: boolean) {
+    const nextModules = enabled
+      ? [...user.modules, module]
+      : user.modules.filter((currentModule) => currentModule !== module)
+
+    if (nextModules.length === 0) {
+      toast.error('Cada usuario debe tener al menos un módulo habilitado')
+      return
+    }
+
+    setSavingModulesFor(user.id)
+    try {
+      const result = await updateUserModules(user.id, nextModules)
+      if (result.success) {
+        setUsers((currentUsers) => currentUsers.map((currentUser) =>
+          currentUser.id === user.id
+            ? { ...currentUser, modules: nextModules }
+            : currentUser
+        ))
+        if (user.isCurrentUser) {
+          window.dispatchEvent(new Event('module-access-updated'))
+        }
+        toast.success(result.message)
+      } else {
+        toast.error(result.message || 'Error al actualizar los módulos')
+      }
+    } catch {
+      toast.error('No se pudieron guardar los módulos. Intentá nuevamente.')
+    } finally {
+      setSavingModulesFor(null)
+    }
   }
 
   // Si es headerOnly, renderizar solo el header con el botón
@@ -370,7 +425,7 @@ export function UsersClient({ headerOnly }: UsersClientProps = {}) {
         </div>
       ) : (
         <div className="bg-[#0F1729] rounded-xl border border-slate-800 overflow-hidden">
-          <Table minWidth="700px">
+          <Table minWidth="940px">
             <thead className="border-b border-slate-800">
               <tr>
                 <th className="px-6 py-4 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">
@@ -381,6 +436,9 @@ export function UsersClient({ headerOnly }: UsersClientProps = {}) {
                 </th>
                 <th className="px-6 py-4 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">
                   Rol
+                </th>
+                <th className="px-6 py-4 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">
+                  Módulos habilitados
                 </th>
                 <th className="px-6 py-4 text-center text-xs font-medium text-slate-400 uppercase tracking-wider">
                   Acciones
@@ -399,6 +457,11 @@ export function UsersClient({ headerOnly }: UsersClientProps = {}) {
                         <span className="text-sm font-medium text-white">
                           {user.name || user.email.split('@')[0]}
                         </span>
+                        {user.isCurrentUser && (
+                          <span className="ml-2 rounded-full bg-cyan-500/10 px-2 py-0.5 text-[10px] font-semibold text-cyan-300">
+                            Tu cuenta
+                          </span>
+                        )}
                         <p className="text-xs text-slate-500">
                           Creado {new Date(user.createdAt).toLocaleDateString('es-AR')}
                         </p>
@@ -421,6 +484,39 @@ export function UsersClient({ headerOnly }: UsersClientProps = {}) {
                       )}
                       {user.role === 'ADMIN' ? 'Admin' : 'Usuario'}
                     </span>
+                  </td>
+                  <td className="px-6 py-4">
+                    <div className="flex items-center gap-2">
+                      {moduleOptions.map(({ id, label, icon: ModuleIcon }) => {
+                        const enabled = user.modules.includes(id)
+                        return (
+                          <label
+                            key={id}
+                            className={`inline-flex min-h-10 cursor-pointer items-center gap-2 rounded-lg border px-2.5 text-xs font-medium transition-colors ${
+                              enabled
+                                ? id === 'TERRITORIES'
+                                  ? 'border-red-500/30 bg-red-500/10 text-red-200'
+                                  : 'border-blue-500/30 bg-blue-500/10 text-blue-200'
+                                : 'border-slate-700 bg-slate-800/40 text-slate-400 hover:bg-slate-800'
+                            } ${savingModulesFor === user.id ? 'cursor-wait opacity-60' : ''}`}
+                          >
+                            <input
+                              type="checkbox"
+                              checked={enabled}
+                              disabled={savingModulesFor !== null || (enabled && user.modules.length === 1)}
+                              onChange={(event) => handleModuleAccessChange(user, id, event.target.checked)}
+                              aria-label={`${enabled ? 'Deshabilitar' : 'Habilitar'} ${label} para ${user.isCurrentUser ? 'tu cuenta' : user.email}`}
+                              className={`h-4 w-4 rounded border-slate-600 bg-slate-900 focus:ring-2 focus:ring-offset-0 ${id === 'TERRITORIES' ? 'accent-red-400 focus:ring-red-400' : 'accent-blue-400 focus:ring-blue-400'}`}
+                            />
+                            <ModuleIcon className="h-3.5 w-3.5" aria-hidden="true" />
+                            <span>{label}</span>
+                          </label>
+                        )
+                      })}
+                    </div>
+                    {savingModulesFor === user.id && (
+                      <p className="mt-1.5 text-[11px] text-slate-500" role="status">Guardando permisos...</p>
+                    )}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center justify-center gap-1">

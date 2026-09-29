@@ -121,6 +121,8 @@ export {
   resetPassword,
   changeOwnPassword,
   getCurrentUserRole,
+  getCurrentUserModules,
+  updateUserModules,
   getCurrentUserInfo,
   getOrCreateApiKey,
   regenerateApiKey,

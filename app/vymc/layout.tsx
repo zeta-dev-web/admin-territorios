@@ -1,5 +1,6 @@
 import { redirect } from 'next/navigation'
 import { getSession } from '@/lib/auth'
+import { getUserModules } from '@/lib/module-access'
 import { prisma } from '@/lib/prisma'
 import { VymcSessionProvider } from '@/lib/vymc-session'
 import { CongregationProvider } from '@/contexts/congregation-context'
@@ -9,6 +10,9 @@ import { AppLayoutVymc } from '@/components/vymc/app-layout-vymc'
 export default async function VymcLayout({ children }: { children: React.ReactNode }) {
   const session = await getSession()
   if (!session?.isAuthenticated) redirect('/login')
+
+  const modules = await getUserModules(session.userId)
+  if (!modules.includes('VYMC')) redirect('/inicio')
 
   const [tenant, user] = await Promise.all([
     prisma.tenant.findUnique({ where: { id: session.tenantId }, select: { name: true } }),

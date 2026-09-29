@@ -2,6 +2,7 @@
 
 import { Menu, ArrowLeft } from 'lucide-react'
 import { useRouter, usePathname } from 'next/navigation'
+import { ThemeToggle } from '@/components/theme/ThemeToggle'
 
 const TITLES_BY_PREFIX: Array<[string, string]> = [
   ['/vymc/publishers', 'Publicadores'],
@@ -62,8 +63,8 @@ export function MobileHeader({
           </h1>
         )}
 
-        {/* Espaciador derecho */}
-        <div className="w-10" />
+        {/* Toggle de tema a la derecha */}
+        <ThemeToggle className="theme-toggle--compact" />
       </div>
     </header>
   )

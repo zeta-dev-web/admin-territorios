@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useMemo } from 'react'
 import { Plus, X, Loader2, MapPin, Search, Check } from 'lucide-react'
+import { Button } from '@/components/ui/button'
 import { createPersonalAssignment, getAllMembersForSelect, getAllTerritoriesForSelect } from '@/server'
 import { useRouter } from 'next/navigation'
 
@@ -109,13 +110,13 @@ export function CreatePersonalAssignmentModal() {
 
   return (
     <>
-      <button
+      <Button
         onClick={() => setIsOpen(true)}
-        className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-lg hover:from-green-600 hover:to-green-700 transition-all shadow-lg shadow-green-500/20 font-medium"
+        className="bg-gradient-to-r from-green-500 to-green-600 shadow-lg shadow-green-500/20 hover:from-green-600 hover:to-green-700"
       >
         <Plus className="h-5 w-5" />
         <span className="hidden sm:inline">Nueva Asignación Personal</span>
-      </button>
+      </Button>
 
       {isOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-in">
@@ -135,13 +136,15 @@ export function CreatePersonalAssignmentModal() {
                   <p className="text-sm text-slate-400">Asignar territorio a integrante</p>
                 </div>
               </div>
-              <button
+              <Button
+                variant="ghost"
+                size="icon"
                 onClick={() => !isLoading && setIsOpen(false)}
-                className="p-2 hover:bg-slate-800 rounded-lg transition-colors"
                 disabled={isLoading}
+                aria-label="Cerrar"
               >
                 <X className="h-5 w-5 text-slate-400" />
-              </button>
+              </Button>
             </div>
 
             <form onSubmit={handleSubmit} className="p-6 space-y-4">
@@ -175,16 +178,19 @@ export function CreatePersonalAssignmentModal() {
                         Territorio {selectedTerritory.number}
                         {selectedTerritory.description && ` - ${selectedTerritory.description}`}
                       </span>
-                      <button
+                      <Button
+                        variant="ghost"
+                        size="icon"
                         type="button"
                         onClick={() => {
                           setSelectedTerritoryId('')
                           setTerritorySearch('')
                         }}
-                        className="ml-auto p-1 hover:bg-slate-800 rounded"
+                        className="ml-auto h-6 w-6"
+                        aria-label="Quitar territorio seleccionado"
                       >
                         <X className="h-3 w-3" />
-                      </button>
+                      </Button>
                     </div>
                   )}
 
@@ -235,16 +241,19 @@ export function CreatePersonalAssignmentModal() {
                       <span className="text-sm text-green-400">
                         {selectedMember.name}{selectedMember.group ? ` - ${selectedMember.group.name}` : ''}
                       </span>
-                      <button
+                      <Button
+                        variant="ghost"
+                        size="icon"
                         type="button"
                         onClick={() => {
                           setSelectedMemberId('')
                           setMemberSearch('')
                         }}
-                        className="ml-auto p-1 hover:bg-slate-800 rounded"
+                        className="ml-auto h-6 w-6"
+                        aria-label="Quitar integrante seleccionado"
                       >
                         <X className="h-3 w-3" />
-                      </button>
+                      </Button>
                     </div>
                   )}
 
@@ -303,18 +312,19 @@ export function CreatePersonalAssignmentModal() {
               </div>
 
               <div className="flex gap-3 pt-4">
-                <button
+                <Button
+                  variant="outline"
                   type="button"
                   onClick={() => setIsOpen(false)}
                   disabled={isLoading}
-                  className="flex-1 px-4 py-2 border border-slate-700 rounded-lg font-medium text-slate-300 hover:bg-slate-800 transition-colors disabled:opacity-50"
+                  className="flex-1"
                 >
                   Cancelar
-                </button>
-                <button
+                </Button>
+                <Button
                   type="submit"
                   disabled={isLoading}
-                  className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-lg font-medium hover:from-green-600 hover:to-green-700 transition-all shadow-lg shadow-green-500/20 disabled:from-slate-700 disabled:to-slate-800"
+                  className="flex-1 bg-gradient-to-r from-green-500 to-green-600 shadow-lg shadow-green-500/20 hover:from-green-600 hover:to-green-700"
                 >
                   {isLoading ? (
                     <>
@@ -327,7 +337,7 @@ export function CreatePersonalAssignmentModal() {
                       <span>Asignar</span>
                     </>
                   )}
-                </button>
+                </Button>
               </div>
             </form>
           </div>

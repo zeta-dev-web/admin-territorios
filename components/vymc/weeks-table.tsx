@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Calendar, ChevronDown, ChevronRight, Trash2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { formatWeekRangeLabel, WEEK_TYPE_LABELS } from "@/components/vymc/week-display-config";
 import type { WeekSummary } from "@/types/week-detail";
 
@@ -53,9 +54,12 @@ export function WeeksTable({ weeks, onSelectWeek, onDeleteWeek }: WeeksTableProp
         return (
           <div key={monthYear} className="border border-border rounded-xl overflow-hidden bg-card">
             {/* Month Header - Clickable */}
-            <button
+            <Button
+              type="button"
+              variant="ghost"
               onClick={() => toggleMonth(monthYear)}
-              className="w-full flex items-center justify-between px-5 py-3 bg-card hover:bg-muted transition-colors"
+              aria-expanded={isExpanded}
+              className="h-auto w-full justify-between rounded-none px-5 py-3 hover:bg-muted"
             >
               <div className="flex items-center gap-3">
                 <ChevronDown
@@ -68,7 +72,7 @@ export function WeeksTable({ weeks, onSelectWeek, onDeleteWeek }: WeeksTableProp
                   {weeksInMonth.length} {weeksInMonth.length === 1 ? 'semana' : 'semanas'}
                 </span>
               </div>
-            </button>
+            </Button>
 
             {/* Weeks in this month - Collapsible */}
             {isExpanded && (
@@ -111,16 +115,20 @@ export function WeeksTable({ weeks, onSelectWeek, onDeleteWeek }: WeeksTableProp
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
-                        <button
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
                           onClick={(e) => {
                             e.stopPropagation();
                             onDeleteWeek(week.id);
                           }}
-                          className="p-2 text-muted-foreground/70 hover:text-red-500 hover:bg-destructive/10 rounded-lg transition-colors"
                           title="Eliminar"
+                          aria-label="Eliminar semana"
+                          className="hover:text-destructive"
                         >
                           <Trash2 className="w-4 h-4" />
-                        </button>
+                        </Button>
                         <ChevronRight className="w-4 h-4 text-muted-foreground/60" />
                       </div>
                     </div>

@@ -37,6 +37,7 @@ model User {
   role            String    @default("USER") // ADMIN | USER
   tenantId        String
   termsAcceptedAt DateTime? // Fecha en que aceptó los términos
+  lastLoginAt     DateTime? // Última conexión exitosa
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
 

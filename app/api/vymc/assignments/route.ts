@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getCurrentTenantId } from '@/lib/tenant'
+import { authorizeModuleRequest } from '@/lib/module-access'
 import { prisma } from '@/lib/prisma'
 import { canAssignPublisher } from '@/lib/assignment-eligibility'
 
@@ -8,7 +8,9 @@ export const dynamic = 'force-dynamic'
 // POST /api/vymc/assignments - Crea una asignación de reunión
 export async function POST(request: NextRequest) {
   try {
-    const tenantId = await getCurrentTenantId()
+    const access = await authorizeModuleRequest('VYMC')
+    if ('response' in access) return access.response
+    const { tenantId } = access
     const b = await request.json()
 
     if (!b.weekItemId || !b.publisherId || !b.role) {

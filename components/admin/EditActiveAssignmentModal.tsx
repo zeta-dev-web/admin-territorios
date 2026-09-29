@@ -24,6 +24,7 @@ import {
   updateUnifiedAssignment,
 } from '@/server'
 import type { UnifiedAssignment } from '@/server/unifiedAssignments'
+import { Button } from '@/components/ui/button'
 
 interface TerritoryOption {
   id: string
@@ -230,9 +231,9 @@ export function EditActiveAssignmentModal({ assignment, onClose }: EditProps) {
               <p className="mt-1 text-sm text-slate-400">Corregí los datos sin perder el control del historial.</p>
             </div>
           </div>
-          <button type="button" onClick={() => onClose()} disabled={saving} className="rounded-xl p-2 text-slate-400 transition hover:bg-slate-800 hover:text-white disabled:opacity-50" aria-label="Cerrar">
+          <Button variant="ghost" size="icon" type="button" onClick={() => onClose()} disabled={saving} aria-label="Cerrar">
             <X className="h-5 w-5" />
-          </button>
+          </Button>
         </header>
 
         <form onSubmit={handleSubmit} className="flex min-h-0 flex-1 flex-col">
@@ -312,11 +313,11 @@ export function EditActiveAssignmentModal({ assignment, onClose }: EditProps) {
           </div>
 
           <footer className="flex gap-3 border-t border-slate-800 bg-[#0B1426] px-5 py-4 sm:justify-end sm:px-7">
-            <button type="button" onClick={() => onClose()} disabled={saving} className="flex-1 rounded-xl border border-slate-700 px-5 py-2.5 font-semibold text-slate-300 transition hover:bg-slate-800 sm:flex-none">Cancelar</button>
-            <button type="submit" disabled={loading || saving} className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-blue-500 to-cyan-400 px-5 py-2.5 font-bold text-slate-950 shadow-lg shadow-cyan-950/30 transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-50 sm:flex-none">
+            <Button variant="outline" type="button" onClick={() => onClose()} disabled={saving} className="flex-1 sm:flex-none">Cancelar</Button>
+            <Button type="submit" disabled={loading || saving} className="flex-1 bg-gradient-to-r from-blue-500 to-cyan-400 text-slate-950 shadow-lg shadow-cyan-950/30 hover:brightness-110 sm:flex-none">
               {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
               {saving ? 'Guardando...' : 'Guardar cambios'}
-            </button>
+            </Button>
           </footer>
         </form>
       </div>
@@ -350,11 +351,11 @@ export function DeleteActiveAssignmentModal({ assignment, onClose }: EditProps) 
         <p className="mt-2 text-sm leading-6 text-slate-400">Se eliminará la asignación del territorio {assignment.territoryNumber} a {assignment.assigneeName}. También se borrarán sus trabajos registrados y el territorio volverá a quedar disponible.</p>
         {error && <div className="mt-4 rounded-xl border border-red-400/30 bg-red-500/10 px-4 py-3 text-sm text-red-300">{error}</div>}
         <div className="mt-6 flex gap-3">
-          <button type="button" onClick={() => onClose()} disabled={deleting} className="flex-1 rounded-xl border border-slate-700 px-4 py-2.5 font-semibold text-slate-300 hover:bg-slate-800">Cancelar</button>
-          <button type="button" onClick={handleDelete} disabled={deleting} className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-red-500 px-4 py-2.5 font-bold text-white hover:bg-red-400 disabled:opacity-50">
+          <Button variant="outline" type="button" onClick={() => onClose()} disabled={deleting} className="flex-1">Cancelar</Button>
+          <Button variant="destructive" type="button" onClick={handleDelete} disabled={deleting} className="flex-1">
             {deleting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
             {deleting ? 'Eliminando...' : 'Eliminar'}
-          </button>
+          </Button>
         </div>
       </div>
     </div>

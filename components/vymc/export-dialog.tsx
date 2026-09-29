@@ -181,11 +181,11 @@ export function ExportWeekDialog({ open, onOpenChange, weeks }: ExportWeekDialog
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+      <DialogContent className="max-h-[85vh] w-[calc(100%-2rem)] max-w-2xl overflow-y-auto p-4 sm:p-6">
         <DialogHeader>
-          <DialogTitle className="text-card-foreground">Exportar Semanas</DialogTitle>
+          <DialogTitle className="text-card-foreground">Descargar Semanas</DialogTitle>
           <DialogDescription className="text-muted-foreground">
-            Seleccioná las semanas que querés exportar en formato PDF o Imágenes (S-140-S).
+            Seleccioná las semanas que querés descargar en formato PDF o Imágenes (S-140-S).
           </DialogDescription>
         </DialogHeader>
 
@@ -208,7 +208,7 @@ export function ExportWeekDialog({ open, onOpenChange, weeks }: ExportWeekDialog
           </div>
 
           {/* Select All / Deselect All */}
-          <div className="flex gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <Button
               type="button"
               onClick={selectAllVisibleWeeks}
@@ -227,7 +227,7 @@ export function ExportWeekDialog({ open, onOpenChange, weeks }: ExportWeekDialog
             >
               Deseleccionar todas
             </Button>
-            <div className="ml-auto text-sm text-muted-foreground">
+            <div className="w-full text-xs text-muted-foreground sm:w-auto sm:ml-auto sm:text-sm">
               {selectedWeekIds.size} {selectedWeekIds.size === 1 ? "semana seleccionada" : "semanas seleccionadas"}
             </div>
           </div>
@@ -295,7 +295,7 @@ export function ExportWeekDialog({ open, onOpenChange, weeks }: ExportWeekDialog
             ) : (
               <>
                 <FileDown className="w-4 h-4 mr-2" />
-                Exportar Imágenes
+                Descargar Imágenes
               </>
             )}
           </Button>
@@ -312,7 +312,7 @@ export function ExportWeekDialog({ open, onOpenChange, weeks }: ExportWeekDialog
             ) : (
               <>
                 <FileDown className="w-4 h-4 mr-2" />
-                Exportar PDF
+                Descargar PDF
               </>
             )}
           </Button>

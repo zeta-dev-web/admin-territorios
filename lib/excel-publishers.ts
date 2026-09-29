@@ -32,18 +32,6 @@ export type PublisherDirectoryRow = {
   lastAssignedAt: Date | null;
 };
 
-export type WeeksHistoryRow = {
-  year: number;
-  weekNumber: number;
-  startDate: string;
-  endDate: string;
-  sectionTitle: string;
-  partTitle: string;
-  partOrder: number;
-  roleLabel: string;
-  publisherName: string;
-};
-
 // ============================================
 // HELPERS DE NORMALIZACIÓN
 // ============================================
@@ -309,37 +297,5 @@ export function buildPublishersTemplateWorkbook(): Buffer {
 
   const workbook = XLSX.utils.book_new();
   appendSheetFromAoa(workbook, aoa, "Plantilla");
-  return workbookToBuffer(workbook);
-}
-
-/** Historial completo de asignaciones por semana. */
-export function buildWeeksHistoryWorkbook(historyRows: WeeksHistoryRow[]): Buffer {
-  const aoa: unknown[][] = [
-    [
-      "Año",
-      "Semana",
-      "Inicio",
-      "Fin",
-      "Sección",
-      "Parte",
-      "Orden",
-      "Rol",
-      "Publicador",
-    ],
-    ...historyRows.map((row) => [
-      row.year,
-      row.weekNumber,
-      formatDisplayDate(row.startDate),
-      formatDisplayDate(row.endDate),
-      row.sectionTitle,
-      row.partTitle,
-      row.partOrder,
-      row.roleLabel,
-      row.publisherName,
-    ]),
-  ];
-
-  const workbook = XLSX.utils.book_new();
-  appendSheetFromAoa(workbook, aoa, "Historial");
   return workbookToBuffer(workbook);
 }

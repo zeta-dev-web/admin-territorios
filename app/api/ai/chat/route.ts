@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { getSession } from "@/lib/auth";
+import { authorizeModuleRequest } from "@/lib/module-access";
 import {
   buildSystemPrompt,
   executeCopilotTool,
@@ -44,6 +45,11 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
+
+    const access = await authorizeModuleRequest(
+      parsed.data.module === 'vymc' ? 'VYMC' : 'TERRITORIES'
+    );
+    if ('response' in access) return access.response;
 
     const rateLimit = await checkRateLimit("copilot", session.userId);
     if (!rateLimit.allowed) {

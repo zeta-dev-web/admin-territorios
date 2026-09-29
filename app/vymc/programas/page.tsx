@@ -7,8 +7,7 @@ import {
   CalendarDays,
   ChevronDown,
   FileDown,
-  FileSpreadsheet,
-  MessageCircle,
+  SlidersHorizontal,
   X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -23,7 +22,8 @@ import {
 } from "@/components/ui/dialog";
 import { ImportWeekDialog } from "@/components/vymc/import-week-dialog";
 import { ExportWeekDialog } from "@/components/vymc/export-dialog";
-import { BulkSendDialog } from "@/components/vymc/bulk-send-dialog";
+// Envío masivo desactivado: ahora el envío es manual uno por uno desde cada programa.
+// import { BulkSendDialog } from "@/components/vymc/bulk-send-dialog";
 import { WeeksTable } from "@/components/vymc/weeks-table";
 import { getNearestMonday } from "@/components/vymc/week-display-config";
 import type { WeekSummary } from "@/types/week-detail";
@@ -33,12 +33,15 @@ export default function WeeksPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isExportDialogOpen, setIsExportDialogOpen] = useState(false);
-  const [isBulkSendDialogOpen, setIsBulkSendDialogOpen] = useState(false);
+  // Envío masivo desactivado: ahora el envío es manual uno por uno desde cada programa.
+  // const [isBulkSendDialogOpen, setIsBulkSendDialogOpen] = useState(false);
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [searchDate, setSearchDate] = useState("");
   const [yearFilter, setYearFilter] = useState<string>("all");
-  const [isExportingHistory, setIsExportingHistory] = useState(false);
+  // Filtros colapsables en mobile
+  const [showFilters, setShowFilters] = useState(false);
+  const activeFilterCount = (searchDate !== "" ? 1 : 0) + (yearFilter !== "all" ? 1 : 0);
 
   const loadWeeks = async () => {
     try {
@@ -92,31 +95,6 @@ export default function WeeksPage() {
       loadWeeks();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Error desconocido");
-    }
-  };
-
-  const handleExportHistory = async () => {
-    setIsExportingHistory(true);
-    try {
-      const response = await fetch("/api/vymc/weeks/export-history");
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error || "Error al exportar el historial");
-      }
-
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `historial-asignaciones-${new Date().toISOString().split("T")[0]}.xlsx`;
-      document.body.appendChild(a);
-      a.click();
-      window.URL.revokeObjectURL(url);
-      document.body.removeChild(a);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Error desconocido");
-    } finally {
-      setIsExportingHistory(false);
     }
   };
 
@@ -180,17 +158,9 @@ export default function WeeksPage() {
                 className="border-primary text-primary hover:bg-primary hover:text-white"
               >
                 <FileDown className="w-4 h-4 mr-2" />
-                Exportar
+                Descargar
               </Button>
-              <Button
-                onClick={handleExportHistory}
-                disabled={isExportingHistory}
-                variant="outline"
-                className="border-accent text-accent hover:bg-accent hover:text-white"
-              >
-                <FileSpreadsheet className="w-4 h-4 mr-2" />
-                Historial Excel
-              </Button>
+              {/* Botón Enviar Asignaciones oculto por el momento
               <Button
                 onClick={() => setIsBulkSendDialogOpen(true)}
                 variant="outline"
@@ -199,6 +169,7 @@ export default function WeeksPage() {
                 <MessageCircle className="w-4 h-4 mr-2" />
                 Enviar Asignaciones
               </Button>
+              */}
             </>
           )}
           <Button
@@ -220,7 +191,26 @@ export default function WeeksPage() {
 
       {/* Filters */}
       {weeks.length > 0 && (
-        <div className="flex flex-col sm:flex-row gap-3">
+        <>
+          <div className="md:hidden">
+            <Button
+              variant="outline"
+              onClick={() => setShowFilters((v) => !v)}
+              aria-expanded={showFilters}
+              className="w-full"
+            >
+              <SlidersHorizontal className="w-4 h-4 mr-2" />
+              Filtros
+              {activeFilterCount > 0 && (
+                <span className="ml-2 inline-flex items-center justify-center min-w-5 h-5 px-1 rounded-full text-[11px] font-semibold bg-primary text-primary-foreground">
+                  {activeFilterCount}
+                </span>
+              )}
+              <ChevronDown className={`w-4 h-4 ml-auto transition-transform ${showFilters ? "rotate-180" : ""}`} />
+            </Button>
+          </div>
+          <div className={`${showFilters ? "block" : "hidden"} md:block`}>
+            <div className="flex flex-col sm:flex-row gap-3">
           <div className="relative flex-1">
             <CalendarDays className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground/70" />
             <Input
@@ -231,13 +221,16 @@ export default function WeeksPage() {
               className="pl-10 border-border focus:border-ring focus:ring-ring"
             />
             {searchDate && (
-              <button
+              <Button
+                variant="ghost"
+                size="sm"
                 onClick={() => setSearchDate("")}
-                className="absolute right-3 top-1/2 transform -translate-y-1/2 flex items-center gap-1 text-xs text-muted-foreground hover:text-white hover:bg-primary bg-card pl-2 pr-2 py-1 rounded transition-colors"
+                aria-label="Borrar búsqueda"
+                className="absolute right-3 top-1/2 h-7 -translate-y-1/2 gap-1 px-2 text-xs"
               >
                 <X className="w-3 h-3" />
                 <span>Borrar búsqueda</span>
-              </button>
+              </Button>
             )}
           </div>
           {years.length > 1 && (
@@ -257,7 +250,9 @@ export default function WeeksPage() {
               <ChevronDown className="absolute right-2 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground/70 pointer-events-none" />
             </div>
           )}
-        </div>
+          </div>
+          </div>
+        </>
       )}
 
       {/* Table or Empty State */}
@@ -304,11 +299,13 @@ export default function WeeksPage() {
       />
 
       {/* Bulk WhatsApp Send Dialog */}
+      {/* Envío masivo desactivado: ahora el envío es manual uno por uno desde cada programa.
       <BulkSendDialog
         open={isBulkSendDialogOpen}
         onOpenChange={setIsBulkSendDialogOpen}
         years={years}
       />
+      */}
 
 
       {/* Delete Confirmation Dialog */}
@@ -316,7 +313,7 @@ export default function WeeksPage() {
         open={!!deleteConfirmId}
         onOpenChange={() => setDeleteConfirmId(null)}
       >
-        <DialogContent>
+        <DialogContent className="w-[calc(100%-2rem)] p-4 sm:p-6">
           <DialogHeader>
             <DialogTitle className="text-card-foreground">
               Eliminar semana
@@ -326,17 +323,18 @@ export default function WeeksPage() {
               sus secciones, elementos y asignaciones.
             </DialogDescription>
           </DialogHeader>
-          <DialogFooter>
+          <DialogFooter className="gap-2 sm:gap-0">
             <Button
               variant="outline"
               onClick={() => setDeleteConfirmId(null)}
-              className="border-border"
+              className="border-border justify-center"
             >
               Cancelar
             </Button>
             <Button
               variant="destructive"
               onClick={() => deleteConfirmId && handleDelete(deleteConfirmId)}
+              className="justify-center"
             >
               Eliminar
             </Button>

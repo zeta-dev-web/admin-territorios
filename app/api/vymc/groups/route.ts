@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getCurrentTenantId } from '@/lib/tenant'
+import { authorizeModuleRequest } from '@/lib/module-access'
 import { prisma } from '@/lib/prisma'
 
 export const dynamic = 'force-dynamic'
@@ -7,7 +7,9 @@ export const dynamic = 'force-dynamic'
 // GET /api/vymc/groups - lista simple para selects y filtros
 export async function GET() {
   try {
-    const tenantId = await getCurrentTenantId()
+    const access = await authorizeModuleRequest('VYMC')
+    if ('response' in access) return access.response
+    const { tenantId } = access
     const groups = await prisma.group.findMany({
       where: { tenantId },
       select: { id: true, name: true, _count: { select: { publishers: true } } },
@@ -26,7 +28,9 @@ export async function GET() {
 // POST /api/vymc/groups - crea un grupo con solo el nombre
 export async function POST(request: NextRequest) {
   try {
-    const tenantId = await getCurrentTenantId()
+    const access = await authorizeModuleRequest('VYMC')
+    if ('response' in access) return access.response
+    const { tenantId } = access
     const { name } = await request.json()
 
     const clean = String(name ?? '').trim()

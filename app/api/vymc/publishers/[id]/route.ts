@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getCurrentTenantId } from '@/lib/tenant'
+import { authorizeModuleRequest } from '@/lib/module-access'
 import { prisma } from '@/lib/prisma'
 import { PUBLISHER_SELECT } from '@/lib/vymc/publisher-select'
 
@@ -9,7 +9,9 @@ export const dynamic = 'force-dynamic'
 export async function PUT(request: NextRequest, ctx: { params: Promise<{ id: string }> }) {
   const t0 = Date.now()
   try {
-    const tenantId = await getCurrentTenantId()
+    const access = await authorizeModuleRequest('VYMC')
+    if ('response' in access) return access.response
+    const { tenantId } = access
     const { id } = await ctx.params
     const body = await request.json()
 
@@ -63,7 +65,9 @@ export async function PUT(request: NextRequest, ctx: { params: Promise<{ id: str
 // DELETE /api/vymc/publishers/[id]
 export async function DELETE(_: NextRequest, ctx: { params: Promise<{ id: string }> }) {
   try {
-    const tenantId = await getCurrentTenantId()
+    const access = await authorizeModuleRequest('VYMC')
+    if ('response' in access) return access.response
+    const { tenantId } = access
     const { id } = await ctx.params
 
     const deleted = await prisma.publisher.deleteMany({ where: { id, tenantId } })

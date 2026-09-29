@@ -12,6 +12,7 @@ import {
   clearAdminBackup,
 } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { getUserModules, type ModuleCode } from '@/lib/module-access'
 import { hashPassword, hashApiKey } from '@/lib/auth'
 import { isLoginBlocked, registerFailedLogin, clearLoginAttempts } from '@/lib/login-throttle'
 import { redirect } from 'next/navigation'
@@ -86,6 +87,11 @@ export async function login(formData: FormData) {
       tenantId: user.tenantId,
       role: user.role as 'ADMIN' | 'USER',
     })
+    // Registrar última conexión sin romper el login si falla
+    void prisma.user.update({
+      where: { id: user.id },
+      data: { lastLoginAt: new Date() },
+    }).catch((e) => console.error('Error al registrar última conexión:', e))
   } catch (error) {
     console.error('Error en login:', error)
     return { success: false, message: 'Error al iniciar sesión' }
@@ -121,16 +127,30 @@ export async function getUsers() {
         role: true,
         tenantId: true,
         createdAt: true,
+        lastLoginAt: true,
         tenant: {
           select: {
             name: true,
           },
         },
+        moduleAccess: {
+          select: { module: true },
+        },
       },
       orderBy: { createdAt: 'desc' },
     })
 
-    return { success: true, data: users }
+    return {
+      success: true,
+      data: users.map(({ moduleAccess, ...user }) => ({
+        ...user,
+        isCurrentUser: user.id === session.userId,
+        // Los usuarios legados sin filas explícitas reciben ambos módulos por defecto.
+        modules: moduleAccess.length > 0
+          ? moduleAccess.map(({ module }) => module)
+          : ['TERRITORIES', 'VYMC'] as ModuleCode[],
+      })),
+    }
   } catch (error) {
     console.error('Error al obtener usuarios:', error)
     return { success: false, data: [], message: 'Error al obtener usuarios' }
@@ -277,6 +297,58 @@ export async function resetPassword(userId: string) {
 export async function getCurrentUserRole() {
   const session = await getSession()
   return session?.role || null
+}
+
+export async function getCurrentUserModules() {
+  const session = await getSession()
+  if (!session?.isAuthenticated) return []
+  return getUserModules(session.userId)
+}
+
+export async function updateUserModules(userId: string, modules: ModuleCode[]) {
+  try {
+    const session = await getSession()
+    if (!session?.isAuthenticated || session.role !== 'ADMIN') {
+      return { success: false, message: 'No autorizado' }
+    }
+
+    const validModules: ModuleCode[] = ['TERRITORIES', 'VYMC']
+    if (
+      !Array.isArray(modules) ||
+      modules.length === 0 ||
+      modules.some((module) => !validModules.includes(module)) ||
+      new Set(modules).size !== modules.length
+    ) {
+      return { success: false, message: 'Seleccioná al menos un módulo válido' }
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { id: true },
+    })
+    if (!user) return { success: false, message: 'Usuario no encontrado' }
+
+    await prisma.$transaction([
+      prisma.userModuleAccess.deleteMany({ where: { userId } }),
+      prisma.userModuleAccess.createMany({
+        data: modules.map((module) => ({ userId, module })),
+        skipDuplicates: true,
+      }),
+    ])
+
+    revalidatePath('/admin/usuarios')
+    revalidatePath('/inicio')
+    revalidatePath('/territorios')
+    revalidatePath('/vymc')
+
+    return { success: true, message: 'Módulos actualizados correctamente' }
+  } catch (error) {
+    console.error('Error al actualizar módulos del usuario:', error)
+    return {
+      success: false,
+      message: error instanceof Error ? error.message : 'Error al actualizar los módulos',
+    }
+  }
 }
 
 /**

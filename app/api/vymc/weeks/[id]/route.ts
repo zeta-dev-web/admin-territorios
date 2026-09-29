@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getCurrentTenantId } from '@/lib/tenant'
+import { authorizeModuleRequest } from '@/lib/module-access'
 import { prisma } from '@/lib/prisma'
 import { isLeadershipPublisher } from '@/lib/assignment-eligibility'
 
@@ -30,7 +30,9 @@ async function loadWeek(id: string, tenantId: string) {
 
 export async function GET(_: NextRequest, ctx: { params: Promise<{ id: string }> }) {
   try {
-    const tenantId = await getCurrentTenantId()
+    const access = await authorizeModuleRequest('VYMC')
+    if ('response' in access) return access.response
+    const { tenantId } = access
     const { id } = await ctx.params
     const week = await loadWeek(id, tenantId)
     if (!week) return NextResponse.json({ error: 'Semana no encontrada' }, { status: 404 })
@@ -44,7 +46,9 @@ export async function GET(_: NextRequest, ctx: { params: Promise<{ id: string }>
 // PUT: presidente / oración inicial (con validación de liderazgo)
 export async function PUT(request: NextRequest, ctx: { params: Promise<{ id: string }> }) {
   try {
-    const tenantId = await getCurrentTenantId()
+    const access = await authorizeModuleRequest('VYMC')
+    if ('response' in access) return access.response
+    const { tenantId } = access
     const { id } = await ctx.params
     const body = await request.json()
 
@@ -82,7 +86,9 @@ export async function PUT(request: NextRequest, ctx: { params: Promise<{ id: str
 
 export async function DELETE(_: NextRequest, ctx: { params: Promise<{ id: string }> }) {
   try {
-    const tenantId = await getCurrentTenantId()
+    const access = await authorizeModuleRequest('VYMC')
+    if ('response' in access) return access.response
+    const { tenantId } = access
     const { id } = await ctx.params
     const week = await prisma.week.findFirst({ where: { id, tenantId }, select: { id: true } })
     if (!week) return NextResponse.json({ error: 'Semana no encontrada' }, { status: 404 })

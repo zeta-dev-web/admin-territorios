@@ -126,20 +126,15 @@ export function PublisherFormDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="max-w-md w-[calc(100%-2rem)] max-h-[85vh] overflow-y-auto p-4 sm:p-6">
         <DialogHeader>
           <DialogTitle className="text-card-foreground">
             {editingPublisher ? "Editar publicador" : "Nuevo publicador"}
           </DialogTitle>
-          <DialogDescription className="text-muted-foreground">
-            {editingPublisher
-              ? "Actualiza la información del publicador"
-              : "Completa los datos del nuevo publicador"}
-          </DialogDescription>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="space-y-1.5">
               <Label htmlFor="firstName" className="text-foreground font-medium">Nombre</Label>
               <Input id="firstName" placeholder="Juan" value={form.firstName}
@@ -241,13 +236,13 @@ export function PublisherFormDialog({
             </div>
           </div>
 
-          <DialogFooter>
+          <DialogFooter className="gap-2 sm:gap-0">
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}
-              disabled={isSubmitting} className="border-border">
+              disabled={isSubmitting} className="border-border justify-center">
               Cancelar
             </Button>
             <Button type="submit" disabled={isSubmitting}
-              className="bg-primary hover:bg-primary/90 text-primary-foreground">
+              className="bg-primary hover:bg-primary/90 text-primary-foreground justify-center">
               {isSubmitting ? "Guardando..." : editingPublisher ? "Actualizar" : "Crear"}
             </Button>
           </DialogFooter>

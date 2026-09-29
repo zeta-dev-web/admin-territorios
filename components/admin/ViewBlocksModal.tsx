@@ -1,6 +1,7 @@
 'use client'
 
 import { X, CheckCircle2, Circle, MapPin } from 'lucide-react'
+import { Button } from '@/components/ui/button'
 import type { BlockStatus } from '@/types'
 
 interface ViewBlocksModalProps {
@@ -43,12 +44,14 @@ export function ViewBlocksModal({
                 </p>
               </div>
             </div>
-            <button
+            <Button
               onClick={onClose}
-              className="p-2 hover:bg-slate-800 rounded-lg transition-colors"
+              variant="ghost"
+              size="icon"
+              aria-label="Cerrar"
             >
-              <X className="h-5 w-5 text-slate-400" />
-            </button>
+              <X className="h-5 w-5" />
+            </Button>
           </div>
 
           <div className="space-y-2">
@@ -113,12 +116,13 @@ export function ViewBlocksModal({
         </div>
 
         <div className="sticky bottom-0 bg-[#0F1729] border-t border-slate-800 p-4">
-          <button
+          <Button
             onClick={onClose}
-            className="w-full px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-lg font-medium transition-colors"
+            variant="outline"
+            className="w-full"
           >
             Cerrar
-          </button>
+          </Button>
         </div>
       </div>
     </div>

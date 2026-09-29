@@ -65,7 +65,7 @@ export function CongregationsTable({ congregations }: CongregationsTableProps) {
 
   return (
     <>
-      <Table minWidth="800px">
+      <Table minWidth="640px">
         <thead style={{ borderBottom: '1px solid var(--app-border)' }}>
           <tr>
             <th className="text-left p-4 text-sm font-semibold" style={{ color: 'var(--app-muted)' }}>
@@ -80,7 +80,7 @@ export function CongregationsTable({ congregations }: CongregationsTableProps) {
             <th className="text-center p-4 text-sm font-semibold" style={{ color: 'var(--app-muted)' }}>
               Territorios
             </th>
-            <th className="text-left p-4 text-sm font-semibold" style={{ color: 'var(--app-muted)' }}>
+            <th className="hidden p-4 text-sm font-semibold text-left md:table-cell" style={{ color: 'var(--app-muted)' }}>
               Fecha de Creación
             </th>
             <th className="text-center p-4 text-sm font-semibold" style={{ color: 'var(--app-muted)' }}>
@@ -103,7 +103,7 @@ export function CongregationsTable({ congregations }: CongregationsTableProps) {
                   </div>
                   <div>
                     <p className="font-medium" style={{ color: 'var(--app-text)' }}>{congregation.name}</p>
-                    <p className="text-xs" style={{ color: 'var(--app-muted)' }}>ID: {congregation.id.slice(0, 8)}...</p>
+                    <p className="text-xs hidden sm:block" style={{ color: 'var(--app-muted)' }}>ID: {congregation.id.slice(0, 8)}...</p>
                   </div>
                 </div>
               </td>
@@ -132,7 +132,7 @@ export function CongregationsTable({ congregations }: CongregationsTableProps) {
               </td>
 
               {/* Fecha */}
-              <td className="p-4">
+              <td className="p-4 hidden md:table-cell">
                 <span className="text-sm" style={{ color: 'var(--app-muted)' }}>
                   {new Date(congregation.createdAt).toLocaleDateString('es-AR')}
                 </span>

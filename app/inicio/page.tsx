@@ -37,6 +37,7 @@ export default async function InicioPage() {
       userName={user?.name ?? session.email}
       congregationName={tenant?.name ?? ''}
       messages={messages}
+      allowedModules={modules}
     />
   )
 }

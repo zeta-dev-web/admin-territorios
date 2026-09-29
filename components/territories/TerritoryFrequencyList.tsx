@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { BarChart3, Trophy, ChevronLeft, ChevronRight } from 'lucide-react'
+import { Button } from '@/components/ui/button'
 import { TerritoryFrequency } from '@/types'
 
 interface TerritoryFrequencyListProps {
@@ -82,27 +83,29 @@ export function TerritoryFrequencyList({
       {/* Paginación */}
       {totalPages > 1 && (
         <div className="flex items-center justify-between pt-3 border-t border-slate-800">
-          <button
+          <Button
             onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
             disabled={currentPage === 1}
-            className="flex items-center gap-1 px-3 py-1.5 text-sm bg-slate-800 hover:bg-slate-700 text-white rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            variant="outline"
+            size="sm"
           >
             <ChevronLeft className="h-4 w-4" />
             Anterior
-          </button>
+          </Button>
 
           <span className="text-sm text-slate-400">
             Página {currentPage} de {totalPages}
           </span>
 
-          <button
+          <Button
             onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
             disabled={currentPage === totalPages}
-            className="flex items-center gap-1 px-3 py-1.5 text-sm bg-slate-800 hover:bg-slate-700 text-white rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            variant="outline"
+            size="sm"
           >
             Siguiente
             <ChevronRight className="h-4 w-4" />
-          </button>
+          </Button>
         </div>
       )}
     </div>

@@ -1,6 +1,7 @@
 'use client'
 
 import { Menu } from 'lucide-react'
+import { Button } from '@/components/ui/button'
 
 interface VymcHeaderProps {
   onMenuClick?: () => void
@@ -14,13 +15,15 @@ export function VymcHeader({ onMenuClick }: VymcHeaderProps) {
         <div className="relative">
           <div className="flex h-16 items-center justify-between px-4 md:px-6 lg:px-8">
             {/* Botón de menú */}
-            <button
+            <Button
+              variant="ghost"
+              size="icon"
               onClick={onMenuClick}
-              className="flex items-center justify-center w-10 h-10 -ml-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors md:hidden"
               aria-label="Menú"
+              className="-ml-2 md:hidden"
             >
               <Menu className="h-5 w-5 text-blue-600 dark:text-blue-400" />
-            </button>
+            </Button>
 
             {/* Contenido del header */}
             <div className="flex items-center gap-3 flex-1 md:flex-none">

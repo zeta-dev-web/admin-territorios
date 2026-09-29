@@ -1,7 +1,8 @@
 'use client'
 
 import { useState, useMemo, useEffect, useRef } from 'react'
-import { Plus, MapPin, Search, X, Loader2 } from 'lucide-react'
+import { Plus, MapPin, Search, X, Loader2, ChevronDown, SlidersHorizontal } from 'lucide-react'
+import { Button } from '@/components/ui/button'
 import { TerritoriesTableWithModal } from './TerritoriesTableWithModal'
 import { TerritoryModal } from './TerritoryModal'
 import { ClientPagination } from '@/components/common/ClientPagination'
@@ -58,6 +59,8 @@ export function TerritoriesPageClient({
   const periodRequest = useRef(0)
   const [currentPage, setCurrentPage] = useState(1)
   const pageSize = 10
+  // Filtros colapsables en mobile
+  const [showFilters, setShowFilters] = useState(false)
 
   const periodActive =
     periodFilter !== 'all' && !(periodFilter === 'custom' && !periodDesde && !periodHasta)
@@ -195,6 +198,12 @@ export function TerritoriesPageClient({
 
   const hasActiveFilters = searchTerm !== '' || selectedGroup !== 'all' || assignmentStatus !== 'all' || periodFilter !== 'all'
 
+  const activeFilterCount =
+    (searchTerm !== '' ? 1 : 0) +
+    (selectedGroup !== 'all' ? 1 : 0) +
+    (assignmentStatus !== 'all' ? 1 : 0) +
+    (periodFilter !== 'all' ? 1 : 0)
+
   return (
     <>
       {/* Header */}
@@ -211,13 +220,14 @@ export function TerritoriesPageClient({
           </div>
         </div>
 
-        <button
+        <Button
           onClick={() => setCreateOpen(true)}
-          className="flex items-center gap-2 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-lg font-medium hover:from-red-600 hover:to-red-700 transition-all shadow-lg shadow-red-500/20 px-4 py-2"
+          variant="default"
+          className="bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white shadow-lg shadow-red-500/20"
         >
           <Plus className="h-5 w-5" />
           <span className="hidden sm:inline">Nuevo Territorio</span>
-        </button>
+        </Button>
       </div>
 
       {/* Stats */}
@@ -239,18 +249,36 @@ export function TerritoriesPageClient({
       {/* Filtros */}
       <div className="bg-[#0F1729] rounded-xl border border-slate-800 p-4">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-sm font-semibold text-white">Filtros</h3>
+          <h3 className="hidden md:block text-sm font-semibold text-white">Filtros</h3>
+          <Button
+            onClick={() => setShowFilters((v) => !v)}
+            aria-expanded={showFilters}
+            variant="ghost"
+            size="sm"
+            className="md:hidden font-semibold text-white"
+          >
+            <SlidersHorizontal className="h-4 w-4 text-slate-400" />
+            Filtros
+            {activeFilterCount > 0 && (
+              <span className="inline-flex items-center justify-center min-w-5 h-5 px-1 rounded-full text-[11px] font-semibold bg-red-500 text-white">
+                {activeFilterCount}
+              </span>
+            )}
+            <ChevronDown className={`h-4 w-4 text-slate-400 transition-transform ${showFilters ? 'rotate-180' : ''}`} />
+          </Button>
           {hasActiveFilters && (
-            <button
+            <Button
               onClick={clearFilters}
-              className="flex items-center gap-1.5 px-3 py-1.5 text-sm bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-lg transition-colors"
+              variant="outline"
+              size="sm"
             >
               <X className="h-4 w-4" />
               Limpiar filtros
-            </button>
+            </Button>
           )}
         </div>
 
+        <div className={`${showFilters ? 'block' : 'hidden'} md:block`}>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {/* Buscador */}
           <div>
@@ -375,6 +403,7 @@ export function TerritoriesPageClient({
             </p>
           </div>
         )}
+        </div>
       </div>
 
       {/* Table */}

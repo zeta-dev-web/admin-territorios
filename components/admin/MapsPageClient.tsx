@@ -54,7 +54,7 @@ export function MapsPageClient({ initialMaps, groups }: MapsPageClientProps) {
       <div className="flex gap-2 border-b border-slate-800">
         <button
           onClick={() => setSelectedTab('GENERAL')}
-          className={`px-4 py-2 font-medium transition-colors relative ${
+          className={`px-4 py-3 font-medium transition-colors relative ${
             selectedTab === 'GENERAL'
               ? 'text-blue-400'
               : 'text-slate-400 hover:text-slate-300'
@@ -70,7 +70,7 @@ export function MapsPageClient({ initialMaps, groups }: MapsPageClientProps) {
         </button>
         <button
           onClick={() => setSelectedTab('GROUP')}
-          className={`px-4 py-2 font-medium transition-colors relative ${
+          className={`px-4 py-3 font-medium transition-colors relative ${
             selectedTab === 'GROUP'
               ? 'text-blue-400'
               : 'text-slate-400 hover:text-slate-300'

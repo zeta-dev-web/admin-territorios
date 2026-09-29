@@ -1,8 +1,8 @@
 import { getDashboardMetrics } from '@/server'
 import { TerritoryCard } from '@/components/territories/TerritoryCard'
 import { AtrasadosSection } from '@/components/territories/AtrasadosSection'
-import { TerritoryFrequencyList } from '@/components/territories/TerritoryFrequencyList'
-import { Activity, Clock, BarChart3, TrendingUp } from 'lucide-react'
+import { MasTrabajadosSection } from '@/components/territories/MasTrabajadosSection'
+import { Activity, Clock, TrendingUp } from 'lucide-react'
 
 export const dynamic = 'force-dynamic'
 
@@ -110,26 +110,13 @@ export default async function DashboardPage() {
         </div>
       </div>
 
-      {/* Grid de 2 columnas: Atrasados y Frecuencia */}
+      {/* Grid de 2 columnas: Atrasados y Más trabajados */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Territorios Atrasados */}
         <AtrasadosSection territories={metrics.atrasadosCandidates ?? metrics.atrasados} />
 
-        {/* Frecuencia */}
-        <section className="bg-[#0F1729] rounded-xl border border-slate-800 p-6">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="w-10 h-10 bg-red-500/10 rounded-xl flex items-center justify-center">
-              <BarChart3 className="h-5 w-5 text-red-500" />
-            </div>
-            <div>
-              <h2 className="text-lg font-bold text-white">
-                Frecuencia de Trabajo
-              </h2>
-              <p className="text-sm text-slate-400">Territorios más trabajados</p>
-            </div>
-          </div>
-          <TerritoryFrequencyList frequencies={metrics.territoryFrequency} />
-        </section>
+        {/* Territorios más trabajados */}
+        <MasTrabajadosSection completions={metrics.territoryCompletions ?? []} />
       </div>
     </div>
   )

@@ -1,13 +1,14 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { getUsers, deleteUser, resetPassword, impersonateUser } from '@/server'
-import { Loader2, Trash2, Shield, User as UserIcon, RefreshCw, X, Edit, Home, KeyRound } from 'lucide-react'
+import { getUsers, deleteUser, resetPassword, impersonateUser, updateUserModules } from '@/server'
+import { Loader2, Trash2, Shield, User as UserIcon, RefreshCw, X, Edit, Home, KeyRound, MapPin, CalendarDays } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { Table } from '@/components/common/Table'
 import { ConfirmDialog } from '@/components/common/ConfirmDialog'
 import { useRouter } from 'next/navigation'
 import { EditUserModal } from './EditUserModal'
+import type { ModuleCode } from '@/lib/module-access'
 
 interface User {
   id: string
@@ -16,10 +17,32 @@ interface User {
   role: string
   tenantId: string
   createdAt: Date
+  lastLoginAt: Date | null
   tenant: {
     name: string
   }
+  modules: ModuleCode[]
+  isCurrentUser: boolean
 }
+
+function formatLastLogin(value: Date | null): string {
+  if (!value) return 'Nunca'
+  const diffMs = Date.now() - new Date(value).getTime()
+  const minutes = Math.floor(diffMs / 60000)
+  if (minutes < 1) return 'Ahora mismo'
+  if (minutes < 60) return `hace ${minutes} min`
+  const hours = Math.floor(minutes / 60)
+  if (hours < 24) return `hace ${hours} h`
+  const days = Math.floor(hours / 24)
+  if (days === 1) return 'Ayer'
+  if (days < 30) return `hace ${days} días`
+  return new Date(value).toLocaleDateString('es-AR', { day: 'numeric', month: 'short', year: 'numeric' })
+}
+
+const moduleOptions: Array<{ id: ModuleCode; label: string; icon: typeof MapPin }> = [
+  { id: 'TERRITORIES', label: 'Territorios', icon: MapPin },
+  { id: 'VYMC', label: 'VYMC', icon: CalendarDays },
+]
 
 export function UsersTable() {
   const router = useRouter()
@@ -31,6 +54,7 @@ export function UsersTable() {
   const [resetUserEmail, setResetUserEmail] = useState('')
   const [confirmDelete, setConfirmDelete] = useState<{ id: string; email: string } | null>(null)
   const [editingUser, setEditingUser] = useState<User | null>(null)
+  const [savingModulesFor, setSavingModulesFor] = useState<string | null>(null)
 
   const loadUsers = useCallback(async () => {
     setLoading(true)
@@ -42,8 +66,21 @@ export function UsersTable() {
   }, [])
 
   useEffect(() => {
-    loadUsers()
-  }, [loadUsers])
+    let isActive = true
+    getUsers()
+      .then((result) => {
+        if (!isActive) return
+        if (result.success) setUsers(result.data)
+        setLoading(false)
+      })
+      .catch(() => {
+        if (isActive) setLoading(false)
+      })
+
+    return () => {
+      isActive = false
+    }
+  }, [])
 
   async function handleDelete() {
     if (!confirmDelete) return
@@ -83,6 +120,40 @@ export function UsersTable() {
     setResettingId(null)
   }
 
+  async function handleModuleAccessChange(user: User, module: ModuleCode, enabled: boolean) {
+    const nextModules = enabled
+      ? [...user.modules, module]
+      : user.modules.filter((currentModule) => currentModule !== module)
+
+    if (nextModules.length === 0) {
+      toast.error('Cada usuario debe tener al menos un módulo habilitado')
+      return
+    }
+
+    setSavingModulesFor(user.id)
+    try {
+      const result = await updateUserModules(user.id, nextModules)
+      if (!result.success) {
+        toast.error(result.message || 'Error al actualizar los módulos')
+        return
+      }
+
+      setUsers((currentUsers) => currentUsers.map((currentUser) =>
+        currentUser.id === user.id
+          ? { ...currentUser, modules: nextModules }
+          : currentUser
+      ))
+      if (user.isCurrentUser) {
+        window.dispatchEvent(new Event('module-access-updated'))
+      }
+      toast.success(result.message)
+    } catch {
+      toast.error('No se pudieron guardar los módulos. Intentá nuevamente.')
+    } finally {
+      setSavingModulesFor(null)
+    }
+  }
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-16">
@@ -103,28 +174,35 @@ export function UsersTable() {
 
   return (
     <>
-      <div className="bg-[#0F1729] rounded-xl border border-slate-800 overflow-hidden">
-        <Table minWidth="700px">
-          <thead className="border-b border-slate-800">
-            <tr>
-              <th className="px-6 py-4 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">
-                Usuario
-              </th>
-              <th className="px-6 py-4 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">
-                Email
-              </th>
-              <th className="px-6 py-4 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">
-                Congregación
-              </th>
-              <th className="px-6 py-4 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">
-                Rol
-              </th>
-              <th className="px-6 py-4 text-center text-xs font-medium text-slate-400 uppercase tracking-wider">
-                Acciones
-              </th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-slate-800">
+      <div>
+        <div className="bg-[#0F1729] rounded-xl border border-slate-800 overflow-hidden">
+          <Table minWidth="640px">
+            <thead className="border-b border-slate-800">
+              <tr>
+                <th className="px-6 py-4 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">
+                  Usuario
+                </th>
+                <th className="hidden px-6 py-4 text-left text-xs font-medium text-slate-400 uppercase tracking-wider md:table-cell">
+                  Email
+                </th>
+                <th className="px-6 py-4 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">
+                  Módulos habilitados
+                </th>
+                <th className="hidden px-6 py-4 text-left text-xs font-medium text-slate-400 uppercase tracking-wider md:table-cell">
+                  Congregación
+                </th>
+                <th className="hidden px-6 py-4 text-left text-xs font-medium text-slate-400 uppercase tracking-wider md:table-cell">
+                  Rol
+                </th>
+                <th className="hidden px-6 py-4 text-left text-xs font-medium text-slate-400 uppercase tracking-wider lg:table-cell">
+                  Última conexión
+                </th>
+                <th className="px-6 py-4 text-center text-xs font-medium text-slate-400 uppercase tracking-wider">
+                  Acciones
+                </th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-800">
             {users.map((user) => (
               <tr key={user.id} className="hover:bg-slate-800/50 transition-colors">
                 <td className="px-6 py-4 whitespace-nowrap">
@@ -132,26 +210,73 @@ export function UsersTable() {
                     <div className="w-9 h-9 bg-slate-800 rounded-full flex items-center justify-center">
                       <UserIcon className="h-4 w-4 text-slate-400" />
                     </div>
-                    <div>
-                      <span className="text-sm font-medium text-white">
-                        {user.name || user.email.split('@')[0]}
-                      </span>
-                      <p className="text-xs text-slate-500">
-                        Creado {new Date(user.createdAt).toLocaleDateString('es-AR')}
-                      </p>
-                    </div>
+                      <div>
+                        <span className="text-sm font-medium text-white">
+                          {user.name || user.email.split('@')[0]}
+                        </span>
+                        {user.isCurrentUser && (
+                          <span className="ml-2 rounded-full bg-cyan-500/10 px-2 py-0.5 text-[10px] font-semibold text-cyan-300">
+                            Tu cuenta
+                          </span>
+                        )}
+                        <p className="text-[11px] leading-tight text-slate-500 md:hidden">
+                          {user.email}
+                        </p>
+                        <p className="text-[11px] leading-tight text-slate-500 md:hidden">
+                          {user.tenant?.name || 'Sin congregación'}
+                        </p>
+                        <p className="text-[11px] leading-tight text-slate-500">
+                          Creado {new Date(user.createdAt).toLocaleDateString('es-AR')}
+                        </p>
+                        <p className="text-[11px] leading-tight text-slate-500 lg:hidden">
+                          Últ. conexión: {formatLastLogin(user.lastLoginAt)}
+                        </p>
+                      </div>
                   </div>
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-400">
+                <td className="hidden px-6 py-4 whitespace-nowrap text-sm text-slate-400 md:table-cell">
                   {user.email}
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap">
+                <td className="px-6 py-4">
+                  <div className="flex flex-wrap items-center gap-2">
+                    {moduleOptions.map(({ id, label, icon: ModuleIcon }) => {
+                      const enabled = user.modules.includes(id)
+                      return (
+                        <label
+                          key={id}
+                          className={`inline-flex min-h-10 cursor-pointer items-center gap-2 rounded-lg border px-2.5 text-xs font-medium transition-colors ${
+                            enabled
+                              ? id === 'TERRITORIES'
+                                ? 'border-red-500/30 bg-red-500/10 text-red-200'
+                                : 'border-blue-500/30 bg-blue-500/10 text-blue-200'
+                              : 'border-slate-700 bg-slate-800/40 text-slate-400 hover:bg-slate-800'
+                          } ${savingModulesFor === user.id ? 'cursor-wait opacity-60' : ''}`}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={enabled}
+                            disabled={savingModulesFor !== null || (enabled && user.modules.length === 1)}
+                            onChange={(event) => handleModuleAccessChange(user, id, event.target.checked)}
+                            aria-label={`${enabled ? 'Deshabilitar' : 'Habilitar'} ${label} para ${user.isCurrentUser ? 'tu cuenta' : user.email}`}
+                            className={`h-4 w-4 rounded border-slate-600 bg-slate-900 focus:ring-2 focus:ring-offset-0 ${id === 'TERRITORIES' ? 'accent-red-400 focus:ring-red-400' : 'accent-blue-400 focus:ring-blue-400'}`}
+                          />
+                          <ModuleIcon className="h-3.5 w-3.5" aria-hidden="true" />
+                          <span>{label}</span>
+                        </label>
+                      )
+                    })}
+                  </div>
+                  {savingModulesFor === user.id && (
+                    <p className="mt-1.5 text-[11px] text-slate-500" role="status">Guardando permisos...</p>
+                  )}
+                </td>
+                <td className="hidden px-6 py-4 whitespace-nowrap md:table-cell">
                   <div className="flex items-center gap-2 text-sm text-slate-300">
                     <Home className="h-4 w-4 text-purple-400" />
                     <span>{user.tenant?.name || 'Sin congregación'}</span>
                   </div>
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap">
+                <td className="hidden px-6 py-4 whitespace-nowrap md:table-cell">
                   <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium ${
                     user.role === 'ADMIN'
                       ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
@@ -163,6 +288,11 @@ export function UsersTable() {
                       <UserIcon className="h-3 w-3" />
                     )}
                     {user.role === 'ADMIN' ? 'Admin' : 'Usuario'}
+                  </span>
+                </td>
+                <td className="hidden px-6 py-4 whitespace-nowrap lg:table-cell">
+                  <span className={`text-sm ${user.lastLoginAt ? 'text-slate-300' : 'text-slate-500 italic'}`}>
+                    {formatLastLogin(user.lastLoginAt)}
                   </span>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
@@ -213,8 +343,9 @@ export function UsersTable() {
                 </td>
               </tr>
             ))}
-          </tbody>
-        </Table>
+            </tbody>
+          </Table>
+        </div>
       </div>
 
       {/* Modal resetear contraseña */}

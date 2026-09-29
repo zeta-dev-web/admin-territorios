@@ -3,11 +3,15 @@
 import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import toast from "react-hot-toast";
-import { AlertCircle, ArrowLeft, MessageCircle, UserPlus, X } from "lucide-react";
+import { AlertCircle, ArrowLeft, UserPlus, X } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { WeekHeader } from "@/components/vymc/week-header";
+import { WhatsAppIcon } from "@/components/vymc/whatsapp-icon";
 import { WeekSectionCard } from "@/components/vymc/week-section-card";
 import { AssignmentDialog } from "@/components/vymc/assignment-dialog";
+import { AddItemDialog, type AddingSectionState } from "@/components/vymc/add-item-dialog";
+import { DeleteItemDialog } from "@/components/vymc/delete-item-dialog";
 import { SpecialAssignmentDialog } from "@/components/vymc/special-assignment-dialog";
 import {
   AutoAssignPreviewDialog,
@@ -21,6 +25,7 @@ import {
   ensureSections,
   formatDateRange,
   getPlaceholderConfig,
+  SECTION_TITLES,
   sortSections,
 } from "@/components/vymc/week-display-config";
 import { canAssignPublisher } from "@/lib/assignment-eligibility";
@@ -68,6 +73,15 @@ export default function WeekDetailPage() {
   const [editingItemId, setEditingItemId] = useState<string | null>(null);
   const [editingTitle, setEditingTitle] = useState<string>("");
   const [isUpdatingTitle, setIsUpdatingTitle] = useState(false);
+
+  // Add extra topic state
+  const [addingSection, setAddingSection] = useState<AddingSectionState>(null);
+  const [isAddingItem, setIsAddingItem] = useState(false);
+  const [addItemError, setAddItemError] = useState<string | null>(null);
+
+  // Delete topic state
+  const [deletingItem, setDeletingItem] = useState<WeekItem | null>(null);
+  const [isDeletingItem, setIsDeletingItem] = useState(false);
 
   const weekId = typeof params.id === "string" ? params.id : "";
 
@@ -229,6 +243,34 @@ export default function WeekDetailPage() {
         : week?.openingPrayer?.id || ""
     );
     setSpecialAssignError(null);
+  };
+
+  /* Quita la oración inicial y abre el modal para elegir otra vez. */
+  const handleRemoveOpeningPrayer = async () => {
+    if (!week) return;
+
+    setIsSpecialAssignLoading(true);
+    try {
+      const res = await fetch(`/api/vymc/weeks/${weekId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ openingPrayerId: null }),
+      });
+
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error || "Error al quitar");
+      }
+
+      await reloadWeek();
+      setSelectedSpecialPublisherId("");
+      setSpecialAssignError(null);
+      setAssigningSpecial("prayer");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Error al quitar");
+    } finally {
+      setIsSpecialAssignLoading(false);
+    }
   };
 
   const handleClearSpecial = async (type: SpecialAssignType) => {
@@ -400,6 +442,92 @@ export default function WeekDetailPage() {
     }
   };
 
+  const openAddItemDialog = (section: WeekSection) => {
+    setAddingSection({
+      sectionId: section.id,
+      sectionType: section.sectionType,
+      sectionTitle: SECTION_TITLES[section.sectionType] ?? section.sectionType,
+    });
+    setAddItemError(null);
+  };
+
+  const handleConfirmAddItem = async (title: string, timeMinutes: number | null) => {
+    if (!addingSection) return;
+
+    setIsAddingItem(true);
+    setAddItemError(null);
+    try {
+      const res = await fetch(
+        `/api/vymc/weeks/sections/${addingSection.sectionId}/items`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ title, timeMinutes }),
+        }
+      );
+
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error || "Error al agregar el tema");
+      }
+
+      await reloadWeek();
+      setAddingSection(null);
+      toast.success("Tema agregado correctamente");
+    } catch (err) {
+      setAddItemError(err instanceof Error ? err.message : "Error al agregar el tema");
+    } finally {
+      setIsAddingItem(false);
+    }
+  };
+
+  const handleDeleteItem = (item: WeekItem) => {
+    setDeletingItem(item);
+  };
+
+  const handleConfirmDeleteItem = async () => {
+    if (!deletingItem) return;
+
+    setIsDeletingItem(true);
+    try {
+      const res = await fetch(`/api/vymc/weeks/items/${deletingItem.id}`, {
+        method: "DELETE",
+      });
+
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error || "Error al eliminar el tema");
+      }
+
+      await reloadWeek();
+      setDeletingItem(null);
+      toast.success("Tema eliminado correctamente");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Error al eliminar el tema");
+    } finally {
+      setIsDeletingItem(false);
+    }
+  };
+
+  const handleMoveItem = async (itemId: string, swapWithItemId: string) => {
+    try {
+      const res = await fetch(`/api/vymc/weeks/items/${itemId}/move`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ swapWithItemId }),
+      });
+
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error || "Error al mover el tema");
+      }
+
+      await reloadWeek();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Error al mover el tema");
+    }
+  };
+
   const handleOpenWhatsAppDialog = (data: WhatsAppShareData) => {
     if (!week) return;
     const weekRangeText = formatDateRange(week.startDate, week.endDate);
@@ -447,13 +575,15 @@ export default function WeekDetailPage() {
   if (error) {
     return (
       <div className="space-y-6">
-        <button
+        <Button
+          variant="ghost"
+          size="sm"
           onClick={() => router.push("/vymc/programas")}
-          className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors"
+          className="gap-2 px-2"
         >
           <ArrowLeft className="w-4 h-4" />
           Volver a programas
-        </button>
+        </Button>
         <div className="rounded-lg bg-red-50 border border-red-200 p-6 flex items-center gap-4">
           <AlertCircle className="w-6 h-6 text-red-500 shrink-0" />
           <div>
@@ -503,13 +633,15 @@ export default function WeekDetailPage() {
   return (
     <div className="space-y-6">
       {/* Back button */}
-      <button
+      <Button
+        variant="ghost"
+        size="sm"
         onClick={() => router.push("/vymc/programas")}
-        className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors"
+        className="gap-2 px-2"
       >
         <ArrowLeft className="w-4 h-4" />
         Volver a programas
-      </button>
+      </Button>
 
       {/* Week Header */}
       <WeekHeader
@@ -543,10 +675,19 @@ export default function WeekDetailPage() {
         </div>
         <CardContent className="py-3 px-5 bg-card">
           {week.president ? (
-            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs bg-gray-600 text-white">
-              <span>
-                {week.president.firstName} {week.president.lastName}
-                {" · "}Asignado
+            <span className="inline-flex items-center gap-1.5">
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs bg-gray-600 text-white">
+                <span>
+                  {week.president.firstName} {week.president.lastName}
+                  {" · "}Asignado
+                </span>
+                <button
+                  onClick={() => handleClearSpecial("president")}
+                  className="ml-1 hover:opacity-70"
+                  title="Quitar"
+                >
+                  <X className="w-3 h-3" />
+                </button>
               </span>
               <button
                 type="button"
@@ -563,27 +704,22 @@ export default function WeekDetailPage() {
                     weekRangeText: "",
                   })
                 }
-                className="text-emerald-300 hover:text-white transition-colors ml-0.5"
+                aria-label="Notificar por WhatsApp"
                 title="Notificar por WhatsApp"
+                className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-[#25D366] border border-[#128C4B]/50 text-[#ffffff] shadow-sm hover:bg-[#1eb457] transition-colors"
               >
-                <MessageCircle className="w-3.5 h-3.5" />
-              </button>
-              <button
-                onClick={() => handleClearSpecial("president")}
-                className="ml-1 hover:opacity-70"
-                title="Quitar"
-              >
-                <X className="w-3 h-3" />
+                <WhatsAppIcon className="w-5 h-5" />
               </button>
             </span>
           ) : (
-            <button
+            <Button
+              variant="soft"
+              size="sm"
               onClick={() => openSpecialAssignDialog("president")}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs text-gray-600 border border-gray-300 rounded hover:bg-blue-50 transition-colors"
             >
               <UserPlus className="w-3.5 h-3.5" />
               Asignar
-            </button>
+            </Button>
           )}
         </CardContent>
       </Card>
@@ -604,6 +740,7 @@ export default function WeekDetailPage() {
               onRemoveAssignment={handleRemoveAssignment}
               onAiAssigned={reloadWeek}
               onChangeOpeningPrayer={() => openSpecialAssignDialog("prayer")}
+              onRemoveOpeningPrayer={handleRemoveOpeningPrayer}
               onShareWhatsApp={handleOpenWhatsAppDialog}
               editingItemId={editingItemId}
               editingTitle={editingTitle}
@@ -612,6 +749,9 @@ export default function WeekDetailPage() {
               onCancelEditingTitle={cancelEditingTitle}
               onSaveEditingTitle={saveEditingTitle}
               isUpdatingTitle={isUpdatingTitle}
+              onAddItem={openAddItemDialog}
+              onDeleteItem={handleDeleteItem}
+              onMoveItem={handleMoveItem}
             />
           ))}
       </div>
@@ -628,6 +768,23 @@ export default function WeekDetailPage() {
         error={assignError}
         onClose={() => setAssigningItem(null)}
         onConfirm={handleCreateAssignment}
+      />
+
+      {/* Add extra topic dialog */}
+      <AddItemDialog
+        addingSection={addingSection}
+        isSaving={isAddingItem}
+        error={addItemError}
+        onClose={() => setAddingSection(null)}
+        onConfirm={handleConfirmAddItem}
+      />
+
+      {/* Delete topic dialog */}
+      <DeleteItemDialog
+        item={deletingItem}
+        isDeleting={isDeletingItem}
+        onClose={() => setDeletingItem(null)}
+        onConfirm={handleConfirmDeleteItem}
       />
 
       {/* Auto-assign preview dialog */}

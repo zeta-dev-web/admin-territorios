@@ -1,7 +1,7 @@
 "use client";
 
 import {
-  Award, ChevronLeft, ChevronRight, MessageCircle, Pencil,
+  ArrowDown, ArrowUp, Award, ChevronLeft, ChevronRight, MessageCircle, Pencil,
   Shield, Trash2, Users,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -19,6 +19,8 @@ type PublishersTableProps = {
   page: number;
   totalPages: number;
   pageSize: number;
+  sortOrder: "LAST_ASC" | "LAST_DESC";
+  onToggleSort: () => void;
   onPageChange: (next: (current: number) => number) => void;
   onPageSizeChange: (size: number) => void;
   onEdit: (publisher: VymcPublisher) => void;
@@ -33,20 +35,20 @@ function WhatsAppLink({ phone, compact }: { phone: string; compact?: boolean }) 
       rel="noopener noreferrer"
       className={
         compact
-          ? "inline-flex items-center gap-1 text-xs text-emerald-700 bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 rounded"
-          : "inline-flex items-center gap-1.5 text-xs font-medium text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 px-2 py-1 rounded-md transition-colors"
+          ? "wa-phone-pill inline-flex items-center gap-1 text-xs px-1.5 py-0.5 rounded"
+          : "wa-phone-pill inline-flex items-center gap-1.5 text-xs font-medium px-2 py-1 rounded-md transition-colors"
       }
       title="Abrir chat de WhatsApp"
     >
-      <MessageCircle className={compact ? "w-3 h-3" : "w-3.5 h-3.5 text-emerald-600"} />
+      <MessageCircle className={compact ? "w-3 h-3" : "w-3.5 h-3.5"} />
       {phone}
     </a>
   );
 }
 
 export function PublishersTable({
-  publishers, page, totalPages, pageSize,
-  onPageChange, onPageSizeChange, onEdit, onDeleteRequest,
+  publishers, page, totalPages, pageSize, sortOrder,
+  onToggleSort, onPageChange, onPageSizeChange, onEdit, onDeleteRequest,
 }: PublishersTableProps) {
   if (publishers.length === 0) return null;
 
@@ -57,7 +59,22 @@ export function PublishersTable({
         <Table>
           <TableHeader>
             <TableRow className="border-border">
-              <TableHead className="text-foreground/80 font-medium">Nombre</TableHead>
+              <TableHead className="text-foreground/80 font-medium">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={onToggleSort}
+                  title={sortOrder === "LAST_ASC" ? "Apellido A-Z (tocar para Z-A)" : "Apellido Z-A (tocar para A-Z)"}
+                  className="gap-1.5 px-2"
+                >
+                  Nombre
+                  {sortOrder === "LAST_ASC" ? (
+                    <ArrowUp className="w-3.5 h-3.5" />
+                  ) : (
+                    <ArrowDown className="w-3.5 h-3.5" />
+                  )}
+                </Button>
+              </TableHead>
               <TableHead className="text-foreground/80 font-medium">Grupo</TableHead>
               <TableHead className="text-foreground/80 font-medium">Teléfono / WhatsApp</TableHead>
               <TableHead className="text-foreground/80 font-medium">Género</TableHead>
@@ -122,11 +139,11 @@ export function PublishersTable({
                 </TableCell>
                 <TableCell className="text-right">
                   <div className="flex justify-end gap-1">
-                    <Button variant="ghost" size="sm" onClick={() => onEdit(p)}
+                    <Button variant="ghost" size="icon" onClick={() => onEdit(p)} aria-label="Editar"
                       className="hover:bg-ring/10 hover:text-ring">
                       <Pencil className="w-4 h-4" />
                     </Button>
-                    <Button variant="ghost" size="sm" onClick={() => onDeleteRequest(p.id)}
+                    <Button variant="ghost" size="icon" onClick={() => onDeleteRequest(p.id)} aria-label="Eliminar"
                       className="hover:bg-destructive/10 hover:text-destructive">
                       <Trash2 className="w-4 h-4" />
                     </Button>
@@ -152,8 +169,8 @@ export function PublishersTable({
                 </div>
               </div>
               <div className="flex gap-1">
-                <Button variant="ghost" size="sm" onClick={() => onEdit(p)} aria-label="Editar"><Pencil className="h-4 w-4" /></Button>
-                <Button variant="ghost" size="sm" onClick={() => onDeleteRequest(p.id)} aria-label="Eliminar"><Trash2 className="h-4 w-4" /></Button>
+                <Button variant="ghost" size="icon" onClick={() => onEdit(p)} aria-label="Editar"><Pencil className="h-4 w-4" /></Button>
+                <Button variant="ghost" size="icon" onClick={() => onDeleteRequest(p.id)} aria-label="Eliminar" className="hover:text-destructive"><Trash2 className="h-4 w-4" /></Button>
               </div>
             </div>
             <div className="mt-3 flex flex-wrap gap-1.5">

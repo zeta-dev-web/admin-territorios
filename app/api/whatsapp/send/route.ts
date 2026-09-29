@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { getSession } from '@/lib/auth'
+import { authorizeModuleRequest } from '@/lib/module-access'
 import { normalizePhone } from "@/lib/whatsapp/evolution-client";
 import {
   enqueueMessage,
@@ -21,6 +22,8 @@ const sendSchema = z.object({
 // POST /api/whatsapp/send
 export async function POST(request: NextRequest) {
   try {
+    const access = await authorizeModuleRequest('VYMC')
+    if ('response' in access) return access.response
     const session = await getSession();
     if (!session?.isAuthenticated || !session.tenantId) {
       return NextResponse.json({ error: "No autorizado" }, { status: 401 });

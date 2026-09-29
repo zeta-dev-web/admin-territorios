@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getSession } from '@/lib/auth';
+import { authorizeModuleRequest } from '@/lib/module-access';
 import {
   clearFinishedFromQueue,
   getQueueSnapshot,
@@ -14,6 +15,8 @@ import {
 // GET /api/whatsapp/queue
 export async function GET() {
   try {
+    const access = await authorizeModuleRequest('VYMC');
+    if ('response' in access) return access.response;
     const session = await getSession();
     if (!session?.isAuthenticated || !session.tenantId) {
       return NextResponse.json({ error: "No autorizado" }, { status: 401 });
@@ -48,6 +51,8 @@ export async function GET() {
 // DELETE /api/whatsapp/queue
 export async function DELETE() {
   try {
+    const access = await authorizeModuleRequest('VYMC');
+    if ('response' in access) return access.response;
     const session = await getSession();
     if (!session?.isAuthenticated || !session.tenantId) {
       return NextResponse.json({ error: "No autorizado" }, { status: 401 });

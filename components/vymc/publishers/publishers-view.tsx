@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo } from "react";
 import toast from "react-hot-toast";
-import { Plus } from "lucide-react";
+import { ArrowDownAZ, ArrowDownZA, ChevronDown, Plus, SlidersHorizontal } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -48,6 +48,16 @@ export function PublishersView() {
 
   const [pageSize, setPageSize] = useState(20);
   const [page, setPage] = useState(1);
+
+  // Orden por apellido
+  const [sortOrder, setSortOrder] = useState<"LAST_ASC" | "LAST_DESC">("LAST_ASC");
+  const toggleSortOrder = () => {
+    setSortOrder((prev) => (prev === "LAST_ASC" ? "LAST_DESC" : "LAST_ASC"));
+    setPage(1);
+  };
+
+  // Filtros colapsables en mobile
+  const [showFilters, setShowFilters] = useState(false);
 
   const loadPublishers = async () => {
     try {
@@ -107,11 +117,29 @@ export function PublishersView() {
       );
     }
 
-    return result;
-  }, [allPublishers, searchQuery, genderFilter, baptizedFilter, pioneerFilter, ministerialFilter, elderFilter, groupFilter]);
+    const collator = new Intl.Collator("es", { sensitivity: "base" });
+    result.sort((a, b) =>
+      sortOrder === "LAST_ASC"
+        ? collator.compare(a.lastName, b.lastName) || collator.compare(a.firstName, b.firstName)
+        : collator.compare(b.lastName, a.lastName) || collator.compare(b.firstName, a.firstName)
+    );
 
-  const totalPages = Math.ceil(filteredPublishers.length / pageSize) || 1;
-  const paginatedPublishers = useMemo(() => {
+    return result;
+  }, [allPublishers, searchQuery, genderFilter, baptizedFilter, pioneerFilter, ministerialFilter, elderFilter, groupFilter, sortOrder]);
+
+  const activeFilterCount = useMemo(() => {
+    let count = 0;
+    if (searchQuery.trim()) count += 1;
+    if (genderFilter !== "ALL") count += 1;
+    if (baptizedFilter !== "ALL") count += 1;
+    if (pioneerFilter !== "ALL") count += 1;
+    if (ministerialFilter !== "ALL") count += 1;
+    if (elderFilter !== "ALL") count += 1;
+    if (groupFilter !== "ALL") count += 1;
+    return count;
+  }, [searchQuery, genderFilter, baptizedFilter, pioneerFilter, ministerialFilter, elderFilter, groupFilter]);
+
+  const totalPages = Math.ceil(filteredPublishers.length / pageSize) || 1;  const paginatedPublishers = useMemo(() => {
     const start = (page - 1) * pageSize;
     return filteredPublishers.slice(start, start + pageSize);
   }, [filteredPublishers, page, pageSize]);
@@ -202,7 +230,35 @@ export function PublishersView() {
       </div>
 
       {/* Filtros */}
-      <PublisherFilters
+      {/* Botón solo visible en mobile para mostrar/ocultar filtros + orden */}
+      <div className="md:hidden flex gap-2">
+        <Button
+          variant="outline"
+          onClick={() => setShowFilters((v) => !v)}
+          className="flex-1"
+          aria-expanded={showFilters}
+        >
+          <SlidersHorizontal className="w-4 h-4 mr-2" />
+          Filtros
+          {activeFilterCount > 0 && (
+            <span className="ml-2 inline-flex items-center justify-center min-w-5 h-5 px-1 rounded-full text-[11px] font-semibold bg-primary text-primary-foreground">
+              {activeFilterCount}
+            </span>
+          )}
+          <ChevronDown className={`w-4 h-4 ml-auto transition-transform ${showFilters ? "rotate-180" : ""}`} />
+        </Button>
+        <Button
+          variant="outline"
+          onClick={toggleSortOrder}
+          aria-label={sortOrder === "LAST_ASC" ? "Ordenado A-Z, tocar para Z-A" : "Ordenado Z-A, tocar para A-Z"}
+          title={sortOrder === "LAST_ASC" ? "Apellido A-Z" : "Apellido Z-A"}
+          className="w-11 px-0 shrink-0 border-border text-muted-foreground hover:text-card-foreground"
+        >
+          {sortOrder === "LAST_ASC" ? <ArrowDownAZ className="w-5 h-5" /> : <ArrowDownZA className="w-5 h-5" />}
+        </Button>
+      </div>
+      <div className={`${showFilters ? "block" : "hidden"} md:block`}>
+        <PublisherFilters
         searchQuery={searchQuery}
         onSearchChange={(v) => { setSearchQuery(v); resetPagesForFilters(); }}
         genderFilter={genderFilter}
@@ -219,6 +275,7 @@ export function PublishersView() {
         groupFilter={groupFilter}
         onGroupFilterChange={(v) => { setGroupFilter(v); resetToFirstPage(); }}
       />
+      </div>
 
 
       {/* Tabla o estado vacío */}
@@ -243,6 +300,8 @@ export function PublishersView() {
           page={page}
           totalPages={totalPages}
           pageSize={pageSize}
+          sortOrder={sortOrder}
+          onToggleSort={toggleSortOrder}
           onPageChange={setPage}
           onPageSizeChange={(size) => { setPageSize(size); resetToFirstPage(); }}
           onEdit={openEditDialog}
@@ -261,12 +320,9 @@ export function PublishersView() {
 
       {/* Crear grupo */}
       <Dialog open={isGroupDialogOpen} onOpenChange={setIsGroupDialogOpen}>
-        <DialogContent className="max-w-sm">
+        <DialogContent className="max-w-sm w-[calc(100%-2rem)] p-4 sm:p-6">
           <DialogHeader>
             <DialogTitle className="text-card-foreground">Nuevo grupo</DialogTitle>
-            <DialogDescription className="text-muted-foreground">
-              Ingresá el nombre del grupo. Después podés asignarle publicadores.
-            </DialogDescription>
           </DialogHeader>
           <div className="space-y-2 py-2">
             <Label htmlFor="groupName" className="text-foreground font-medium">Nombre del grupo</Label>
@@ -276,12 +332,12 @@ export function PublishersView() {
               disabled={isCreatingGroup}
               autoFocus />
           </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsGroupDialogOpen(false)} disabled={isCreatingGroup}>
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button variant="outline" onClick={() => setIsGroupDialogOpen(false)} disabled={isCreatingGroup} className="justify-center">
               Cancelar
             </Button>
             <Button onClick={handleCreateGroup} disabled={!newGroupName.trim() || isCreatingGroup}
-              className="bg-primary hover:bg-primary/90 text-primary-foreground">
+              className="bg-primary hover:bg-primary/90 text-primary-foreground justify-center">
               {isCreatingGroup ? "Creando..." : "Crear grupo"}
             </Button>
           </DialogFooter>
@@ -290,16 +346,16 @@ export function PublishersView() {
 
       {/* Confirmación de borrado */}
       <Dialog open={!!deleteConfirmId} onOpenChange={() => setDeleteConfirmId(null)}>
-        <DialogContent>
+        <DialogContent className="w-[calc(100%-2rem)] p-4 sm:p-6">
           <DialogHeader>
             <DialogTitle className="text-card-foreground">Eliminar publicador</DialogTitle>
             <DialogDescription className="text-muted-foreground">
               Esta acción no se puede deshacer. El publicador será eliminado del directorio.
             </DialogDescription>
           </DialogHeader>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setDeleteConfirmId(null)}>Cancelar</Button>
-            <Button variant="destructive" onClick={() => deleteConfirmId && handleDelete(deleteConfirmId)}>
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button variant="outline" onClick={() => setDeleteConfirmId(null)} className="justify-center">Cancelar</Button>
+            <Button variant="destructive" onClick={() => deleteConfirmId && handleDelete(deleteConfirmId)} className="justify-center">
               Eliminar
             </Button>
           </DialogFooter>

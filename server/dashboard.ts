@@ -7,6 +7,7 @@ import {
   TerritoryProgress,
   AtrasadoTerritory,
   TerritoryFrequency,
+  TerritoryCompletion,
   BlockStatus,
 } from '@/types'
 
@@ -216,11 +217,33 @@ export async function getDashboardMetrics(): Promise<DashboardMetrics> {
       }))
       .sort((a, b) => b.completedAssignments - a.completedAssignments) // Los más trabajados primero
 
+    // 4. TRABAJOS COMPLETADOS CON FECHA (para filtrar "más trabajados" por periodo)
+    const completedAssignments = await prisma.assignment.findMany({
+      where: {
+        isCompleted: true,
+        tenantId,
+      },
+      select: {
+        territoryId: true,
+        endDate: true,
+        territory: {
+          select: { number: true },
+        },
+      },
+    })
+
+    const territoryCompletions: TerritoryCompletion[] = completedAssignments.map((a) => ({
+      territoryId: a.territoryId,
+      territoryNumber: a.territory.number,
+      completedAt: a.endDate,
+    }))
+
     return {
       activeTerritoriesProgress,
       atrasados,
       atrasadosCandidates: freeTerritories,
       territoryFrequency,
+      territoryCompletions,
     }
   } catch (error) {
     console.error('Error al obtener métricas del dashboard:', error)
@@ -230,6 +253,7 @@ export async function getDashboardMetrics(): Promise<DashboardMetrics> {
       atrasados: [],
       atrasadosCandidates: [],
       territoryFrequency: [],
+      territoryCompletions: [],
     }
   }
 }

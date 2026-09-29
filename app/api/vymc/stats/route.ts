@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { getCurrentTenantId } from '@/lib/tenant'
+import { authorizeModuleRequest } from '@/lib/module-access'
 import { prisma } from '@/lib/prisma'
 
 export const dynamic = 'force-dynamic'
@@ -15,7 +15,9 @@ const MONTHS = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto
 // GET /api/vymc/stats - métricas vivas del dashboard VYMC
 export async function GET() {
   try {
-    const tenantId = await getCurrentTenantId()
+    const access = await authorizeModuleRequest('VYMC')
+    if ('response' in access) return access.response
+    const { tenantId } = access
     const now = new Date()
     const monthStart = new Date(now.getFullYear(), now.getMonth(), 1)
     const nextMonthStart = new Date(now.getFullYear(), now.getMonth() + 1, 1)
