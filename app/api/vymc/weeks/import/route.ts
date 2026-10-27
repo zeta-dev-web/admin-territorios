@@ -45,7 +45,7 @@ export async function POST(request: NextRequest) {
               .normalize('NFD')
               .replace(/[\u0300-\u036f]/g, '')
               .toLowerCase()
-            if (!replacedStudy && normalizedTitle.includes('estudio biblico de congregacion')) {
+            if (!replacedStudy && normalizedTitle.includes('estudio biblico de la congregacion')) {
               replacedStudy = true
               return { ...item, title: supervisorStudyTitle }
             }
