@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { AlertCircle, CheckCircle2, Download, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { DatePicker } from "@/components/ui/calendar";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
   Dialog,
@@ -54,6 +55,7 @@ export function ImportWeekDialog({ open, onOpenChange, onImported }: ImportWeekD
   const router = useRouter();
   const [selectedDate, setSelectedDate] = useState<Date>(getNearestMonday(new Date()));
   const [weekType, setWeekType] = useState<(typeof SPECIAL_WEEK_OPTIONS)[number]["value"] | "REGULAR">("REGULAR");
+  const [supervisorStudyTitle, setSupervisorStudyTitle] = useState("");
   const [isScraping, setIsScraping] = useState(false);
   const [scrapeResult, setScrapeResult] = useState<ScrapeResult | null>(null);
   const [scrapeError, setScrapeError] = useState<string | null>(null);
@@ -65,6 +67,7 @@ export function ImportWeekDialog({ open, onOpenChange, onImported }: ImportWeekD
     if (open) {
       setSelectedDate(getNearestMonday(new Date()));
       setWeekType("REGULAR");
+      setSupervisorStudyTitle("");
       setScrapeResult(null);
       setScrapeError(null);
     }
@@ -104,7 +107,11 @@ export function ImportWeekDialog({ open, onOpenChange, onImported }: ImportWeekD
   };
 
   const handleSave = async () => {
-    if (weekType === "REGULAR" && !scrapeResult) return;
+    if ((weekType === "REGULAR" || weekType === "CIRCUIT_SUPERVISOR_VISIT") && !scrapeResult) return;
+    if (weekType === "CIRCUIT_SUPERVISOR_VISIT" && !supervisorStudyTitle.trim()) {
+      setScrapeError("Ingresá el tema del superintendente de circuito");
+      return;
+    }
 
     setIsSaving(true);
     try {
@@ -123,6 +130,7 @@ export function ImportWeekDialog({ open, onOpenChange, onImported }: ImportWeekD
           endDate: endDate.toISOString().split("T")[0],
           biblicalReading: scrapeResult?.biblicalReading,
           sections: scrapeResult?.sections ?? [],
+          supervisorStudyTitle: weekType === "CIRCUIT_SUPERVISOR_VISIT" ? supervisorStudyTitle.trim() : undefined,
           weekType,
         }),
       });
@@ -253,6 +261,24 @@ export function ImportWeekDialog({ open, onOpenChange, onImported }: ImportWeekD
                     {formatDateForDisplay(scrapeResult.scrapedDate)}
                   </span>
                 </div>
+                {weekType === "CIRCUIT_SUPERVISOR_VISIT" && (
+                  <div className="rounded-md border border-border bg-background p-3">
+                    <Label htmlFor="supervisor-study-title" className="text-foreground font-medium">
+                      Tema del superintendente de circuito
+                    </Label>
+                    <Input
+                      id="supervisor-study-title"
+                      value={supervisorStudyTitle}
+                      onChange={(event) => setSupervisorStudyTitle(event.target.value)}
+                      placeholder="Escribí el título del tema"
+                      disabled={isSaving}
+                      className="mt-1.5"
+                    />
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      Este título reemplazará únicamente el estudio bíblico de congregación.
+                    </p>
+                  </div>
+                )}
                 {scrapeResult.sections?.map((section, i) => (
                   <div key={i} className="border-l-4 border-primary pl-3">
                     <h5 className="font-medium text-primary text-sm uppercase tracking-wide">
@@ -301,7 +327,10 @@ export function ImportWeekDialog({ open, onOpenChange, onImported }: ImportWeekD
                 </Button>
                 <Button
                   onClick={handleSave}
-                  disabled={isSaving}
+                  disabled={
+                    isSaving ||
+                    (weekType === "CIRCUIT_SUPERVISOR_VISIT" && !supervisorStudyTitle.trim())
+                  }
                   className="bg-accent hover:bg-accent/90 text-accent-foreground"
                 >
                   {isSaving ? (
